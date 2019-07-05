@@ -66,6 +66,7 @@ class helmUpgradeBotHub23:
         # Checkout a new branch
         self.checkout_branch()
         fname = self.update_changelog()
+        self.add_commit_push(fname)
 
 
     def check_fork_exists(self):
@@ -122,12 +123,24 @@ class helmUpgradeBotHub23:
 	    	])
 
 
+    def add_commit_push(self, changed_files):
+        for f in changed_files:
+            subprocess.check_call(["git", "add", f])
+
+        commit_msg = f"Log helm chart bump to version {self.version_info['helm_page']['version']}"
+
+        subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
+        subprocess.check_call(["git", "config", "user.email", "helmupgradebot.github@gmail.com"])
+        subprocess.check_call(["git", "commit", "-m", commit_msg])
+        subprocess.check_call(["git", "push", f"https://HelmUpgradeBot:{TOKEN}@github.com/HelmUpgradeBot/hub23-deploy", "helm_chart_bump"])
+
+
     def update_changelog(self):
         fname = "changelog.txt"
         with open(fname, "a") as f:
             f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {self.version_info['helm_page']['version']}")
 
-        return fname
+        return [fname]
 
 
     def get_hub23_latest(self):
