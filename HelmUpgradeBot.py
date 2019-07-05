@@ -68,8 +68,8 @@ class helmUpgradeBotHub23:
 
     def clone_fork(self):
     	subprocess.check_call([
-    		"git", "clone",
-    		"https://github.com/HelmUpgradeBot/hub23-deploy.git"
+            "git", "clone",
+            "https://github.com/HelmUpgradeBot/hub23-deploy.git"
     	])
 
 
@@ -84,27 +84,27 @@ class helmUpgradeBotHub23:
 
     def checkout_branch(self, existing_pr):
     	if self.fork_exists:
-    		self.delete_old_branch()
-    		subprocess.check_call([
-    			"git", "pull",
-    			"https://github.com/alan-turing-institute/hub23-deploy.git",
-    			"master"
+            self.delete_old_branch()
+            subprocess.check_call([
+                "git", "pull",
+                "https://github.com/alan-turing-institute/hub23-deploy.git",
+                "master"
     		])
     	subprocess.check_call([
-    		"git", "checkout", "-b", "helm_chart_bump"
+            "git", "checkout", "-b", "helm_chart_bump"
     	])
 
 
     def delete_old_branch(self):
-	    res = requests.get(
+        res = requests.get(
 	    	"https://api.github.com/repos/HelmUpgradeBot/hub23-deploy/branches"
 	    )
 	    if "helm_chart_bump" in [x["name"] for x in res.json()]:
 	    	subprocess.check_call([
-	    		"git", "push", "--delete", "origin", "helm_chart_bump"
+                "git", "push", "--delete", "origin", "helm_chart_bump"
 	    	])
 	    	subprocess.check_call([
-	    		"git", "branch", "-d", "helm_chart_bump"
+                "git", "branch", "-d", "helm_chart_bump"
 	    	])
 
 
@@ -123,8 +123,8 @@ class helmUpgradeBotHub23:
         helm_chart_yaml = load(requests.get(url_helm_chart).text)
 
         updates_sorted = sorted(
-			helm_chart_yaml["entries"]["binderhub"],
-			key=lambda k: k["created"]
+            helm_chart_yaml["entries"]["binderhub"],
+            key=lambda k: k["created"]
 		)
         self.version_info["helm_page"]["date"] = updates_sorted[-1]['created']
         self.version_info["helm_page"]["version"] = updates_sorted[-1]['version'].split('-')[-1]
