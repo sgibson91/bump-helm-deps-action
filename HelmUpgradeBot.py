@@ -1,3 +1,12 @@
+"""
+Script to pull the latest Helm Chart deployment from:
+https://jupyterhub.github.io/helm-chart/#development-releases-binderhub
+and compare the latest release with the Hub23 changelog.
+
+If Hub23 needs an upgrade, the script will perform the upgrade and open a pull
+request documenting the new helm chart version in the changelog.
+"""
+
 import os
 import sys
 import stat
@@ -9,10 +18,10 @@ import subprocess
 import pandas as pd
 from yaml import safe_load as load
 
-# URLs
+# Hub23 repo API URL
 REPO_API = "https://api.github.com/repos/alan-turing-institute/hub23-deploy/"
 
-# Environment Variables
+# Access token for GitHub API
 TOKEN = os.environ.get("BOT_TOKEN")
 
 
@@ -40,6 +49,12 @@ class helmUpgradeBotHub23:
             self.upgrade_helm_version()
         else:
             print("Hub23 is up-to-date with current BinderHub Helm Chart release!")
+
+            today = pd.to_datetime(datetime.datetime.today().strftime("%Y-%m-%d"))
+
+            if ((today - self.version_info["helm_page"]["date"]).days >= 7) and self.fork_exists:
+                self.remove_fork()
+
             sys.exit(0)
 
         self.clean_up()
@@ -130,9 +145,15 @@ class helmUpgradeBotHub23:
         commit_msg = f"Log helm chart bump to version {self.version_info['helm_page']['version']}"
 
         subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
-        subprocess.check_call(["git", "config", "user.email", "helmupgradebot.github@gmail.com"])
+        subprocess.check_call([
+            "git", "config", "user.email", "helmupgradebot.github@gmail.com"
+        ])
         subprocess.check_call(["git", "commit", "-m", commit_msg])
-        subprocess.check_call(["git", "push", f"https://HelmUpgradeBot:{TOKEN}@github.com/HelmUpgradeBot/hub23-deploy", "helm_chart_bump"])
+        subprocess.check_call([
+            "git", "push",
+            f"https://HelmUpgradeBot:{TOKEN}@github.com/HelmUpgradeBot/hub23-deploy",
+            "helm_chart_bump"
+        ])
 
 
     def update_changelog(self):
