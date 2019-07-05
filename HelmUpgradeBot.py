@@ -63,10 +63,10 @@ class helmUpgradeBotHub23:
             f"{self.version_info['helm_page']['version']}"
         ])
 
-        # Checkout a new branch
         self.checkout_branch()
         fname = self.update_changelog()
         self.add_commit_push(fname)
+        self.create_update_pr()
 
 
     def check_fork_exists(self):
@@ -141,6 +141,36 @@ class helmUpgradeBotHub23:
             f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {self.version_info['helm_page']['version']}")
 
         return [fname]
+
+
+    def make_pr_body(self):
+        today = pd.to_datetime(datetime.datetime.today().strftime("%Y-%m-%d"))
+
+        body = "\n".join([
+            "This PR is updating the CHANGELOG to reflect the most recent Helm Chart version bump.",
+            f"It had been {(today - self.version_info['hub23']['date']).days} days since the last upgrade."
+        ])
+
+        print(body)
+
+        return body
+
+
+    def create_update_pr(self):
+        body = self.make_pr_body()
+
+        pr = {
+            "title": "Logging Helm Chart version upgrade",
+            "body": body,
+            "base": "master",
+            "head": "HelmUpgradeBot:helm_chart_bump"
+        }
+
+        requests.post(
+            REPO_API + "pulls",
+            headers={"Authorization": f"token {TOKEN}"},
+            json=pr
+        )
 
 
     def get_hub23_latest(self):
