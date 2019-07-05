@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import shutil
 import datetime
 import requests
 import subprocess
@@ -40,11 +41,13 @@ class helmUpgradeBotHub23:
             print("Hub23 is up-to-date with current BinderHub Helm Chart release!")
             sys.exit(0)
 
+        self.clean_up()
 
     def upgrade_helm_version(self):
         if not self.fork_exists:
             self.make_fork()
         self.clone_fork()
+        os.chdir("hub23-deploy")
 
 
     def check_fork_exists(self):
@@ -134,6 +137,15 @@ class helmUpgradeBotHub23:
 
         print(f"Hub23: {self.version_info['hub23']['date']} {self.version_info['hub23']['version']}")
         print(f"Helm Chart page: {self.version_info['helm_page']['date']} {self.version_info['helm_page']['version']}")
+
+
+    def clean_up(self):
+        cwd = os.getcwd()
+        this_dir = cwd.split("/")[-1]
+        if this_dir == "hub23-deploy":
+            os.chdir("..")
+
+        shutil.rmtree(this_dir)
 
 
 if __name__ == "__main__":
