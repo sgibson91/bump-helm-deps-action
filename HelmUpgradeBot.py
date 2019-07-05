@@ -65,6 +65,7 @@ class helmUpgradeBotHub23:
 
         # Checkout a new branch
         self.checkout_branch()
+        fname = self.update_changelog()
 
 
     def check_fork_exists(self):
@@ -121,6 +122,14 @@ class helmUpgradeBotHub23:
 	    	])
 
 
+    def update_changelog(self):
+        fname = "changelog.txt"
+        with open(fname, "a") as f:
+            f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {self.version_info['helm_page']['version']}")
+
+        return fname
+
+
     def get_hub23_latest(self):
         changelog_url = "https://raw.githubusercontent.com/alan-turing-institute/hub23-deploy/master/changelog.txt"
         changelog = load(requests.get(changelog_url).text)
@@ -140,7 +149,7 @@ class helmUpgradeBotHub23:
             key=lambda k: k["created"]
 		)
         self.version_info["helm_page"]["date"] = updates_sorted[-1]['created']
-        self.version_info["helm_page"]["version"] = updates_sorted[-1]['version'].split('-')[-1]
+        self.version_info["helm_page"]["version"] = updates_sorted[-1]['version']
 
 
     def get_latest_versions(self):
