@@ -49,6 +49,10 @@ class helmUpgradeBotHub23:
         self.clone_fork()
         os.chdir("hub23-deploy")
 
+        # Make the config files
+        subprocess.check_call(["chmod", "700", "make-config-files.sh"])
+        subprocess.check_call(["./make-config-files.sh"])
+
 
     def check_fork_exists(self):
         res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
@@ -71,9 +75,9 @@ class helmUpgradeBotHub23:
 
     def remove_fork(self):
         requests.delete(
-			"https://api.github.com/repos/HelmUpgradeBot/hub23-deploy/",
-			headers={"Authorization": f"token {TOKEN}"}
-		)
+            "https://api.github.com/repos/HelmUpgradeBot/hub23-deploy/",
+            headers={"Authorization": f"token {TOKEN}"}
+        )
         self.fork_exists = False
         time.sleep(5)
 
