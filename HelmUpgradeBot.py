@@ -1,5 +1,6 @@
 import os
 import sys
+import stat
 import time
 import shutil
 import datetime
@@ -49,9 +50,21 @@ class helmUpgradeBotHub23:
         self.clone_fork()
         os.chdir("hub23-deploy")
 
+        # Make shell scripts executable
+        os.chmod("make-config-files.sh", stat.S_IXOTH)
+        os.chmod("upgrade.sh", stat.S_IXOTH)
+
         # Make the config files
-        subprocess.check_call(["chmod", "700", "make-config-files.sh"])
         subprocess.check_call(["./make-config-files.sh"])
+
+        # Upgrade Hub23's Helm Chart
+        subprocess.check_call([
+            "./upgrade.sh",
+            f"{self.version_info['helm_page']['version']}"
+        ])
+
+        # Checkout a new branch
+        self.checkout_branch()
 
 
     def check_fork_exists(self):
@@ -82,7 +95,7 @@ class helmUpgradeBotHub23:
         time.sleep(5)
 
 
-    def checkout_branch(self, existing_pr):
+    def checkout_branch(self):
     	if self.fork_exists:
             self.delete_old_branch()
             subprocess.check_call([
