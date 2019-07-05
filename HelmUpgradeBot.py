@@ -99,11 +99,11 @@ class helmUpgradeBotHub23:
         res = requests.get(
 	    	"https://api.github.com/repos/HelmUpgradeBot/hub23-deploy/branches"
 	    )
-	    if "helm_chart_bump" in [x["name"] for x in res.json()]:
-	    	subprocess.check_call([
+        if "helm_chart_bump" in [x["name"] for x in res.json()]:
+            subprocess.check_call([
                 "git", "push", "--delete", "origin", "helm_chart_bump"
 	    	])
-	    	subprocess.check_call([
+            subprocess.check_call([
                 "git", "branch", "-d", "helm_chart_bump"
 	    	])
 
