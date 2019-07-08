@@ -31,11 +31,9 @@ class helmUpgradeBotHub23:
 
 
     def check_helm_version(self):
-        hub23_prs = requests.get(REPO_API + "pulls?state=open")
-        helmUpgradeBot_prs = [x for x in hub23_prs.json() if x["user"]["login"] == "HelmUpgradeBot"]
         self.check_fork_exists()
 
-        if (len(helmUpgradeBot_prs) == 0) and self.fork_exists:
+        if self.fork_exists:
             self.remove_fork()
 
         date_cond = (self.version_info["helm_page"]["date"] >
@@ -70,9 +68,11 @@ class helmUpgradeBotHub23:
         os.chmod("upgrade.sh", stat.S_IXOTH)
 
         # Make the config files
+        print("Generating Hub23 configuration files...")
         subprocess.check_call(["./make-config-files.sh"])
 
         # Upgrade Hub23's Helm Chart
+        print("Upgrading Hub23 helm chart...")
         subprocess.check_call([
             "./upgrade.sh",
             f"{self.version_info['helm_page']['version']}"
@@ -94,6 +94,7 @@ class helmUpgradeBotHub23:
             REPO_API + "forks",
             headers={"Authorization": f"token {TOKEN}"}
         )
+        self.fork_exists = True
 
 
     def clone_fork(self):
@@ -171,8 +172,6 @@ class helmUpgradeBotHub23:
             "This PR is updating the CHANGELOG to reflect the most recent Helm Chart version bump.",
             f"It had been {(today - self.version_info['hub23']['date']).days} days since the last upgrade."
         ])
-
-        print(body)
 
         return body
 
