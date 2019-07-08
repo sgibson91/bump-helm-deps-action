@@ -18,6 +18,28 @@ If an upgrade is available, the bot will perform the upgrade and open a PR to th
 
 A moderator should check and merge the PR and delete the branch as appropriate.
 
+## Usage
+
+To run the bot, simply execute the following parsing a GitHub access token as an environment variable:
+
+```
+BOT_TOKEN="<Personal Access Token for HelmUpgradeBot>" python HelmUpgradeBot.py
+```
+
+## Requirements
+
+The bot requires Python v3.7 and the `pandas` and `pyyaml` packages listed in [`requirements.txt`](./requirements.txt), which can be installed using `pip`:
+
+```
+pip install -r requirements.txt
+```
+
+When the bot tries to run `make-config-files.sh` and `upgrade.sh` from the `hub23-deploy` repo, it will require the following three command line interfaces:
+
+* [Microsoft Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
+* [Kubernetes (`kubectl`)](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+* [Helm](https://helm.sh/docs/using_helm/#installing-helm)
+
 ## Acknowledgements
 
 Thank you to Christopher Hench ([@henchc](https://github.com/henchc)) who wrote and documented [`henchbot`](https://github.com/henchbot) which automatically opens PRs to upgrade mybinder.org.
