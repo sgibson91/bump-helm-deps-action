@@ -382,18 +382,18 @@ def main():
             print(err_msg)
 
         # Upgrading Helm Chart
-        # print("Upgrading Hub23 Helm Chart")
-        # proc = subprocess.Popen(
-        #     ["./upgrade.sh", version_info["helm_page"]["version"]],
-        #     stdout=subprocess.PIPE,
-        #     stderr=subprocess.PIPE
-        # )
-        # res = proc.communicate()
-        # if proc.returncode == 0:
-        #     print("Successfully upgraded Hub23 Helm Chart")
-        # else:
-        #     err_msg = res[1].decode(encoding="utf-8")
-        #     print(err_msg)
+        print("Upgrading Hub23 Helm Chart")
+        proc = subprocess.Popen(
+            ["./upgrade.sh", version_info["helm_page"]["version"]],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        res = proc.communicate()
+        if proc.returncode == 0:
+            print("Successfully upgraded Hub23 Helm Chart")
+        else:
+            err_msg = res[1].decode(encoding="utf-8")
+            print(err_msg)
 
         checkout_branch(fork_exists)
         fname = update_changelog(version_info)
