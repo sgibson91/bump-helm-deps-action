@@ -138,8 +138,6 @@ def delete_old_branch():
     req = requests.get(
         "https://api.github.com/repos/HelmUpgradeBot/hub23-deploy/branches"
     )
-    print(req.text)
-    print("helm_chart_bump" in [x["name"] for x in req.json()])
 
     if "helm_chart_bump" in [x["name"] for x in req.json()]:
         proc = subprocess.Popen(
@@ -286,6 +284,68 @@ def add_commit_push(changed_files, version_info):
             err_msg = res[1].decode(encoding="utf-8")
             print(err_msg)
 
+def make_pr_body(version_info):
+    """Make PR body
+
+    Parameters
+    ----------
+    version_info
+        Dictionary.
+
+    Returns
+    -------
+    body
+        String
+    """
+    print("Writing Pull Request body")
+
+    today = pd.Timestamp.now().tz_localize(None)
+    body = "\n".join([
+        "This PR is updating the CHANGELOG to reflect the most recent Helm Chart version bump.",
+        f"It had been {(today - version_info['hub23']['date']).days} days since the last upgrade."
+    ])
+
+    print("Pull Request body written")
+
+    return body
+
+def create_update_pr(version_info):
+    """Create a PR
+
+    Parameters
+    ----------
+    version_info
+        Dictionary.
+    """
+    print("Creating a Pull Request")
+
+    body = make_pr_body(version_info)
+
+    pr = {
+        "title": "Logging Helm Chart version upgrade",
+        "body": body,
+        "base": "master",
+        "head": "HelmUpgradeBot:helm_chart_bump"
+    }
+
+    requests.post(
+        REPO_API + "pulls",
+        headers={"Authorization": f"token {TOKEN}"},
+        json=pr
+    )
+
+    print("Pull Request created")
+
+def clean_up():
+    cwd = os.getcwd()
+    this_dir = cwd.split("/")[-1]
+    if this_dir == "hub23-deploy":
+        os.pardir
+
+    print("Deleting local repository: hub23-deploy")
+    shutil.rmtree(this_dir)
+    print("Deleted local repository: hub23-deploy")
+
 def main():
     version_info = get_latest_versions()
     fork_exists = remove_fork()
@@ -338,62 +398,17 @@ def main():
         checkout_branch(fork_exists)
         fname = update_changelog(version_info)
         add_commit_push(fname, version_info)
+        create_update_pr(version_info)
 
     else:
         print("Hub23 is up-to-date with current BinderHub Helm Chart release!")
 
-        today = pd.Timestamp.today().tz_localize(None)
+        today = pd.Timestamp.now().tz_localize(None)
 
         if ((today - version_info["helm_page"]["date"]).days >= 7) and fork_exists:
             fork_exists = remove_fork()
 
-# class helmUpgradeBotHub23:
-
-#     def check_helm_version(self):
-
-#         if date_cond and version_cond:
-#             self.upgrade_helm_version()
-
-#         self.clean_up()
-
-#     def upgrade_helm_version(self):
-#         self.create_update_pr()
-
-#     def make_pr_body(self):
-#         today = pd.to_datetime(datetime.datetime.today().strftime("%Y-%m-%d"))
-
-#         body = "\n".join([
-#             "This PR is updating the CHANGELOG to reflect the most recent Helm Chart version bump.",
-#             f"It had been {(today - self.version_info['hub23']['date']).days} days since the last upgrade."
-#         ])
-
-#         return body
-
-
-#     def create_update_pr(self):
-#         body = self.make_pr_body()
-
-#         pr = {
-#             "title": "Logging Helm Chart version upgrade",
-#             "body": body,
-#             "base": "master",
-#             "head": "HelmUpgradeBot:helm_chart_bump"
-#         }
-
-#         requests.post(
-#             REPO_API + "pulls",
-#             headers={"Authorization": f"token {TOKEN}"},
-#             json=pr
-#         )
-
-#     def clean_up(self):
-#         cwd = os.getcwd()
-#         this_dir = cwd.split("/")[-1]
-#         if this_dir == "hub23-deploy":
-#             os.chdir("..")
-
-#         shutil.rmtree(this_dir)
-
+    clean_up()
 
 if __name__ == "__main__":
     main()
