@@ -244,8 +244,7 @@ def delete_old_branch(repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
         proc = subprocess.Popen(
             ["git", "branch", "-d", branch],
@@ -258,8 +257,7 @@ def delete_old_branch(repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     """Checkout a git branch
@@ -294,8 +292,7 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
         else:
             err_msg = res[1].decode(Encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
     logging.info(f"Checking out branch: {branch}")
     proc = subprocess.Popen(
@@ -309,8 +306,7 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     else:
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
-        print(err_msg)
-        raise
+        raise GitError(err_msg)
 
 def update_changelog(fnames, version_info):
     """Update changelog file
@@ -360,8 +356,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
         commit_msg = f"Log Helm Chart bump to version {version_info['helm_page']['version']}"
 
@@ -377,8 +372,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
         logging.info(f"Pushing commits to branch: {branch}")
         proc = subprocess.Popen(
@@ -396,8 +390,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise GitError(err_msg)
 
 def make_pr_body(version_info, binderhub_name):
     """Make PR body
@@ -517,24 +510,22 @@ def main():
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
-            print(err_msg)
-            raise
+            raise BashError(err_msg)
 
         # Upgrading Helm Chart
-        # logging.info(f"Upgrading Helm Chart for: {args.deployment}")
-        # proc = subprocess.Popen(
-        #     ["./upgrade.sh", version_info["helm_page"]["version"]],
-        #     stdout=subprocess.PIPE,
-        #     stderr=subprocess.PIPE
-        # )
-        # res = proc.communicate()
-        # if proc.returncode == 0:
-        #     logging.info(f"Helm Chart successfully upgraded for: {args.deployment}")
-        # else:
-        #     err_msg = res[1].decode(encoding="utf-8")
-        #     logging.error(err_msg)
-        #     print(err_msg)
-        #     raise
+        logging.info(f"Upgrading Helm Chart for: {args.deployment}")
+        proc = subprocess.Popen(
+            ["./upgrade.sh", version_info["helm_page"]["version"]],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        res = proc.communicate()
+        if proc.returncode == 0:
+            logging.info(f"Helm Chart successfully upgraded for: {args.deployment}")
+        else:
+            err_msg = res[1].decode(encoding="utf-8")
+            logging.error(err_msg)
+            raise BashError(err_msg)
 
         checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch)
         update_changelog(args.files, version_info)
