@@ -385,7 +385,7 @@ def update_changelog(fnames, version_info):
             with open(fname, "a") as f:
                 f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {version_info['helm_page']['version']}")
         else:
-            raise Exception("Please provide a function call to handle your other files.")
+            print("Exception: Please provide a function call to handle your other files.")
 
         logging.info(f"Updated file: {fname}")
 
