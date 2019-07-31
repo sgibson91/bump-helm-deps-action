@@ -21,9 +21,6 @@ import pandas as pd
 from CustomExceptions import *
 from yaml import safe_load as load
 
-# Access token for GitHub API
-TOKEN = os.environ.get("BOT_TOKEN")
-
 # Setup logging config
 logging.basicConfig(
     level=logging.DEBUG,
@@ -74,8 +71,75 @@ def parse_args():
         default="Hub23",
         help="The name of the deployed BinderHub"
     )
+    parser.add_argument(
+        "-t",
+        "--token-name",
+        type=str,
+        default="HelmUpgradeBot-token",
+        help="Name of bot PAT in Azure Key Vault"
+    )
+    parser.add_argument(
+        "-v",
+        "--keyvault",
+        type=str,
+        default="hub23-keyvault",
+        help="Name of Azure Key Vault bot PAT is stored in"
+    )
 
     return parser.parse_args()
+
+def get_token(keyvault, token_name):
+    """Get personal access token for bot from Azure Key Vault
+
+    Parameters
+    ----------
+    keyvault
+        String.
+    token_name
+        String.
+
+    Returns
+    -------
+    token
+        String.
+    """
+    logging.info("Logging into Azure using Managed System Identity")
+    proc = subprocess.Popen(
+        ["az", "login", "--identity"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    res = proc.communicate()
+    if proc.returncode == 0:
+        logging.info("Successfully logged into Azure")
+    else:
+        err_msg = res[1].decode(encoding="utf-8")
+        logging.error(err_msg)
+        raise AzureError(err_msg)
+
+    logging.info(f"Retrieving secret: {token_name}")
+    proc = subprocess.Popen(
+        ["az", "keyvault", "secret", "show", "-n", token_name, "--vault-name", keyvault],
+        stdout=subprocess.PIPE,
+        stderr==subprocess.PIPE
+    )
+    res = proc.communicate()
+    if proc.returncode == 0:
+        token = res[0].decode(encoding="utf-8")
+        logging.info(f"Successfully retrieved secret: {token_name}")
+        return token
+    else:
+        err_msg = res[1].decode(encoding="utf-8")
+        logging.error(err_msg)
+        raise AzureError(err_msg)
+
+def set_github_config():
+    subprocess.check_call([
+        "git", "config", "user.name", "HelmUpgradeBot"
+    ])
+    subprocess.check_call([
+        "git", "config", "user.email", "helmupgradebot.github@gmail.com"
+    ])
 
 def get_latest_versions(binderhub_name, changelog_file):
     """Get latest Helm Chart versions
@@ -133,12 +197,14 @@ def check_fork_exists(repo_name):
 
     return fork_exists
 
-def remove_fork(repo_name):
+def remove_fork(repo_name, token):
     """Remove fork
 
     Parameters
     ----------
     repo_name
+        String.
+    token
         String.
 
     Returns
@@ -152,7 +218,7 @@ def remove_fork(repo_name):
         logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
         requests.delete(
             f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/",
-            headers={"Authorization": f"token {TOKEN}"}
+            headers={"Authorization": f"token {token}"}
         )
         fork_exists = False
         time.sleep(5)
@@ -184,7 +250,7 @@ def clone_fork(repo_name):
         logging.error(err_msg)
         raise GitError(err_msg)
 
-def make_fork(repo_api, repo_name):
+def make_fork(repo_api, repo_name, token):
     """Create a fork
 
     Parameters
@@ -192,6 +258,8 @@ def make_fork(repo_api, repo_name):
     repo_api
         String.
     repo_name
+        String.
+    token
         String.
 
     Returns
@@ -202,20 +270,12 @@ def make_fork(repo_api, repo_name):
     logging.info(f"Forking repo: {repo_name}")
     requests.post(
         repo_api + "forks",
-        headers={"Authorization": f"token {TOKEN}"}
+        headers={"Authorization": f"token {token}"}
     )
     fork_exists = True
     logging.info(f"Created fork: {repo_name}")
 
     return fork_exists
-
-def set_github_config():
-    subprocess.check_call([
-        "git", "config", "user.name", "HelmUpgradeBot"
-    ])
-    subprocess.check_call([
-        "git", "config", "user.email", "helmupgradebot.github@gmail.com"
-    ])
 
 def delete_old_branch(repo_name, branch):
     """Delete old git branch
@@ -329,7 +389,7 @@ def update_changelog(fnames, version_info):
 
         logging.info(f"Updated file: {fname}")
 
-def add_commit_push(changed_files, version_info, repo_name, branch):
+def add_commit_push(changed_files, version_info, repo_name, branch, token):
     """Add commit and push files
 
     Parameters
@@ -341,6 +401,8 @@ def add_commit_push(changed_files, version_info, repo_name, branch):
     repo_name
         String.
     branch
+        String.
+    token
         String.
     """
     for f in changed_files:
@@ -378,7 +440,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch):
         proc = subprocess.Popen(
             [
                 "git", "push",
-                f"https://HelmUpgradeBot:{TOKEN}@github.com/HelmUpgradeBot/{repo_name}",
+                f"https://HelmUpgradeBot:{token}@github.com/HelmUpgradeBot/{repo_name}",
                 branch
             ],
             stdout=subprocess.PIPE,
@@ -419,7 +481,7 @@ def make_pr_body(version_info, binderhub_name):
 
     return body
 
-def create_update_pr(version_info, branch, repo_api, binderhub_name):
+def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
     """Create a PR
 
     Parameters
@@ -431,6 +493,8 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name):
     repo_api
         String.
     binderhub_name
+        String.
+    token
         String.
     """
     logging.info("Creating Pull Request")
@@ -446,7 +510,7 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name):
 
     requests.post(
         repo_api + "pulls",
-        headers={"Authorization": f"token {TOKEN}"},
+        headers={"Authorization": f"token {token}"},
         json=pr
     )
 
@@ -476,9 +540,10 @@ def main():
     repo_api = f"https://api.github.com/repos/{args.repo_owner}/{args.repo_name}/"
 
     # Initial set-up
+    token = get_token(args.keyvault, args.token_name)
     set_github_config()
     version_info = get_latest_versions(args.deployment, args.files[0])
-    fork_exists = remove_fork(args.repo_name)
+    fork_exists = remove_fork(args.repo_name, token)
 
     # Create conditions
     date_cond = (version_info["helm_page"]["date"] > version_info[args.deployment]["date"])
@@ -489,7 +554,7 @@ def main():
 
         # Forking repo
         if not fork_exists:
-            fork_exists = make_fork(repo_api, args.repo_name)
+            fork_exists = make_fork(repo_api, args.repo_name, token)
         clone_fork(args.repo_name)
         os.chdir(args.repo_name)
 
@@ -529,8 +594,8 @@ def main():
 
         checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch)
         update_changelog(args.files, version_info)
-        add_commit_push(args.files, version_info, args.repo_name, args.branch)
-        create_update_pr(version_info, args.branch, repo_api, args.deployment)
+        add_commit_push(args.files, version_info, args.repo_name, args.branch, token)
+        create_update_pr(version_info, args.branch, repo_api, args.deployment, token)
 
     else:
         logging.info(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
