@@ -13,7 +13,6 @@ import stat
 import time
 import json
 import shutil
-import logging
 import datetime
 import requests
 import argparse
@@ -21,15 +20,6 @@ import subprocess
 import pandas as pd
 from CustomExceptions import *
 from yaml import safe_load as load
-
-# Setup logging config
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="HelmUpgradeBot.log",
-    filemode="a",
-    format="[%(asctime)s %(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 
 def parse_args():
     """Command line argument parser"""
@@ -120,19 +110,18 @@ def get_token(keyvault, token_name, identity=False):
     if identity:
         login_cmd.append("--identity")
 
-    logging.info("Logging into Azure using Managed System Identity")
+    print("Logging into Azure using Managed System Identity")
     proc = subprocess.Popen(
         login_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     res = proc.communicate()
     if proc.returncode == 0:
-        logging.info("Successfully logged into Azure")
+        print("Successfully logged into Azure")
     else:
         err_msg = res[1].decode(encoding="utf-8")
-        logging.error(err_msg)
         raise AzureError(err_msg)
 
-    logging.info(f"Retrieving secret: {token_name}")
+    print(f"Retrieving secret: {token_name}")
     proc = subprocess.Popen(
         ["az", "keyvault", "secret", "show", "-n", token_name, "--vault-name", keyvault],
         stdout=subprocess.PIPE,
@@ -143,11 +132,10 @@ def get_token(keyvault, token_name, identity=False):
         json_out = res[0].decode(encoding="utf-8")
         secret_info = json.loads(json_out)
         token = secret_info["value"]
-        logging.info(f"Successfully retrieved secret: {token_name}")
+        print(f"Successfully retrieved secret: {token_name}")
         return token
     else:
         err_msg = res[1].decode(encoding="utf-8")
-        logging.error(err_msg)
         raise AzureError(err_msg)
 
 def set_github_config():
@@ -175,14 +163,14 @@ def get_latest_versions(binderhub_name, changelog_file):
     """
     version_info = {binderhub_name: {}, "helm_page": {}}
 
-    logging.info(f"Fetching the latest Helm Chart version deployed on: {binderhub_name}")
+    print(f"Fetching the latest Helm Chart version deployed on: {binderhub_name}")
     changelog_url = f"https://raw.githubusercontent.com/alan-turing-institute/hub23-deploy/master/{changelog_file}"
     changelog = load(requests.get(changelog_url).text)
     version_info[binderhub_name]["date"] = pd.to_datetime(list(changelog.keys())[-1])
     version_info[binderhub_name]["version"] = changelog[list(changelog.keys())[-1]]
 
     url_helm_chart = "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
-    logging.info(f"Fetching the latest Helm Chart version from: {url_helm_chart}")
+    print(f"Fetching the latest Helm Chart version from: {url_helm_chart}")
     helm_chart_yaml = load(requests.get(url_helm_chart).text)
     updates_sorted = sorted(
         helm_chart_yaml["entries"]["binderhub"],
@@ -191,8 +179,8 @@ def get_latest_versions(binderhub_name, changelog_file):
     version_info["helm_page"]["date"] = updates_sorted[-1]['created']
     version_info["helm_page"]["version"] = updates_sorted[-1]['version']
 
-    logging.info(f"{binderhub_name}: {version_info[binderhub_name]['date']} {version_info[binderhub_name]['version']}")
-    logging.info(f"Helm Chart page: {version_info['helm_page']['date']} {version_info['helm_page']['version']}")
+    print(f"{binderhub_name}: {version_info[binderhub_name]['date']} {version_info[binderhub_name]['version']}")
+    print(f"Helm Chart page: {version_info['helm_page']['date']} {version_info['helm_page']['version']}")
 
     return version_info
 
@@ -232,17 +220,17 @@ def remove_fork(repo_name, token):
     fork_exists = check_fork_exists(repo_name)
 
     if fork_exists:
-        logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
+        print(f"HelmUpgradeBot has a fork of: {repo_name}")
         requests.delete(
             f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/",
             headers={"Authorization": f"token {token}"}
         )
         fork_exists = False
         time.sleep(5)
-        logging.info(f"Deleted fork: {repo_name}")
+        print(f"Deleted fork: {repo_name}")
 
     else:
-        logging.info(f"HelmUpgradeBot does not have a fork of: {repo_name}")
+        print(f"HelmUpgradeBot does not have a fork of: {repo_name}")
         return fork_exists
 
 def clone_fork(repo_name):
@@ -253,7 +241,7 @@ def clone_fork(repo_name):
     repo_name
         String.
     """
-    logging.info(f"Cloning fork: {repo_name}")
+    print(f"Cloning fork: {repo_name}")
     proc = subprocess.Popen(
         ["git", "clone", f"https://github.com/HelmUpgradeBot/{repo_name}.git"],
         stdout=subprocess.PIPE,
@@ -261,10 +249,9 @@ def clone_fork(repo_name):
     )
     res = proc.communicate()
     if proc.returncode == 0:
-        logging.info(f"Successfully cloned fork: {repo_name}")
+        print(f"Successfully cloned fork: {repo_name}")
     else:
         err_msg = res[1].decode(encoding="utf-8")
-        logging.error(err_msg)
         raise GitError(err_msg)
 
 def install_requirements(repo_name):
@@ -275,7 +262,7 @@ def install_requirements(repo_name):
     repo_name
         String.
     """
-    logging.info(f"Installing requirements for: {repo_name}")
+    print(f"Installing requirements for: {repo_name}")
 
     proc = subprocess.Popen(
         ["pip", "install", "-r", "requirements.txt"],
@@ -284,10 +271,9 @@ def install_requirements(repo_name):
     )
     res = proc.communicate()
     if proc.returncode == 0:
-        logging.info("Successfully installed repo requirements")
+        print("Successfully installed repo requirements")
     else:
         err_msg = res[1].decode(encoding="utf-8")
-        logging.error(err_msg)
         raise Exception(err_msg)
 
 def make_fork(repo_api, repo_name, token):
@@ -307,13 +293,13 @@ def make_fork(repo_api, repo_name, token):
     fork_exists
         Boolean.
     """
-    logging.info(f"Forking repo: {repo_name}")
+    print(f"Forking repo: {repo_name}")
     requests.post(
         repo_api + "forks",
         headers={"Authorization": f"token {token}"}
     )
     fork_exists = True
-    logging.info(f"Created fork: {repo_name}")
+    print(f"Created fork: {repo_name}")
 
     return fork_exists
 
@@ -332,7 +318,7 @@ def delete_old_branch(repo_name, branch):
     )
 
     if branch in [x["name"] for x in req.json()]:
-        logging.info(f"Deleting branch: {branch}")
+        print(f"Deleting branch: {branch}")
 
         proc = subprocess.Popen(
             ["git", "push", "--delete", "origin", branch],
@@ -341,10 +327,9 @@ def delete_old_branch(repo_name, branch):
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully deleted remote branch: {branch}")
+            print(f"Successfully deleted remote branch: {branch}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
         proc = subprocess.Popen(
@@ -354,14 +339,13 @@ def delete_old_branch(repo_name, branch):
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully deleted local branch: {branch}")
+            print(f"Successfully deleted local branch: {branch}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
     else:
-        logging.info(f"Branch does not exist: {branch}")
+        print(f"Branch does not exist: {branch}")
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     """Checkout a git branch
@@ -380,7 +364,7 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     if fork_exists:
         delete_old_branch(repo_name, branch)
 
-        logging.info(f"Pulling master branch of: {repo_owner}/{repo_name}")
+        print(f"Pulling master branch of: {repo_owner}/{repo_name}")
         proc = subprocess.Popen(
             [
                 "git", "pull",
@@ -392,13 +376,12 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
         )
         proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully pulled master branch of: {repo_owner}/{repo_name}")
+            print(f"Successfully pulled master branch of: {repo_owner}/{repo_name}")
         else:
             err_msg = res[1].decode(Encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
-    logging.info(f"Checking out branch: {branch}")
+    print(f"Checking out branch: {branch}")
     proc = subprocess.Popen(
         ["git", "checkout", "-b", branch],
         stdout=subprocess.PIPE,
@@ -406,10 +389,9 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     )
     res = proc.communicate()
     if proc.returncode == 0:
-        logging.info(f"Successfully checked out branch: {branch}")
+        print(f"Successfully checked out branch: {branch}")
     else:
         err_msg = res[1].decode(encoding="utf-8")
-        logging.error(err_msg)
         raise GitError(err_msg)
 
 def update_changelog(fnames, version_info):
@@ -423,15 +405,15 @@ def update_changelog(fnames, version_info):
         Dictionary.
     """
     for fname in fnames:
-        logging.info(f"Updating file: {fname}")
+        print(f"Updating file: {fname}")
 
         if fname == "changelog.txt":
             with open(fname, "a") as f:
                 f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {version_info['helm_page']['version']}")
         else:
-            logging.warning("Exception: Please provide a function call to handle your other files.")
+            print("Exception: Please provide a function call to handle your other files.")
 
-        logging.info(f"Updated file: {fname}")
+        print(f"Updated file: {fname}")
 
 def add_commit_push(changed_files, version_info, repo_name, branch, token):
     """Add commit and push files
@@ -450,7 +432,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         String.
     """
     for f in changed_files:
-        logging.info(f"Adding file: {f}")
+        print(f"Adding file: {f}")
         proc = subprocess.Popen(
             ["git", "add", f],
             stdout=subprocess.PIPE,
@@ -458,15 +440,14 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully added file: {f}")
+            print(f"Successfully added file: {f}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
         commit_msg = f"Log Helm Chart bump to version {version_info['helm_page']['version']}"
 
-        logging.info(f"Committing file: {f}")
+        print(f"Committing file: {f}")
         proc = subprocess.Popen(
             ["git", "commit", "-m", commit_msg],
             stdout=subprocess.PIPE,
@@ -474,13 +455,12 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully committed file: {f}")
+            print(f"Successfully committed file: {f}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
-        logging.info(f"Pushing commits to branch: {branch}")
+        print(f"Pushing commits to branch: {branch}")
         proc = subprocess.Popen(
             [
                 "git", "push",
@@ -492,10 +472,9 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully pushed changes to branch: {branch}")
+            print(f"Successfully pushed changes to branch: {branch}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise GitError(err_msg)
 
 def make_pr_body(version_info, binderhub_name):
@@ -513,7 +492,7 @@ def make_pr_body(version_info, binderhub_name):
     body
         String.
     """
-    logging.info("Writing Pull Request body")
+    print("Writing Pull Request body")
 
     today = pd.Timestamp.now().tz_localize(None)
     body = "\n".join([
@@ -521,7 +500,7 @@ def make_pr_body(version_info, binderhub_name):
         f"It had been {(today - version_info[binderhub_name]['date']).days} days since the last upgrade."
     ])
 
-    logging.info("Pull Request body written")
+    print("Pull Request body written")
 
     return body
 
@@ -541,7 +520,7 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
     token
         String.
     """
-    logging.info("Creating Pull Request")
+    print("Creating Pull Request")
 
     body = make_pr_body(version_info, binderhub_name)
 
@@ -558,7 +537,7 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
         json=pr
     )
 
-    logging.info("Pull Request created")
+    print("Pull Request created")
 
 def clean_up(repo_name):
     """Delete local repo
@@ -573,15 +552,15 @@ def clean_up(repo_name):
     if this_dir == repo_name:
         os.chdir(os.pardir)
 
-    logging.info(f"Deleting local repository: {repo_name}")
+    print(f"Deleting local repository: {repo_name}")
     shutil.rmtree(this_dir)
-    logging.info(f"Deleted local repository: {repo_name}")
+    print(f"Deleted local repository: {repo_name}")
 
 def main():
     args = parse_args()
 
     if args.dry_run:
-        logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
+        print("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
     # Set API URL
     repo_api = f"https://api.github.com/repos/{args.repo_owner}/{args.repo_name}/"
@@ -597,7 +576,7 @@ def main():
     version_cond = (version_info["helm_page"]["version"] != version_info[args.deployment]["version"])
 
     if date_cond and version_cond:
-        logging.info("Helm upgrade required")
+        print("Helm upgrade required")
 
         # Forking repo
         if not fork_exists:
@@ -611,16 +590,15 @@ def main():
         if args.identity:
             config_cmd.append("--identity")
 
-        logging.info(f"Generating configuration files for: {args.deployment}")
+        print(f"Generating configuration files for: {args.deployment}")
         proc = subprocess.Popen(
             config_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Successfully generated configuration files: {args.deployment}")
+            print(f"Successfully generated configuration files: {args.deployment}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise BashError(err_msg)
 
         # Upgrading Helm Chart
@@ -630,19 +608,18 @@ def main():
         if args.identity:
             upgrade_cmd.append("--identity")
         if args.dry_run:
-            logging.info("Adding --dry-run argument to Helm Upgrade")
+            print("Adding --dry-run argument to Helm Upgrade")
             upgrade_cmd.append("--dry-run")
 
-        logging.info(f"Upgrading Helm Chart for: {args.deployment}")
+        print(f"Upgrading Helm Chart for: {args.deployment}")
         proc = subprocess.Popen(
             upgrade_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         res = proc.communicate()
         if proc.returncode == 0:
-            logging.info(f"Helm Chart successfully upgraded for: {args.deployment}")
+            print(f"Helm Chart successfully upgraded for: {args.deployment}")
         else:
             err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
             raise BashError(err_msg)
 
         if not args.dry_run:
@@ -652,7 +629,7 @@ def main():
             create_update_pr(version_info, args.branch, repo_api, args.deployment, token)
 
     else:
-        logging.info(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
+        print(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
         today = pd.Timestamp.now().tz_localize(None)
 
