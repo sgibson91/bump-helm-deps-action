@@ -35,7 +35,7 @@ Here is a list detailing the assumptions that the bot makes.
 
 1. A GitHub PAT is stored in an Azure Key Vault.
 2. The configuration for your BinderHub deployment is in a pulic GitHub repo.
-3. Your deployment repo contains scripts to generate the configuration files (for example, `make-config-files.sh`) and to perform the helm upgrade (for example, `upgrade.sh`) which takes the new version as a command line argument. See the `hub23-deploy` repo for how these scripts may be set out.
+3. Your deployment repo contains scripts to generate the configuration files (for example, `generate-configs.py`) and to perform the helm upgrade (for example, `upgrade.py`) which takes the new version as a command line argument. See the `hub23-deploy` repo for how these scripts may be set out.
 4. Your deployment repo contains a changelog file (for example, `changelog.txt`) of the form `date of upgrade: deployed version`.
 
 ## Requirements
