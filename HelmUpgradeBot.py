@@ -287,12 +287,13 @@ def delete_old_branch(repo_name, branch):
     branch
         String.
     """
-    logging.info(f"Deleting branch: {branch}")
     req = requests.get(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches"
     )
 
     if branch in [x["name"] for x in req.json()]:
+        logging.info(f"Deleting branch: {branch}")
+
         proc = subprocess.Popen(
             ["git", "push", "--delete", "origin", branch],
             stdout=subprocess.PIPE,
@@ -318,6 +319,9 @@ def delete_old_branch(repo_name, branch):
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
             raise GitError(err_msg)
+
+    else:
+        logging.info(f"Branch does not exist: {branch}")
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     """Checkout a git branch
@@ -455,7 +459,7 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
             raise GitError(err_msg)
 
 def make_pr_body(version_info, binderhub_name):
-    """Make PR body
+    """Make Pull Request body
 
     Parameters
     ----------
@@ -482,7 +486,7 @@ def make_pr_body(version_info, binderhub_name):
     return body
 
 def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
-    """Create a PR
+    """Create a Pull Request
 
     Parameters
     ----------
