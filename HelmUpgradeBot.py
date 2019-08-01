@@ -11,6 +11,7 @@ import os
 import sys
 import stat
 import time
+import json
 import shutil
 import logging
 import datetime
@@ -85,10 +86,20 @@ def parse_args():
         default="hub23-keyvault",
         help="Name of Azure Key Vault bot PAT is stored in"
     )
+    parser.add_argument(
+        "--identity",
+        action="store_true",
+        help="Login to Azure with a Managed System Identity"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Perform a dry-run helm upgrade"
+    )
 
     return parser.parse_args()
 
-def get_token(keyvault, token_name):
+def get_token(keyvault, token_name, identity=False):
     """Get personal access token for bot from Azure Key Vault
 
     Parameters
@@ -97,17 +108,21 @@ def get_token(keyvault, token_name):
         String.
     token_name
         String.
+    identity
+        Boolean.
 
     Returns
     -------
     token
         String.
     """
+    login_cmd = ["az", "login"]
+    if identity:
+        login_cmd.append("--identity")
+
     logging.info("Logging into Azure using Managed System Identity")
     proc = subprocess.Popen(
-        ["az", "login", "--identity"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        login_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     res = proc.communicate()
     if proc.returncode == 0:
@@ -121,11 +136,13 @@ def get_token(keyvault, token_name):
     proc = subprocess.Popen(
         ["az", "keyvault", "secret", "show", "-n", token_name, "--vault-name", keyvault],
         stdout=subprocess.PIPE,
-        stderr==subprocess.PIPE
+        stderr=subprocess.PIPE
     )
     res = proc.communicate()
     if proc.returncode == 0:
-        token = res[0].decode(encoding="utf-8")
+        json_out = res[0].decode(encoding="utf-8")
+        secret_info = json.loads(json_out)
+        token = secret_info["value"]
         logging.info(f"Successfully retrieved secret: {token_name}")
         return token
     else:
@@ -249,6 +266,29 @@ def clone_fork(repo_name):
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
         raise GitError(err_msg)
+
+def install_requirements(repo_name):
+    """Install repo requirements
+
+    Parameters
+    ----------
+    repo_name
+        String.
+    """
+    logging.info(f"Installing requirements for: {repo_name}")
+
+    proc = subprocess.Popen(
+        ["pip", "install", "-r", "requirements.txt"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    res = proc.communicate()
+    if proc.returncode == 0:
+        logging.info("Successfully installed repo requirements")
+    else:
+        err_msg = res[1].decode(encoding="utf-8")
+        logging.error(err_msg)
+        raise Exception(err_msg)
 
 def make_fork(repo_api, repo_name, token):
     """Create a fork
@@ -389,7 +429,7 @@ def update_changelog(fnames, version_info):
             with open(fname, "a") as f:
                 f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {version_info['helm_page']['version']}")
         else:
-            print("Exception: Please provide a function call to handle your other files.")
+            logging.warning("Exception: Please provide a function call to handle your other files.")
 
         logging.info(f"Updated file: {fname}")
 
@@ -540,11 +580,14 @@ def clean_up(repo_name):
 def main():
     args = parse_args()
 
+    if args.dry_run:
+        logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
+
     # Set API URL
     repo_api = f"https://api.github.com/repos/{args.repo_owner}/{args.repo_name}/"
 
     # Initial set-up
-    token = get_token(args.keyvault, args.token_name)
+    token = get_token(args.keyvault, args.token_name, identity=args.identity)
     set_github_config()
     version_info = get_latest_versions(args.deployment, args.files[0])
     fork_exists = remove_fork(args.repo_name, token)
@@ -561,17 +604,16 @@ def main():
             fork_exists = make_fork(repo_api, args.repo_name, token)
         clone_fork(args.repo_name)
         os.chdir(args.repo_name)
-
-        # Make shell scripts executable
-        os.chmod("make-config-files.sh", 0o700)
-        os.chmod("upgrade.sh", 0o700)
+        install_requirements(args.repo_name)
 
         # Generating config files
+        config_cmd = ["python", "generate-configs.py"]
+        if args.identity:
+            config_cmd.append("--identity")
+
         logging.info(f"Generating configuration files for: {args.deployment}")
         proc = subprocess.Popen(
-            ["./make-config-files.sh"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            config_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         res = proc.communicate()
         if proc.returncode == 0:
@@ -582,11 +624,18 @@ def main():
             raise BashError(err_msg)
 
         # Upgrading Helm Chart
+        upgrade_cmd = [
+            "python", "upgrade.py", "-v", version_info["helm_page"]["version"],
+        ]
+        if args.identity:
+            upgrade_cmd.append("--identity")
+        if args.dry_run:
+            logging.info("Adding --dry-run argument to Helm Upgrade")
+            upgrade_cmd.append("--dry-run")
+
         logging.info(f"Upgrading Helm Chart for: {args.deployment}")
         proc = subprocess.Popen(
-            ["./upgrade.sh", version_info["helm_page"]["version"]],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            upgrade_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         res = proc.communicate()
         if proc.returncode == 0:
@@ -596,10 +645,11 @@ def main():
             logging.error(err_msg)
             raise BashError(err_msg)
 
-        checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch)
-        update_changelog(args.files, version_info)
-        add_commit_push(args.files, version_info, args.repo_name, args.branch, token)
-        create_update_pr(version_info, args.branch, repo_api, args.deployment, token)
+        if not args.dry_run:
+            checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch)
+            update_changelog(args.files, version_info)
+            add_commit_push(args.files, version_info, args.repo_name, args.branch, token)
+            create_update_pr(version_info, args.branch, repo_api, args.deployment, token)
 
     else:
         logging.info(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
