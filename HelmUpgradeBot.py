@@ -119,8 +119,10 @@ def get_token(keyvault, token_name, identity=False):
     login_cmd = ["az", "login"]
     if identity:
         login_cmd.append("--identity")
+        print("Logging into Azure using Managed System Identity")
+    else:
+       print("Logging into Azure")
 
-    logging.info("Logging into Azure using Managed System Identity")
     proc = subprocess.Popen(
         login_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
