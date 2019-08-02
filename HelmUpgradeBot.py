@@ -4,6 +4,7 @@ import time
 import shutil
 import requests
 import argparse
+import pandas as pd
 from CustomExceptions import *
 from run_command import run_cmd
 from yaml import safe_load as load
@@ -158,6 +159,8 @@ def get_token(token_name, keyvault, identity=False):
         raise AzureError(result["err_msg"])
 
 def set_github_config():
+    import subprocess
+
     subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
     subprocess.check_call([
         "git", "config", "user.email", "helmupgradebot.github@gmail.com"
