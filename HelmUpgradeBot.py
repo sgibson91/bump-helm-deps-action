@@ -470,7 +470,7 @@ def main():
     args = parse_args()
 
     if args.dry_run:
-        print("THIS IS A DRY-RUN. HELM UPGRADE WILL NOT BE EXECUTED.")
+        print("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
     chart_info = get_chart_versions()
     cond = (
