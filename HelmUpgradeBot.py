@@ -40,7 +40,7 @@ def parse_args():
         "-d",
         "--deployment",
         type=str,
-        default="Hub23",
+        default="hub23",
         help="The name of the deployed BinderHub"
     )
     parser.add_argument(
@@ -77,9 +77,16 @@ def parse_args():
 
     return parser.parse_args()
 
-def get_chart_versions():
+def get_chart_versions(repo_owner, repo_name, binderhub_name, chart_name):
     """Function to get version numbers of hub23 local chart and all it's
     dependencies
+
+    Parameters
+    ----------
+    repo_owner: String.
+    repo_name: String.
+    binderhub_name: String.
+    chart_name: String.
 
     Returns
     -------
@@ -87,7 +94,7 @@ def get_chart_versions():
     """
     chart_info = {}
     chart_urls = {
-        "hub23": "https://raw.githubusercontent.com/alan-turing-institute/hub23-deploy/refactor-to-chart/hub23-chart/requirements.yaml",
+        binderhub_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/refactor-to-chart/{chart_name}/requirements.yaml",
         "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
     }
 
@@ -413,7 +420,7 @@ def make_pr_body(version_info, binderhub_name):
     today = pd.Timestamp.now().tz_localize(None)
     body = "\n".join([
         f"This PR is updating the {binderhub_name} local Helm Chart to pull the most recent BinderHub Helm Chart release.\n\n" +
-        f"{version_info['hub23']} ... {version_info'binderhub'}"
+        f"{version_info['hub23']} ... {version_info['binderhub']}"
     ])
 
     print("Pull Request body written")
@@ -473,7 +480,12 @@ def main():
     if args.dry_run:
         print("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
-    chart_info = get_chart_versions()
+    chart_info = get_chart_versions(
+        args.repo_owner,
+        args.repo_name,
+        args.deployment,
+        args.chart_name
+    )
     cond = (
         chart_info["hub23"]["binderhub"]["version"] ==
         chart_info["binderhub"]["version"]
