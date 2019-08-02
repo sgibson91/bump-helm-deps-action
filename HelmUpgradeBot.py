@@ -412,7 +412,8 @@ def make_pr_body(version_info, binderhub_name):
 
     today = pd.Timestamp.now().tz_localize(None)
     body = "\n".join([
-        "This PR is updating the Hub23 local Helm Chart to pull the most recent BinderHub Helm Chart release."
+        f"This PR is updating the {binderhub_name} local Helm Chart to pull the most recent BinderHub Helm Chart release.\n\n" +
+        f"{version_info['hub23']} ... {version_info'binderhub'}"
     ])
 
     print("Pull Request body written")
