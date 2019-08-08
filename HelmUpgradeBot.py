@@ -202,9 +202,13 @@ def check_fork_exists(repo_name):
     fork_exists: boolean
     """
     res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
-    fork_exists = bool([x for x in res.json() if x["name"] == repo_name])
 
-    return fork_exists
+    if res:
+        fork_exists = bool([x for x in res.json() if x["name"] == repo_name])
+        return fork_exists
+    else:
+        logging.error(res.text)
+        raise GitError(res.text)
 
 def remove_fork(repo_name, token):
     """Remove fork
@@ -222,13 +226,17 @@ def remove_fork(repo_name, token):
 
     if fork_exists:
         logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
-        requests.delete(
-            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/",
+        res = requests.delete(
+            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}",
             headers={"Authorization": f"token {token}"}
         )
-        fork_exists = False
-        time.sleep(5)
-        logging.info(f"Deleted fork: {repo_name}")
+        if res:
+            fork_exists = False
+            time.sleep(5)
+            logging.info(f"Deleted fork: {repo_name}")
+        else:
+            logging.error(res.text)
+            raise GitError(res.text)
 
     else:
         logging.info(f"HelmUpgradeBot does not have a fork of: {repo_name}")
@@ -295,14 +303,18 @@ def make_fork(repo_api, repo_name, token):
     fork_exists: boolean
     """
     logging.info(f"Forking repo: {repo_name}")
-    requests.post(
+    res = requests.post(
         repo_api + "forks",
         headers={"Authorization": f"token {token}"}
     )
-    fork_exists = True
-    logging.info(f"Created fork: {repo_name}")
 
-    return fork_exists
+    if res:
+        fork_exists = True
+        logging.info(f"Created fork: {repo_name}")
+        return fork_exists
+    else:
+        logging.error(res.text)
+        raise GitError(res.text)
 
 def delete_old_branch(repo_name, branch, token):
     """Delete old git branch
@@ -312,43 +324,50 @@ def delete_old_branch(repo_name, branch, token):
     repo_name: string
     branch: string
     """
-    req = requests.get(
+    res = requests.get(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches"
     )
 
-    if branch in [x["name"] for x in req.json()]:
-        logging.info(f"Deleting branch: {branch}")
+    if res:
+        if branch in [x["name"] for x in res.json()]:
+            logging.info(f"Deleting branch: {branch}")
 
-        proc = subprocess.Popen(
-            ["git", "push", "--delete", "origin", branch],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        res = proc.communicate()
-        if proc.returncode == 0:
-            logging.info(f"Successfully deleted remote branch: {branch}")
-        else:
-            err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
-            clean_up(repo_name)
-            fork_exists = remove_fork(repo_name, token)
-            raise GitError(err_msg)
+            proc = subprocess.Popen(
+                ["git", "push", "--delete", "origin", branch],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            res = proc.communicate()
+            if proc.returncode == 0:
+                logging.info(f"Successfully deleted remote branch: {branch}")
+            else:
+                err_msg = res[1].decode(encoding="utf-8")
+                logging.error(err_msg)
+                clean_up(repo_name)
+                fork_exists = remove_fork(repo_name, token)
+                raise GitError(err_msg)
 
-        proc = subprocess.Popen(
-            ["git", "branch", "-d", branch],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-        res = proc.communicate()
-        if proc.returncode == 0:
-            logging.info(f"Successfully deleted local branch: {branch}")
+            proc = subprocess.Popen(
+                ["git", "branch", "-d", branch],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            res = proc.communicate()
+            if proc.returncode == 0:
+                logging.info(f"Successfully deleted local branch: {branch}")
+            else:
+                err_msg = res[1].decode(encoding="utf-8")
+                logging.error(err_msg)
+                clean_up(repo_name)
+                remove_fork(repo_name, token)
+                raise GitError(err_msg)
+
         else:
-            err_msg = res[1].decode(encoding="utf-8")
-            logging.error(err_msg)
-            raise GitError(err_msg)
+            logging.info(f"Branch does not exist: {branch}")
 
     else:
-        logging.info(f"Branch does not exist: {branch}")
+        logged.error(res.text)
+        raise GitError(res.text)
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
     """Checkout a git branch
@@ -530,13 +549,19 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
         "head": f"HelmUpgradeBot:{branch}"
     }
 
-    requests.post(
+    res = requests.post(
         repo_api + "pulls",
         headers={"Authorization": f"token {token}"},
         json=pr
     )
 
-    logging.info("Pull Request created")
+    if res:
+        logging.info("Pull Request created")
+    else:
+        logging.error(res.text)
+        clean_up(repo_name)
+        remove_fork(repo_name, token)
+        raise GitError(res.text)
 
 def clean_up(repo_name):
     """Delete local repo
