@@ -1,12 +1,3 @@
-"""
-Script to pull the latest Helm Chart deployment from:
-https://jupyterhub.github.io/helm-chart/#development-releases-binderhub
-and compare the latest release with the Hub23 changelog.
-
-If Hub23 needs an upgrade, the script will perform the upgrade and open a pull
-request documenting the new helm chart version in the changelog.
-"""
-
 import os
 import sys
 import stat
@@ -359,7 +350,7 @@ def delete_old_branch(repo_name, branch, token):
                 err_msg = res[1].decode(encoding="utf-8")
                 logging.error(err_msg)
                 clean_up(repo_name)
-                remove_fork(repo_name, token)
+                fork_exists = remove_fork(repo_name, token)
                 raise GitError(err_msg)
 
         else:
@@ -560,7 +551,7 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
     else:
         logging.error(res.text)
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_excists = remove_fork(repo_name, token)
         raise GitError(res.text)
 
 def clean_up(repo_name):
@@ -624,7 +615,7 @@ def main():
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
             clean_up(args.repo_name)
-            remove_fork(args.repo_name, token)
+            fork_exists = remove_fork(args.repo_name, token)
             raise BashError(err_msg)
 
         # Upgrading Helm Chart
@@ -648,7 +639,7 @@ def main():
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
             clean_up(args.repo_name)
-            remove_fork(args.repo_name, token)
+            fork_exists = remove_fork(args.repo_name, token)
             raise BashError(err_msg)
 
         if not args.dry_run:
