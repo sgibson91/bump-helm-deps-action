@@ -215,7 +215,7 @@ def remove_fork(repo_name, token):
     if fork_exists:
         logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
         res = requests.delete(
-            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/",
+            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}",
             headers={"Authorization": f"token {token}"}
         )
 
@@ -259,7 +259,7 @@ def make_fork(repo_api, repo_name, token):
     else:
         logging.error(res.text)
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(res.text)
 
 def clone_fork(repo_name, token):
@@ -278,7 +278,7 @@ def clone_fork(repo_name, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(result["err_msg"])
 
 def install_requirements(repo_name, token):
@@ -297,7 +297,7 @@ def install_requirements(repo_name, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise Exception(result["err_msg"])
 
 def delete_old_branch(repo_name, branch, token):
@@ -324,7 +324,7 @@ def delete_old_branch(repo_name, branch, token):
             else:
                 logging.error(result["err_msg"])
                 clean_up(repo_name)
-                remove_fork(repo_name, token)
+                fork_exists = remove_fork(repo_name, token)
                 raise GitError(result["err_msg"])
 
             branch_cmd = ["git", "branch", "-d", branch]
@@ -334,7 +334,7 @@ def delete_old_branch(repo_name, branch, token):
             else:
                 logging.error(result["err_msg"])
                 clean_up(repo_name)
-                remove_fork(repo_name, token)
+                fork_exists = remove_fork(repo_name, token)
                 raise GitError(result["err_msg"])
 
         else:
@@ -343,7 +343,7 @@ def delete_old_branch(repo_name, branch, token):
     else:
         logging.error(res.text)
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(res.text)
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
@@ -372,7 +372,7 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
         else:
             logging.error(result["err_msg"])
             clean_up(repo_name)
-            remove_fork(repo_name, token)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(result["err_msg"])
 
     logging.info(f"Checking out branch: {branch}")
@@ -383,7 +383,7 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(result["err_msg"])
 
 def update_local_chart(chart_name, repo_name, version_info):
@@ -435,7 +435,7 @@ def add_commit_push(changed_file, version_info, repo_name, branch, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(result["err_msg"])
 
     commit_msg = f"Log Helm Chart bump to version {version_info['binderhub']}"
@@ -448,7 +448,7 @@ def add_commit_push(changed_file, version_info, repo_name, branch, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(result["err_msg"])
 
     logging.info(f"Pushing commits to branch: {branch}")
@@ -463,7 +463,7 @@ def add_commit_push(changed_file, version_info, repo_name, branch, token):
     else:
         logging.error(result["err_msg"])
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(result["err_msg"])
 
 def make_pr_body(version_info, binderhub_name):
@@ -524,7 +524,7 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token, repo
     else:
         logging.error(res.text)
         clean_up(repo_name)
-        remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(res.text)
 
 def clean_up(repo_name):
@@ -596,6 +596,7 @@ def main():
             create_update_pr(version_info, args.branch, repo_api, args.deployment, token, args.repo_name)
 
     clean_up(args.repo_name)
+    fork_exists = remove_fork(args.repo_name, token)
 
 if __name__ == "__main__":
     main()
