@@ -215,7 +215,7 @@ def remove_fork(repo_name, token):
     if fork_exists:
         logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
         res = requests.delete(
-            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/",
+            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}",
             headers={"Authorization": f"token {token}"}
         )
 
@@ -299,6 +299,33 @@ def install_requirements(repo_name, token):
         clean_up(repo_name)
         remove_fork(repo_name, token)
         raise Exception(result["err_msg"])
+
+def make_fork(repo_api, repo_name, token):
+    """Create a fork
+
+    Parameters
+    ----------
+    repo_api: string
+    repo_name: string
+    token: string
+
+    Returns
+    -------
+    fork_exists: boolean
+    """
+    logging.info(f"Forking repo: {repo_name}")
+    res = requests.post(
+        repo_api + "forks",
+        headers={"Authorization": f"token {token}"}
+    )
+
+    if res:
+        fork_exists = True
+        logging.info(f"Created fork: {repo_name}")
+        return fork_exists
+    else:
+        logging.error(res.text)
+        raise GitError(res.text)
 
 def delete_old_branch(repo_name, branch, token):
     """Delete old git branch
@@ -596,6 +623,7 @@ def main():
             create_update_pr(version_info, args.branch, repo_api, args.deployment, token, args.repo_name)
 
     clean_up(args.repo_name)
+    fork_exists = remove_fork(args.repo_name, token)
 
 if __name__ == "__main__":
     main()
