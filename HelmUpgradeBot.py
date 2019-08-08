@@ -300,6 +300,33 @@ def install_requirements(repo_name, token):
         fork_exists = remove_fork(repo_name, token)
         raise Exception(result["err_msg"])
 
+def make_fork(repo_api, repo_name, token):
+    """Create a fork
+
+    Parameters
+    ----------
+    repo_api: string
+    repo_name: string
+    token: string
+
+    Returns
+    -------
+    fork_exists: boolean
+    """
+    logging.info(f"Forking repo: {repo_name}")
+    res = requests.post(
+        repo_api + "forks",
+        headers={"Authorization": f"token {token}"}
+    )
+
+    if res:
+        fork_exists = True
+        logging.info(f"Created fork: {repo_name}")
+        return fork_exists
+    else:
+        logging.error(res.text)
+        raise GitError(res.text)
+
 def delete_old_branch(repo_name, branch, token):
     """Delete old git branch
 
