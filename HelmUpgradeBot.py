@@ -104,17 +104,13 @@ def get_token(keyvault, token_name, identity=False):
 
     Parameters
     ----------
-    keyvault
-        String.
-    token_name
-        String.
-    identity
-        Boolean.
+    keyvault: string
+    token_name: string
+    identity: boolean
 
     Returns
     -------
-    token
-        String.
+    token: string
     """
     login_cmd = ["az", "login"]
     if identity:
@@ -144,9 +140,8 @@ def get_token(keyvault, token_name, identity=False):
     if proc.returncode == 0:
         json_out = res[0].decode(encoding="utf-8")
         secret_info = json.loads(json_out)
-        token = secret_info["value"]
         logging.info(f"Successfully retrieved secret: {token_name}")
-        return token
+        return secret_info["value"]
     else:
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
@@ -165,15 +160,12 @@ def get_latest_versions(binderhub_name, changelog_file):
 
     Parameters
     ----------
-    binderhub_name
-        String.
-    changelog_file
-        String.
+    binderhub_name: string
+    changelog_file: string
 
     Returns
     -------
-    version_info
-        Dictionary.
+    version_info: dictionary
     """
     version_info = {binderhub_name: {}, "helm_page": {}}
 
@@ -203,13 +195,11 @@ def check_fork_exists(repo_name):
 
     Parameters
     ----------
-    repo_name
-        String.
+    repo_name: string
 
     Returns
     -------
-    fork_exists
-        Boolean.
+    fork_exists: boolean
     """
     res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
     fork_exists = bool([x for x in res.json() if x["name"] == repo_name])
@@ -221,15 +211,12 @@ def remove_fork(repo_name, token):
 
     Parameters
     ----------
-    repo_name
-        String.
-    token
-        String.
+    repo_name: string
+    token: string
 
     Returns
     -------
-    fork_exists
-        Boolean.
+    fork_exists: boolean
     """
     fork_exists = check_fork_exists(repo_name)
 
@@ -247,13 +234,12 @@ def remove_fork(repo_name, token):
         logging.info(f"HelmUpgradeBot does not have a fork of: {repo_name}")
         return fork_exists
 
-def clone_fork(repo_name):
+def clone_fork(repo_name, token):
     """Clone fork
 
     Parameters
     ----------
-    repo_name
-        String.
+    repo_name: string
     """
     logging.info(f"Cloning fork: {repo_name}")
     proc = subprocess.Popen(
@@ -267,15 +253,16 @@ def clone_fork(repo_name):
     else:
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
+        clean_up(repo_name)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(err_msg)
 
-def install_requirements(repo_name):
+def install_requirements(repo_name, token):
     """Install repo requirements
 
     Parameters
     ----------
-    repo_name
-        String.
+    repo_name: string
     """
     logging.info(f"Installing requirements for: {repo_name}")
 
@@ -290,6 +277,8 @@ def install_requirements(repo_name):
     else:
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
+        clean_up(repo_name)
+        fork_exists = remove_fork(repo_name, token)
         raise Exception(err_msg)
 
 def make_fork(repo_api, repo_name, token):
@@ -297,17 +286,13 @@ def make_fork(repo_api, repo_name, token):
 
     Parameters
     ----------
-    repo_api
-        String.
-    repo_name
-        String.
-    token
-        String.
+    repo_api: string
+    repo_name: string.
+    token: string.
 
     Returns
     -------
-    fork_exists
-        Boolean.
+    fork_exists: boolean
     """
     logging.info(f"Forking repo: {repo_name}")
     requests.post(
@@ -319,15 +304,13 @@ def make_fork(repo_api, repo_name, token):
 
     return fork_exists
 
-def delete_old_branch(repo_name, branch):
+def delete_old_branch(repo_name, branch, token):
     """Delete old git branch
 
     Parameters
     ----------
-    repo_name
-        String.
-    branch
-        String.
+    repo_name: string
+    branch: string
     """
     req = requests.get(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches"
@@ -347,6 +330,8 @@ def delete_old_branch(repo_name, branch):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(repo_name)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(err_msg)
 
         proc = subprocess.Popen(
@@ -365,19 +350,15 @@ def delete_old_branch(repo_name, branch):
     else:
         logging.info(f"Branch does not exist: {branch}")
 
-def checkout_branch(fork_exists, repo_owner, repo_name, branch):
+def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
     """Checkout a git branch
 
     Parameters
     ----------
-    fork_exists
-        Boolean.
-    repo_owner
-        String.
-    repo_name
-        String
-    branch
-        String.
+    fork_exists: boolean
+    repo_owner: string
+    repo_name: string
+    branch: string
     """
     if fork_exists:
         delete_old_branch(repo_name, branch)
@@ -398,6 +379,8 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
         else:
             err_msg = res[1].decode(Encoding="utf-8")
             logging.error(err_msg)
+            clean_up(repo_name)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(err_msg)
 
     logging.info(f"Checking out branch: {branch}")
@@ -412,6 +395,8 @@ def checkout_branch(fork_exists, repo_owner, repo_name, branch):
     else:
         err_msg = res[1].decode(encoding="utf-8")
         logging.error(err_msg)
+        clean_up(repo_name)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(err_msg)
 
 def update_changelog(fnames, version_info):
@@ -419,10 +404,8 @@ def update_changelog(fnames, version_info):
 
     Parameters
     ----------
-    fnames
-        List of strings.
-    version_info
-        Dictionary.
+    fnames: list of strings
+    version_info: dictionary
     """
     for fname in fnames:
         logging.info(f"Updating file: {fname}")
@@ -440,16 +423,11 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
 
     Parameters
     ----------
-    changed_files
-        List of strings. Filenames to process.
-    version_info
-        Dictionary.
-    repo_name
-        String.
-    branch
-        String.
-    token
-        String.
+    changed_files: list of strings. Filenames to process.
+    version_info: dictionary
+    repo_name: string
+    branch: string
+    token: string
     """
     for f in changed_files:
         logging.info(f"Adding file: {f}")
@@ -464,6 +442,8 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(repo_name)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(err_msg)
 
         commit_msg = f"Log Helm Chart bump to version {version_info['helm_page']['version']}"
@@ -480,6 +460,8 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(repo_name)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(err_msg)
 
         logging.info(f"Pushing commits to branch: {branch}")
@@ -498,6 +480,8 @@ def add_commit_push(changed_files, version_info, repo_name, branch, token):
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(repo_name)
+            fork_exists = remove_fork(repo_name, token)
             raise GitError(err_msg)
 
 def make_pr_body(version_info, binderhub_name):
@@ -505,15 +489,12 @@ def make_pr_body(version_info, binderhub_name):
 
     Parameters
     ----------
-    version_info
-        Dictionary.
-    binderhub_name
-        String.
+    version_info: dictionary
+    binderhub_name: string
 
     Returns
     -------
-    body
-        String.
+    body: string
     """
     logging.info("Writing Pull Request body")
 
@@ -532,16 +513,11 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
 
     Parameters
     ----------
-    version_info
-        Dictionary.
-    branch
-        String.
-    repo_api
-        String.
-    binderhub_name
-        String.
-    token
-        String.
+    version_info: dictionary
+    branch: string
+    repo_api: string
+    binderhub_name: string
+    token: string
     """
     logging.info("Creating Pull Request")
 
@@ -567,8 +543,7 @@ def clean_up(repo_name):
 
     Parameters
     ----------
-    repo_name
-        String.
+    repo_name: string
     """
     cwd = os.getcwd()
     this_dir = cwd.split("/")[-1]
@@ -604,9 +579,9 @@ def main():
         # Forking repo
         if not fork_exists:
             fork_exists = make_fork(repo_api, args.repo_name, token)
-        clone_fork(args.repo_name)
+        clone_fork(args.repo_name, token)
         os.chdir(args.repo_name)
-        install_requirements(args.repo_name)
+        install_requirements(args.repo_name, token)
 
         # Generating config files
         config_cmd = ["python", "generate-configs.py"]
@@ -623,6 +598,8 @@ def main():
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(args.repo_name)
+            remove_fork(args.repo_name, token)
             raise BashError(err_msg)
 
         # Upgrading Helm Chart
@@ -645,10 +622,12 @@ def main():
         else:
             err_msg = res[1].decode(encoding="utf-8")
             logging.error(err_msg)
+            clean_up(args.repo_name)
+            remove_fork(args.repo_name, token)
             raise BashError(err_msg)
 
         if not args.dry_run:
-            checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch)
+            checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch, token)
             update_changelog(args.files, version_info)
             add_commit_push(args.files, version_info, args.repo_name, args.branch, token)
             create_update_pr(version_info, args.branch, repo_api, args.deployment, token)
@@ -656,12 +635,8 @@ def main():
     else:
         logging.info(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
-        today = pd.Timestamp.now().tz_localize(None)
-
-        if ((today - version_info["helm_page"]["date"]).days >= 7) and fork_exists:
-            fork_exists = remove_fork(args.repo_name)
-
     clean_up(args.repo_name)
+    fork_exists = remove_fork(args.repo_name, token)
 
 if __name__ == "__main__":
     main()
