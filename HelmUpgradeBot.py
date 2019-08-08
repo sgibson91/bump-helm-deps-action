@@ -366,7 +366,7 @@ def delete_old_branch(repo_name, branch, token):
             logging.info(f"Branch does not exist: {branch}")
 
     else:
-        logged.error(res.text)
+        logging.error(res.text)
         raise GitError(res.text)
 
 def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
