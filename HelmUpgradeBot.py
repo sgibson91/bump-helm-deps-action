@@ -551,8 +551,20 @@ def create_update_pr(version_info, branch, repo_api, binderhub_name, token):
     else:
         logging.error(res.text)
         clean_up(repo_name)
-        fork_excists = remove_fork(repo_name, token)
+        fork_exists = remove_fork(repo_name, token)
         raise GitError(res.text)
+
+def copy_logs():
+    """Function to copy log files to parent directory so they are preserved.
+    """
+    cwd = os.getcwd()
+    dst = os.path.dirname(os.path.abspath(os.getcwd()))
+
+    for fname in os.listdir(cwd):
+        if fname.endswith(".log"):
+            fpath = os.path.join(cwd, fname)
+            logging.info(f"Copying log: {fname}")
+            shutil.copy(fpath, dst)
 
 def clean_up(repo_name):
     """Delete local repo
@@ -567,7 +579,7 @@ def clean_up(repo_name):
         os.chdir(os.pardir)
 
     logging.info(f"Deleting local repository: {repo_name}")
-    shutil.rmtree(this_dir)
+    shutil.rmtree(repo_name)
     logging.info(f"Deleted local repository: {repo_name}")
 
 def main():
@@ -651,6 +663,7 @@ def main():
     else:
         logging.info(f"{args.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
+    copy_logs()
     clean_up(args.repo_name)
     fork_exists = remove_fork(args.repo_name, token)
 
