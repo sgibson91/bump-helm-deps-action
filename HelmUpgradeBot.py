@@ -6,6 +6,7 @@ import shutil
 import logging
 import requests
 import argparse
+import datetime
 import pandas as pd
 from CustomExceptions import *
 from run_command import run_cmd
@@ -26,7 +27,7 @@ logging.basicConfig(
 def parse_args():
     """Command line argument parser"""
     parser = argparse.ArgumentParser(
-        description="Upgrade the Helm Chart of a BinderHub deployment and update the changelog in the deployment GitHub repository"
+        description="Upgrade the Helm Chart of a BinderHub Helm Chart in the deployment GitHub repository"
     )
 
     parser.add_argument(
@@ -94,7 +95,7 @@ def parse_args():
 class HelmUpgradeBot(object):
     def __init__(self, argsDict):
         # Parse args from dict
-        self.repo_ower = argsDict["repo_owner"]
+        self.repo_owner = argsDict["repo_owner"]
         self.repo_name = argsDict["repo_name"]
         self.branch = argsDict["branch"]
         self.chart_name = argsDict["chart_name"]
@@ -152,7 +153,7 @@ class HelmUpgradeBot(object):
 
         # Hub23 local chart info
         self.chart_info[self.deployment] = {}
-        chart_reqs = load(requests.get(chart_urls[self.deployemnt]).text)
+        chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
 
         for dependency in chart_reqs["dependencies"]:
             self.chart_info[self.deployment][dependency["name"]] = {
@@ -167,7 +168,7 @@ class HelmUpgradeBot(object):
             key=lambda k: k["created"]
         )
         self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
-   
+
     def set_github_config(self):
         logging.info("Setting up git configuration for HelmUpgradeBot")
 
@@ -226,53 +227,16 @@ class HelmUpgradeBot(object):
         if not self.fork_exists:
             self.make_fork()
         self.clone_fork()
-        os.chdir(self.repo_name)
-        self.install_requirements()
-
-        # Generating config files
-        logging.info(f"Generating configuration files for: {self.deployment}")
-        config_cmd = ["python", "generate-configs.py"]
-        if self.identity:
-            config_cmd.append("--identity")
-
-        result = run_cmd(config_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully generated configuration files: {self.deployment}")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise BashError(result["err_msg"])
-
-        # Upgrading Helm Chart
-        upgrade_cmd = [
-            "python", "upgrade.py", "-v", self.chart_info["binderhub"]["version"],
-        ]
-        if self.identity:
-            upgrade_cmd.append("--identity")
-        if self.dry_run:
-            logging.info("Adding --dry-run argument to Helm Upgrade")
-            upgrade_cmd.append("--dry-run")
-
-        logging.info(f"Upgrading Helm Chart for: {self.deployment}")
-        result = run_cmd(upgrade_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Helm Chart successfully upgraded for: {self.deployment}")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise BashError(result["err_msg"])
 
         if not self.dry_run:
+            os.chdir(self.repo_name)
             self.checkout_branch()
-            self.update_changelog()
+            self.update_local_chart()
             self.add_commit_push()
             self.create_update_pr()
 
-        self.copy_logs()
         self.clean_up()
-        self.remove_fork()
+        # self.remove_fork()
 
     def make_fork(self):
         logging.info(f"Forking repo: {self.repo_name}")
@@ -302,19 +266,6 @@ class HelmUpgradeBot(object):
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
-
-    def install_requirements(self):
-        logging.info(f"Installing requirements for: {self.repo_name}")
-
-        pip_cmd = ["pip", "install", "-r", "requirements.txt"]
-        result = run_cmd(pip_cmd)
-        if result["returncode"] == 0:
-            logging.info("Successfully installed repo requirements")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise Exception(result["err_msg"])
 
     def delete_old_branch(self):
         res = requests.get(
@@ -383,20 +334,20 @@ class HelmUpgradeBot(object):
             raise GitError(result["err_msg"])
 
     def update_local_chart(self):
-      logging.info(f"Updating local Helm Chart: {self.chart_name}")
+        logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
-      self.fname = os.path.join(f"{self.chart_name}", "requirements.yaml")
-      with open(self.fname, "r") as f:
-          chart_yaml = load(f)
+        self.fname = f"{self.chart_name}/requirements.yaml"
+        with open(self.fname, "r") as f:
+            chart_yaml = load(f)
 
-      for dependency in chart_yaml["dependencies"]:
-          if dependency["name"] == "binderhub":
-              dependency["version"] = self.chart_info["binderhub"]["version"]
+        for dependency in chart_yaml["dependencies"]:
+            if dependency["name"] == "binderhub":
+                dependency["version"] = self.chart_info["binderhub"]["version"]
 
-      with open(self.fname, "w") as f:
-          dump(chart_yaml, f)
+        with open(self.fname, "w") as f:
+            dump(chart_yaml, f)
 
-      logging.info(f"Updated file: {self.fname}")
+        logging.info(f"Updated file: {self.fname}")
 
     def add_commit_push(self):
         logging.info(f"Adding file: {self.fname}")
@@ -416,7 +367,7 @@ class HelmUpgradeBot(object):
         commit_cmd = ["git", "commit", "-m", commit_msg]
         result = run_cmd(commit_cmd)
         if result["returncode"] == 0:
-            logging.info(f"Successfully committed file: {f}")
+            logging.info(f"Successfully committed file: {self.fname}")
         else:
             logging.error(result["err_msg"])
             self.clean_up()
@@ -476,25 +427,16 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(res.text)
 
-    def copy_logs(self):
-        cwd = os.getcwd()
-        dst = os.path.dirname(os.path.abspath(os.getcwd()))
-
-        for fname in os.listdir(cwd):
-            if fname.endswith(".log"):
-                fpath = os.path.join(cwd, fname)
-                logging.info(f"Copying log: {fname}")
-                shutil.copy(fpath, dst)
-
     def clean_up(self):
         cwd = os.getcwd()
         this_dir = cwd.split("/")[-1]
         if this_dir == self.repo_name:
             os.chdir(os.pardir)
 
-        logging.info(f"Deleting local repository: {self.repo_name}")
-        shutil.rmtree(self.repo_name)
-        logging.info(f"Deleted local repository: {self.repo_name}")
+        if os.path.exists(self.repo_name):
+            logging.info(f"Deleting local repository: {self.repo_name}")
+            shutil.rmtree(self.repo_name)
+            logging.info(f"Deleted local repository: {self.repo_name}")
 
 if __name__ == "__main__":
     args = parse_args()
