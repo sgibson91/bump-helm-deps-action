@@ -147,7 +147,7 @@ class HelmUpgradeBot(object):
     def get_chart_versions(self):
         self.chart_info = {}
         chart_urls = {
-            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/refactor-to-chart/{self.chart_name}/requirements.yaml",
+            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
             "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
         }
 
