@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import time
 import shutil
@@ -14,7 +15,9 @@ from yaml import safe_dump as dump
 # Setup log config
 logging.basicConfig(
     level=logging.DEBUG,
-    filename="HelmUpgradeBot.log",
+    filename="HelmUpgradeBot_{}.log".format(
+        datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    ),
     filemode="a",
     format="[%(asctime)s %(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
@@ -88,542 +91,412 @@ def parse_args():
 
     return parser.parse_args()
 
-def get_chart_versions(repo_owner, repo_name, binderhub_name, chart_name):
-    """Function to get version numbers of hub23 local chart and all it's
-    dependencies
+class HelmUpgradeBot(object):
+    def __init__(self, argsDict):
+        # Parse args from dict
+        self.repo_ower = argsDict["repo_owner"]
+        self.repo_name = argsDict["repo_name"]
+        self.branch = argsDict["branch"]
+        self.chart_name = argsDict["chart_name"]
+        self.deployment = argsDict["deployment"]
+        self.keyvault = argsDict["keyvault"]
+        self.identity = argsDict["identity"]
+        self.dry_run = argsDict["dry_run"]
+        self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
-    Parameters
-    ----------
-    repo_owner: string
-    repo_name: string
-    binderhub_name: string
-    chart_name: string
+        self.get_token(argsDict["token_name"])
+        self.get_chart_versions()
+        self.remove_fork()
 
-    Returns
-    -------
-    chart_info: dictionary
-    """
-    chart_info = {}
-    chart_urls = {
-        binderhub_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/refactor-to-chart/{chart_name}/requirements.yaml",
-        "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
-    }
+        if argsDict["identity"]:
+            self.set_github_config()
 
-    # Hub23 local chart info
-    chart_info["hub23"] = {}
-    chart_reqs = load(requests.get(chart_urls["hub23"]).text)
+    def login(self):
+        login_cmd = ["az", "login"]
 
-    for dependency in chart_reqs["dependencies"]:
-        chart_info["hub23"][dependency["name"]] = {
-            "version": dependency["version"]
+        if self.identity:
+            login_cmd.append("--identity")
+            logging.info("Login to Azure with Managed System Identity")
+        else:
+            logging.info("Login to Azure")
+
+        result = run_cmd(login_cmd)
+        if result["returncode"] == 0:
+            logging.info("Successfully logged into Azure")
+        else:
+            logging.error(result["err_msg"])
+            raise AzureError(result["err_msg"])
+
+    def get_token(self, token_name):
+        self.login()
+
+        logging.info(f"Retrieving secret: {token_name}")
+        vault_cmd = [
+            "az", "keyvault", "secret", "show", "-n", token_name,
+            "--vault-name", self.keyvault, "--query", "value", "-o", "tsv"
+        ]
+        result = run_cmd(vault_cmd)
+        if result["returncode"] == 0:
+            self.token = result["output"].strip("\n")
+            logging.info(f"Successfully pulled secret: {token_name}")
+        else:
+            logging.error(result["err_msg"])
+            raise AzureError(result["err_msg"])
+
+    def get_chart_versions(self):
+        self.chart_info = {}
+        chart_urls = {
+            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/refactor-to-chart/{self.chart_name}/requirements.yaml",
+            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
         }
 
-    # BinderHub chart
-    chart_info["binderhub"] = {}
-    chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
-    updates_sorted = sorted(
-        chart_reqs["entries"]["binderhub"],
-        key=lambda k: k["created"]
-    )
-    chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+        # Hub23 local chart info
+        self.chart_info[self.deployment] = {}
+        chart_reqs = load(requests.get(chart_urls[self.deployemnt]).text)
 
-    return chart_info
+        for dependency in chart_reqs["dependencies"]:
+            self.chart_info[self.deployment][dependency["name"]] = {
+                "version": dependency["version"]
+            }
 
-def get_token(token_name, keyvault, identity=False):
-    """Get personal access token from Azure Key Vault
-
-    Parameters
-    ----------
-    token_name: string
-    keyvault: string
-    identity: boolean
-
-    Returns
-    -------
-    token: string
-    """
-    login_cmd = ["az", "login"]
-    if identity:
-        login_cmd.append("--identity")
-        logging.info("Login to Azure with Managed System Identity")
-    else:
-        logging.info("Login to Azure")
-
-    result = run_cmd(login_cmd)
-    if result["returncode"] == 0:
-        logging.info("Successfully logged into Azure")
-    else:
-        logging.error(result["err_msg"])
-        raise AzureError(result["err_msg"])
-
-    logging.info(f"Retrieving secret: {token_name}")
-    get_token_cmd = [
-        "az", "keyvault", "secret", "show", "-n", token_name, "--vault-name",
-        keyvault
-    ]
-    result = run_cmd(get_token_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully retrieved secret: {token_name}")
-        secret_info = json.loads(result["output"])
-        return secret_info["value"]
-    else:
-        logging.error(result["err_msg"])
-        raise AzureError(result["err_msg"])
-
-def set_github_config():
-    import subprocess
-
-    subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
-    subprocess.check_call([
-        "git", "config", "user.email", "helmupgradebot.github@gmail.com"
-    ])
-
-def check_fork_exists(repo_name):
-    """Check if fork exists
-
-    Parameters
-    ----------
-    repo_name: string
-
-    Returns
-    -------
-    fork_exists: boolean
-    """
-    res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
-
-    if res:
-        fork_exists = bool([x for x in res.json() if x["name"] == repo_name])
-        return fork_exists
-    else:
-        logging.error(res.text)
-        raise GitError(res.text)
-
-def remove_fork(repo_name, token):
-    """Remove fork
-
-    Parameters
-    ----------
-    repo_name: string
-    token: string
-
-    Returns
-    -------
-    fork_exists: boolean
-    """
-    fork_exists = check_fork_exists(repo_name)
-
-    if fork_exists:
-        logging.info(f"HelmUpgradeBot has a fork of: {repo_name}")
-        res = requests.delete(
-            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}",
-            headers={"Authorization": f"token {token}"}
+        # BinderHub chart
+        self.chart_info["binderhub"] = {}
+        chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
+        updates_sorted = sorted(
+            chart_reqs["entries"]["binderhub"],
+            key=lambda k: k["created"]
         )
+        self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+   
+    def set_github_config(self):
+        logging.info("Setting up git configuration for HelmUpgradeBot")
+
+        subprocess.check_call([
+            "git", "config", "user.name", "HelmUpgradeBot"
+        ])
+        subprocess.check_call([
+            "git", "config", "user.email", "helmupgradebot.github@gmail.com"
+        ])
+
+    def check_fork_exists(self):
+        res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
 
         if res:
-            fork_exists = False
-            time.sleep(5)
-            logging.info(f"Deleted fork: {repo_name}")
+            self.fork_exists = bool([x for x in res.json() if x["name"] == self.repo_name])
         else:
             logging.error(res.text)
             clean_up(repo_name)
             raise GitError(res.text)
 
-    else:
-        logging.info(f"HelmUpgradeBot does not have a fork of: {repo_name}")
+    def remove_fork(self):
+        self.check_fork_exists()
 
-    return fork_exists
-
-def make_fork(repo_api, repo_name, token):
-    """Create a fork
-
-    Parameters
-    ----------
-    repo_api: string
-    repo_name: string
-    token: string
-
-    Returns
-    -------
-    fork_exists: boolean
-    """
-    logging.info(f"Forking repo: {repo_name}")
-    res = requests.post(
-        repo_api + "forks",
-        headers={"Authorization": f"token {token}"}
-    )
-
-    if res:
-        fork_exists = True
-        logging.info(f"Created fork: {repo_name}")
-        return fork_exists
-    else:
-        logging.error(res.text)
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(res.text)
-
-def clone_fork(repo_name, token):
-    """Clone fork
-
-    Parameters
-    ----------
-    repo_name: string
-    token: string
-    """
-    logging.info(f"Cloning fork: {repo_name}")
-    clone_cmd = ["git", "clone", f"https://github.com/HelmUpgradeBot/{repo_name}.git"]
-    result = run_cmd(clone_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully cloned fork: {repo_name}")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(result["err_msg"])
-
-def install_requirements(repo_name, token):
-    """Install repo requirements
-
-    Parameters
-    ----------
-    repo_name: string
-    token: string
-    """
-    logging.info(f"Installing requirements for: {repo_name}")
-    pip_cmd = ["pip", "install", "-r", "requirements.txt"]
-    result = run_cmd(pip_cmd)
-    if result["returncode"] == 0:
-        logging.info("Successfully installed repo requirements")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise Exception(result["err_msg"])
-
-def make_fork(repo_api, repo_name, token):
-    """Create a fork
-
-    Parameters
-    ----------
-    repo_api: string
-    repo_name: string
-    token: string
-
-    Returns
-    -------
-    fork_exists: boolean
-    """
-    logging.info(f"Forking repo: {repo_name}")
-    res = requests.post(
-        repo_api + "forks",
-        headers={"Authorization": f"token {token}"}
-    )
-
-    if res:
-        fork_exists = True
-        logging.info(f"Created fork: {repo_name}")
-        return fork_exists
-    else:
-        logging.error(res.text)
-        raise GitError(res.text)
-
-def delete_old_branch(repo_name, branch, token):
-    """Delete old git branch
-
-    Parameters
-    ----------
-    repo_name: string
-    branch: string
-    token: string
-    """
-    res = requests.get(
-        f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches"
-    )
-
-    if res:
-        if branch in [x["name"] for x in res.json()]:
-            logging.info(f"Deleting branch: {branch}")
-
-            push_cmd = ["git", "push", "--delete", "origin", branch]
-            result = run_cmd(push_cmd)
-            if result["returncode"] == 0:
-                logging.info(f"Successfully deleted remote branch: {branch}")
+        if self.fork_exists:
+            logging.info(f"HelmUpgradeBot has a fork of: {self.repo_name}")
+            res = requests.delete(
+                f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}",
+                headers={"Authorization": f"token {self.token}"}
+            )
+            if res:
+                self.fork_exists = False
+                time.sleep(5)
+                logging.info(f"Deleted fork: {self.repo_name}")
             else:
-                logging.error(result["err_msg"])
-                clean_up(repo_name)
-                fork_exists = remove_fork(repo_name, token)
-                raise GitError(result["err_msg"])
-
-            branch_cmd = ["git", "branch", "-d", branch]
-            result = run_cmd(branch_cmd)
-            if result["returncode"] == 0:
-                logging.info(f"Successfully deleted local branch: {branch}")
-            else:
-                logging.error(result["err_msg"])
-                clean_up(repo_name)
-                fork_exists = remove_fork(repo_name, token)
-                raise GitError(result["err_msg"])
+                logging.error(res.text)
+                raise GitError(res.text)
 
         else:
-            logging.info(f"Branch does not exist: {branch}")
+            logging.info(f"HelmUpgradeBot does not have a fork of: {self.repo_name}")
 
-    else:
-        logging.error(res.text)
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(res.text)
+    def check_versions(self):
+        if self.dry_run:
+            logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
-def checkout_branch(fork_exists, repo_owner, repo_name, branch, token):
-    """Checkout a git branch
+        # Create conditions
+        version_cond = (self.chart_info["binderhub"]["version"] != self.chart_info[self.deployment]["binderhub"]["version"])
 
-    Parameters
-    ----------
-    fork_exists: boolean
-    repo_owner: string
-    repo_name: string
-    branch: string
-    token: string
-    """
-    if fork_exists:
-        delete_old_branch(repo_name, branch, token)
+        if version_cond:
+            logging.info("Helm upgrade required")
+            self.upgrade_chart()
+        else:
+            logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
-        logging.info(f"Pulling master branch of: {repo_owner}/{repo_name}")
-        pull_cmd = [
-            "git", "pull",
-            f"https://github.com/{repo_owner}/{repo_name}.git",
-            "master"
-        ]
-        result = run_cmd(pull_cmd)
-        if result['returncode'] == 0:
-            logging.info(f"Successfully pulled master branch of: {repo_owner}/{repo_name}")
+    def upgrade_chart(self):
+        # Forking repo
+        if not self.fork_exists:
+            self.make_fork()
+        self.clone_fork()
+        os.chdir(self.repo_name)
+        self.install_requirements()
+
+        # Generating config files
+        logging.info(f"Generating configuration files for: {self.deployment}")
+        config_cmd = ["python", "generate-configs.py"]
+        if self.identity:
+            config_cmd.append("--identity")
+
+        result = run_cmd(config_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully generated configuration files: {self.deployment}")
         else:
             logging.error(result["err_msg"])
-            clean_up(repo_name)
-            fork_exists = remove_fork(repo_name, token)
+            self.clean_up()
+            self.remove_fork()
+            raise BashError(result["err_msg"])
+
+        # Upgrading Helm Chart
+        upgrade_cmd = [
+            "python", "upgrade.py", "-v", self.chart_info["binderhub"]["version"],
+        ]
+        if self.identity:
+            upgrade_cmd.append("--identity")
+        if self.dry_run:
+            logging.info("Adding --dry-run argument to Helm Upgrade")
+            upgrade_cmd.append("--dry-run")
+
+        logging.info(f"Upgrading Helm Chart for: {self.deployment}")
+        result = run_cmd(upgrade_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Helm Chart successfully upgraded for: {self.deployment}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise BashError(result["err_msg"])
+
+        if not self.dry_run:
+            self.checkout_branch()
+            self.update_changelog()
+            self.add_commit_push()
+            self.create_update_pr()
+
+        self.copy_logs()
+        self.clean_up()
+        self.remove_fork()
+
+    def make_fork(self):
+        logging.info(f"Forking repo: {self.repo_name}")
+        res = requests.post(
+            self.repo_api + "forks",
+            headers={"Authorization": f"token {self.token}"}
+        )
+
+        if res:
+            self.fork_exists = True
+            logging.info(f"Created fork: {self.repo_name}")
+        else:
+            logging.error(res.text)
+            raise GitError(res.text)
+
+    def clone_fork(self):
+        logging.info(f"Cloning fork: {self.repo_name}")
+
+        clone_cmd = [
+            "git", "clone", f"https://github.com/HelmUpgradeBot/{self.repo_name}.git"
+        ]
+        result = run_cmd(clone_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully cloned repo: {self.repo_name}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
             raise GitError(result["err_msg"])
 
-    logging.info(f"Checking out branch: {branch}")
-    chkt_cmd = ["git", "checkout", "-b", branch]
-    result = run_cmd(chkt_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully checked out branch: {branch}")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(result["err_msg"])
+    def install_requirements(self):
+        logging.info(f"Installing requirements for: {self.repo_name}")
 
-def update_local_chart(chart_name, repo_name, version_info):
-    """Update changelog file
+        pip_cmd = ["pip", "install", "-r", "requirements.txt"]
+        result = run_cmd(pip_cmd)
+        if result["returncode"] == 0:
+            logging.info("Successfully installed repo requirements")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise Exception(result["err_msg"])
 
-    Parameters
-    ----------
-    chart_name: string
-    version_info: dictionary
+    def delete_old_branch(self):
+        res = requests.get(
+            f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}/branches"
+        )
 
-    Returns
-    -------
-    fname: string
-    """
-    logging.info(f"Updating local Helm Chart: {chart_name}")
+        if res:
+            if self.branch in [x["name"] for x in res.json()]:
+                logging.info(f"Deleting branch: {self.branch}")
 
-    fname = os.path.join(f"{chart_name}", "requirements.yaml")
-    with open(fname, "r") as f:
-        chart_yaml = load(f)
+                delete_cmd = ["git", "push", "--delete", "origin", self.branch]
+                result = run_cmd(delete_cmd)
+                if result["returncode"] == 0:
+                    logging.info(f"Successfully deleted remote branch: {self.branch}")
+                else:
+                    logging.error(result["err_msg"])
+                    self.clean_up()
+                    self.remove_fork()
+                    raise GitError(result["err_msg"])
 
-    for dependency in chart_yaml["dependencies"]:
-        if dependency["name"] == "binderhub":
-            dependency["version"] = version_info["binderhub"]
+                delete_cmd = ["git", "branch", "-d", self.branch]
+                result = run_cmd(delete_cmd)
+                if result["returncode"] == 0:
+                    logging.info(f"Successfully deleted local branch: {self.branch}")
+                else:
+                    logging.error(result["err_msg"])
+                    swlf.clean_up()
+                    self.remove_fork()
+                    raise GitError(result["err_msg"])
 
-    with open(fname, "w") as f:
-        dump(chart_yaml, f)
+            else:
+                logging.info(f"Branch does not exist: {self.branch}")
 
-    logging.info(f"Updated file: {fname}")
+        else:
+            logging.error(res.text)
+            raise GitError(res.text)
 
-    return fname
+    def checkout_branch(self):
+        if self.fork_exists:
+            self.delete_old_branch()
 
-def add_commit_push(changed_file, version_info, repo_name, branch, token):
-    """Add commit and push files
+            logging.info(f"Pulling master branch of: {self.repo_owner}/{self.repo_name}")
+            pull_cmd = [
+                "git", "pull",
+                f"https://github.com/{self.repo_owner}/{self.repo_name}.git",
+                "master"
+            ]
+            result = run_cmd(pull_cmd)
+            if result["returncode"] == 0:
+                logging.info(f"Successfully pulled master branch of: {self.repo_owner}/{self.repo_name}")
+            else:
+                logging.error(result["err_msg"])
+                self.clean_up()
+                self.remove_fork()
+                raise GitError(result["err_msg"])
 
-    Parameters
-    ----------
-    changed_file: string
-    version_info: dictionary
-    repo_name: string
-    branch: string
-    token: string
-    """
-    add_cmd = ["git", "add", changed_file]
+        logging.info(f"Checking out branch: {self.branch}")
+        chkt_cmd = ["git", "checkout", "-b", self.branch]
+        result = run_cmd(chkt_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully checked out branch: {self.branch}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-    logging.info(f"Adding file: {changed_file}")
-    result = run_cmd(add_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully added file: {changed_file}")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(result["err_msg"])
+    def update_local_chart(self):
+      logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
-    commit_msg = f"Log Helm Chart bump to version {version_info['binderhub']}"
-    cmt_cmd = ["git", "commit", "-m", commit_msg]
+      self.fname = os.path.join(f"{self.chart_name}", "requirements.yaml")
+      with open(self.fname, "r") as f:
+          chart_yaml = load(f)
 
-    logging.info(f"Committing file: {changed_file}")
-    result = run_cmd(cmt_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully committed file: {changed_file}")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(result["err_msg"])
+      for dependency in chart_yaml["dependencies"]:
+          if dependency["name"] == "binderhub":
+              dependency["version"] = self.chart_info["binderhub"]["version"]
 
-    logging.info(f"Pushing commits to branch: {branch}")
-    push_cmd = [
-        "git", "push",
-        f"https://HelmUpgradeBot:{token}@github.com/HelmUpgradeBot/{repo_name}",
-        branch
-    ]
-    result = run_cmd(push_cmd)
-    if result["returncode"] == 0:
-        logging.info(f"Successfully pushed changes to branch: {branch}")
-    else:
-        logging.error(result["err_msg"])
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(result["err_msg"])
+      with open(self.fname, "w") as f:
+          dump(chart_yaml, f)
 
-def make_pr_body(version_info, binderhub_name):
-    """Make Pull Request body
+      logging.info(f"Updated file: {self.fname}")
 
-    Parameters
-    ----------
-    version_info: dictionary
-    binderhub_name: string
+    def add_commit_push(self):
+        logging.info(f"Adding file: {self.fname}")
+        add_cmd = ["git", "add", self.fname]
+        result = run_cmd(add_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully added file: {self.fname}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-    Returns
-    -------
-    body: string
-    """
-    logging.info("Writing Pull Request body")
+        commit_msg = f"Log Helm Chart bump to version {self.chart_info['binderhub']['version']}"
 
-    today = pd.Timestamp.now().tz_localize(None)
-    body = "\n".join([
-        f"This PR is updating the {binderhub_name} local Helm Chart to pull the most recent BinderHub Helm Chart release.\n\n" +
-        f"{version_info['hub23']} ... {version_info['binderhub']}"
-    ])
+        logging.info(f"Committing file: {self.fname}")
+        commit_cmd = ["git", "commit", "-m", commit_msg]
+        result = run_cmd(commit_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully committed file: {f}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-    logging.info("Pull Request body written")
+        logging.info(f"Pushing commits to branch: {self.branch}")
+        push_cmd = [
+            "git", "push",
+            f"https://HelmUpgradeBot:{self.token}@github.com/HelmUpgradeBot/{self.repo_name}",
+            self.branch
+        ]
+        result = run_cmd(push_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully pushed changes to branch: {self.branch}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-    return body
+    def make_pr_body(self):
+        logging.info("Writing Pull Request body")
 
-def create_update_pr(version_info, branch, repo_api, binderhub_name, token, repo_name):
-    """Create a Pull Request
+        today = pd.Timestamp.now().tz_localize(None)
+        body = "\n".join([
+            "This PR is updating the local Helm Chart to the most recent BinderHub Helm Chart version."
+        ])
 
-    Parameters
-    ----------
-    version_info: dictionary
-    branch: string
-    repo_api: string
-    binderhub_name: string
-    token: string
-    repo_name: string
-    """
-    logging.info("Creating Pull Request")
+        logging.info("Pull Request body written")
 
-    body = make_pr_body(version_info, binderhub_name)
+        return body
 
-    pr = {
-        "title": "Logging Helm Chart version upgrade",
-        "body": body,
-        "base": "master",
-        "head": f"HelmUpgradeBot:{branch}"
-    }
+    def create_update_pr(self):
+        logging.info("Creating Pull Request")
 
-    res = requests.post(
-        repo_api + "pulls",
-        headers={"Authorization": f"token {token}"},
-        json=pr
-    )
+        body = self.make_pr_body()
 
-    if res:
-        logging.info("Pull Request created")
-    else:
-        logging.error(res.text)
-        clean_up(repo_name)
-        fork_exists = remove_fork(repo_name, token)
-        raise GitError(res.text)
-
-def clean_up(repo_name):
-    """Delete local repo
-
-    Parameters
-    ----------
-    repo_name: string
-    """
-    cwd = os.getcwd()
-    this_dir = cwd.split("/")[-1]
-    if this_dir == repo_name:
-        os.chdir(os.pardir)
-
-    if os.path.exists(repo_name):
-        logging.info(f"Deleting local repository: {repo_name}")
-        shutil.rmtree(repo_name)
-        logging.info(f"Deleted local repository: {repo_name}")
-
-def main():
-    args = parse_args()
-
-    if args.dry_run:
-        logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
-
-    chart_info = get_chart_versions(
-        args.repo_owner,
-        args.repo_name,
-        args.deployment,
-        args.chart_name
-    )
-    cond = (
-        chart_info["hub23"]["binderhub"]["version"] ==
-        chart_info["binderhub"]["version"]
-    )
-
-    if cond:
-        logging.info("Hub23 is up-to-date with BinderHub!")
-    else:
-        version_info = {
-            "hub23": chart_info["hub23"]["binderhub"]["version"],
-            "binderhub": chart_info["binderhub"]["version"]
+        pr = {
+            "title": "Logging Helm Chart version upgrade",
+            "body": body,
+            "base": "master",
+            "head": f"HelmUpgradeBot:{self.branch}"
         }
-        logging.info(f"""Helm upgrade required
-    Hub23: {version_info['hub23']}
-    BinderHub: {version_info['binderhub']}""")
 
-        # Set API URL
-        repo_api = f"https://api.github.com/repos/{args.repo_owner}/{args.repo_name}/"
+        res = requests.post(
+            self.repo_api + "pulls",
+            headers={"Authorization": f"token {self.token}"},
+            json=pr
+        )
 
-        # Get access token from Azure Key Vault and remove fork
-        token = get_token(args.token_name, args.keyvault, identity=args.identity)
-        fork_exists = remove_fork(args.repo_name, token)
+        if res:
+            logging.info("Pull Request created")
+        else:
+            logging.error(res.text)
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(res.text)
 
-        if not args.dry_run:
-            set_github_config()
+    def copy_logs(self):
+        cwd = os.getcwd()
+        dst = os.path.dirname(os.path.abspath(os.getcwd()))
 
-        # Forking repo
-        if not fork_exists:
-            fork_exists = make_fork(repo_api, args.repo_name, token)
-        clone_fork(args.repo_name, token)
-        os.chdir(args.repo_name)
-        install_requirements(args.repo_name, token)
+        for fname in os.listdir(cwd):
+            if fname.endswith(".log"):
+                fpath = os.path.join(cwd, fname)
+                logging.info(f"Copying log: {fname}")
+                shutil.copy(fpath, dst)
 
-        if not args.dry_run:
-            checkout_branch(fork_exists, args.repo_owner, args.repo_name, args.branch, token)
-            fname = update_local_chart(args.chart_name, args.repo_name, version_info)
-            add_commit_push(args.files, version_info, args.repo_name, args.branch, token)
-            create_update_pr(version_info, args.branch, repo_api, args.deployment, token, args.repo_name)
+    def clean_up(self):
+        cwd = os.getcwd()
+        this_dir = cwd.split("/")[-1]
+        if this_dir == self.repo_name:
+            os.chdir(os.pardir)
 
-    clean_up(args.repo_name)
-    fork_exists = remove_fork(args.repo_name, token)
+        logging.info(f"Deleting local repository: {self.repo_name}")
+        shutil.rmtree(self.repo_name)
+        logging.info(f"Deleted local repository: {self.repo_name}")
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    bot = HelmUpgradeBot(vars(args))
+    bot.check_versions()

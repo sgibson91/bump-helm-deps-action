@@ -7,6 +7,7 @@ If an upgrade is available, the bot will perform open a PR to the [hub23-deploy 
 - [Assumptions HelmUpgradeBot Makes](#assumptions-helmupgradebot-makes)
 - [Requirements](#requirements)
 - [Usage](#usage)
+- [Permissions](#permissions)
 - [Acknowledgements](#acknowledgements)
 
 ---
@@ -47,6 +48,29 @@ It will require the following command line interface:
 
 * [Microsoft Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
 
+### Install Azure CLI
+
+```
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+```
+
+### Install `kubectl`
+
+```
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.15.0/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+```
+
+### Install `helm`
+
+```
+curl -LO https://git.io/get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+```
+
 ## Usage
 
 To run the bot, simply execute the following:
@@ -73,6 +97,21 @@ where:
 * `CHART-NAME` is the name of the local Helm Chart;
 * `--identity` enables logging into Azure with a [Managed System Identity](https://docs.microsoft.com/en-gb/azure/active-directory/managed-identities-azure-resources/overview); and
 * `--dry-run` performs a dry-run of the upgrade and does not open a Pull Request.
+
+## Permissions
+
+The user (or machine) running this script will need _at least_:
+
+* `Contributor` role permissions to the Kubernetes cluster to be upgraded
+* Permission to get secrets from the Azure Key Vault
+
+## CRON expression
+
+To run this script at 10am daily:
+
+```
+0 10 * * * cd /path/to/hub23-deploy-upgrades && ~/path/to/python HelmUpgradeBot.py [--flags]
+```
 
 ## Acknowledgements
 
