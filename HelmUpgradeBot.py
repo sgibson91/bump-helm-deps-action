@@ -1,18 +1,19 @@
 import os
 import time
 import json
+import time
 import shutil
 import logging
-import datetime
 import requests
 import argparse
-import subprocess
+import datetime
 import pandas as pd
 from CustomExceptions import *
 from run_command import run_cmd
 from yaml import safe_load as load
+from yaml import safe_dump as dump
 
-# Setup logging config
+# Setup log config
 logging.basicConfig(
     level=logging.DEBUG,
     filename="HelmUpgradeBot_{}.log".format(
@@ -26,7 +27,7 @@ logging.basicConfig(
 def parse_args():
     """Command line argument parser"""
     parser = argparse.ArgumentParser(
-        description="Upgrade the Helm Chart of a BinderHub deployment and update the changelog in the deployment GitHub repository"
+        description="Upgrade the Helm Chart of a BinderHub Helm Chart in the deployment GitHub repository"
     )
 
     parser.add_argument(
@@ -51,17 +52,10 @@ def parse_args():
         help="The git branch name to commit to"
     )
     parser.add_argument(
-        "-f",
-        "--files",
-        nargs="?",
-        default=["changelog.txt"],
-        help="The files that should be updated. The first should be the changelog file."
-    )
-    parser.add_argument(
         "-d",
         "--deployment",
         type=str,
-        default="Hub23",
+        default="hub23",
         help="The name of the deployed BinderHub"
     )
     parser.add_argument(
@@ -79,6 +73,13 @@ def parse_args():
         help="Name of Azure Key Vault bot PAT is stored in"
     )
     parser.add_argument(
+        "-c",
+        "--chart-name",
+        type=str,
+        default="hub23-chart",
+        help="Name of local Helm Chart"
+    )
+    parser.add_argument(
         "--identity",
         action="store_true",
         help="Login to Azure with a Managed System Identity"
@@ -94,10 +95,10 @@ def parse_args():
 class HelmUpgradeBot(object):
     def __init__(self, argsDict):
         # Parse args from dict
-        self.repo_ower = argsDict["repo_owner"]
+        self.repo_owner = argsDict["repo_owner"]
         self.repo_name = argsDict["repo_name"]
         self.branch = argsDict["branch"]
-        self.files = argsDict["files"]
+        self.chart_name = argsDict["chart_name"]
         self.deployment = argsDict["deployment"]
         self.keyvault = argsDict["keyvault"]
         self.identity = argsDict["identity"]
@@ -105,7 +106,7 @@ class HelmUpgradeBot(object):
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
         self.get_token(argsDict["token_name"])
-        self.get_latest_versions()
+        self.get_chart_versions()
         self.remove_fork()
 
         if argsDict["identity"]:
@@ -143,27 +144,30 @@ class HelmUpgradeBot(object):
             logging.error(result["err_msg"])
             raise AzureError(result["err_msg"])
 
-    def get_latest_versions(self):
-        self.version_info = {self.deployment: {}, "helm_page": {}}
+    def get_chart_versions(self):
+        self.chart_info = {}
+        chart_urls = {
+            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/refactor-to-chart/{self.chart_name}/requirements.yaml",
+            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
+        }
 
-        logging.info(f"Fetching the latest Helm Chart version deployed on: {self.deployment}")
-        changelog_url = f"https://raw.githubusercontent.com/{self.repo_ower}/{self.repo_name}/master/{self.files[0]}"
-        changelog = load(requests.get(changelog_url).text)
-        self.version_info[self.deployment]["date"] = pd.to_datetime(list(changelog.keys())[-1])
-        self.version_info[self.deployment]["version"] = changelog[list(changelog.keys())[-1]]
+        # Hub23 local chart info
+        self.chart_info[self.deployment] = {}
+        chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
 
-        url_helm_chart = "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
-        logging.info(f"Fetching the latest Helm Chart version from: {url_helm_chart}")
-        helm_chart_yaml = load(requests.get(url_helm_chart).text)
+        for dependency in chart_reqs["dependencies"]:
+            self.chart_info[self.deployment][dependency["name"]] = {
+                "version": dependency["version"]
+            }
+
+        # BinderHub chart
+        self.chart_info["binderhub"] = {}
+        chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
         updates_sorted = sorted(
-            helm_chart_yaml["entries"]["binderhub"],
+            chart_reqs["entries"]["binderhub"],
             key=lambda k: k["created"]
         )
-        self.version_info["helm_page"]["date"] = updates_sorted[-1]['created']
-        self.version_info["helm_page"]["version"] = updates_sorted[-1]['version']
-
-        logging.info(f"{self.deployment}: {self.version_info[self.deployment]['date']} {self.version_info[self.deployment]['version']}")
-        logging.info(f"Helm Chart page: {self.version_info['helm_page']['date']} {self.version_info['helm_page']['version']}")
+        self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
 
     def set_github_config(self):
         logging.info("Setting up git configuration for HelmUpgradeBot")
@@ -182,6 +186,7 @@ class HelmUpgradeBot(object):
             self.fork_exists = bool([x for x in res.json() if x["name"] == self.repo_name])
         else:
             logging.error(res.text)
+            clean_up(repo_name)
             raise GitError(res.text)
 
     def remove_fork(self):
@@ -209,10 +214,9 @@ class HelmUpgradeBot(object):
             logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
         # Create conditions
-        date_cond = (self.version_info["helm_page"]["date"] > self.version_info[self.deployment]["date"])
-        version_cond = (self.version_info["helm_page"]["version"] != self.version_info[self.deployment]["version"])
+        version_cond = (self.chart_info["binderhub"]["version"] != self.chart_info[self.deployment]["binderhub"]["version"])
 
-        if date_cond and version_cond:
+        if version_cond:
             logging.info("Helm upgrade required")
             self.upgrade_chart()
         else:
@@ -223,53 +227,16 @@ class HelmUpgradeBot(object):
         if not self.fork_exists:
             self.make_fork()
         self.clone_fork()
-        os.chdir(self.repo_name)
-        self.install_requirements()
-
-        # Generating config files
-        logging.info(f"Generating configuration files for: {self.deployment}")
-        config_cmd = ["python", "generate-configs.py"]
-        if self.identity:
-            config_cmd.append("--identity")
-
-        result = run_cmd(config_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully generated configuration files: {self.deployment}")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise BashError(result["err_msg"])
-
-        # Upgrading Helm Chart
-        upgrade_cmd = [
-            "python", "upgrade.py", "-v", self.version_info["helm_page"]["version"],
-        ]
-        if self.identity:
-            upgrade_cmd.append("--identity")
-        if self.dry_run:
-            logging.info("Adding --dry-run argument to Helm Upgrade")
-            upgrade_cmd.append("--dry-run")
-
-        logging.info(f"Upgrading Helm Chart for: {self.deployment}")
-        result = run_cmd(upgrade_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Helm Chart successfully upgraded for: {self.deployment}")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise BashError(result["err_msg"])
 
         if not self.dry_run:
+            os.chdir(self.repo_name)
             self.checkout_branch()
-            self.update_changelog()
+            self.update_local_chart()
             self.add_commit_push()
             self.create_update_pr()
 
-        self.copy_logs()
         self.clean_up()
-        self.remove_fork()
+        # self.remove_fork()
 
     def make_fork(self):
         logging.info(f"Forking repo: {self.repo_name}")
@@ -299,19 +266,6 @@ class HelmUpgradeBot(object):
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
-
-    def install_requirements(self):
-        logging.info(f"Installing requirements for: {self.repo_name}")
-
-        pip_cmd = ["pip", "install", "-r", "requirements.txt"]
-        result = run_cmd(pip_cmd)
-        if result["returncode"] == 0:
-            logging.info("Successfully installed repo requirements")
-        else:
-            logging.error(result["err_msg"])
-            self.clean_up()
-            self.remove_fork()
-            raise Exception(result["err_msg"])
 
     def delete_old_branch(self):
         res = requests.get(
@@ -379,66 +333,68 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-    def update_changelog(self):
-        for fname in self.files:
-            logging.info(f"Updating file: {fname}")
+    def update_local_chart(self):
+        logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
-            if fname == "changelog.txt":
-                with open(fname, "a") as f:
-                    f.write(f"{datetime.datetime.now().strftime('%Y-%m-%d')}: {self.version_info['helm_page']['version']}")
-            else:
-                logging.warning("Exception: Please provide a function call to handle your other files.")
+        self.fname = f"{self.chart_name}/requirements.yaml"
+        with open(self.fname, "r") as f:
+            chart_yaml = load(f)
 
-            logging.info(f"Updated file: {fname}")
+        for dependency in chart_yaml["dependencies"]:
+            if dependency["name"] == "binderhub":
+                dependency["version"] = self.chart_info["binderhub"]["version"]
+
+        with open(self.fname, "w") as f:
+            dump(chart_yaml, f)
+
+        logging.info(f"Updated file: {self.fname}")
 
     def add_commit_push(self):
-        for f in self.files:
-            logging.info(f"Adding file: {f}")
-            add_cmd = ["git", "add", f]
-            result = run_cmd(add_cmd)
-            if result["returncode"] == 0:
-                logging.info(f"Successfully added file: {f}")
-            else:
-                logging.error(result["err_msg"])
-                self.clean_up()
-                self.remove_fork()
-                raise GitError(result["err_msg"])
+        logging.info(f"Adding file: {self.fname}")
+        add_cmd = ["git", "add", self.fname]
+        result = run_cmd(add_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully added file: {self.fname}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-            commit_msg = f"Log Helm Chart bump to version {self.version_info['helm_page']['version']}"
+        commit_msg = f"Log Helm Chart bump to version {self.chart_info['binderhub']['version']}"
 
-            logging.info(f"Committing file: {f}")
-            commit_cmd = ["git", "commit", "-m", commit_msg]
-            result = run_cmd(commit_cmd)
-            if result["returncode"] == 0:
-                logging.info(f"Successfully committed file: {f}")
-            else:
-                logging.error(result["err_msg"])
-                self.clean_up()
-                self.remove_fork()
-                raise GitError(result["err_msg"])
+        logging.info(f"Committing file: {self.fname}")
+        commit_cmd = ["git", "commit", "-m", commit_msg]
+        result = run_cmd(commit_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully committed file: {self.fname}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
-            logging.info(f"Pushing commits to branch: {self.branch}")
-            push_cmd = [
-                "git", "push",
-                f"https://HelmUpgradeBot:{self.token}@github.com/HelmUpgradeBot/{self.repo_name}",
-                self.branch
-            ]
-            result = run_cmd(push_cmd)
-            if result["returncode"] == 0:
-                logging.info(f"Successfully pushed changes to branch: {self.branch}")
-            else:
-                logging.error(result["err_msg"])
-                self.clean_up()
-                self.remove_fork()
-                raise GitError(result["err_msg"])
+        logging.info(f"Pushing commits to branch: {self.branch}")
+        push_cmd = [
+            "git", "push",
+            f"https://HelmUpgradeBot:{self.token}@github.com/HelmUpgradeBot/{self.repo_name}",
+            self.branch
+        ]
+        result = run_cmd(push_cmd)
+        if result["returncode"] == 0:
+            logging.info(f"Successfully pushed changes to branch: {self.branch}")
+        else:
+            logging.error(result["err_msg"])
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(result["err_msg"])
 
     def make_pr_body(self):
         logging.info("Writing Pull Request body")
 
         today = pd.Timestamp.now().tz_localize(None)
         body = "\n".join([
-            "This PR is updating the CHANGELOG to reflect the most recent Helm Chart version bump.",
-            f"It had been {(today - version_info[binderhub_name]['date']).days} days since the last upgrade."
+            "This PR is updating the local Helm Chart to the most recent BinderHub Helm Chart version."
         ])
 
         logging.info("Pull Request body written")
@@ -471,25 +427,16 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(res.text)
 
-    def copy_logs(self):
-        cwd = os.getcwd()
-        dst = os.path.dirname(os.path.abspath(os.getcwd()))
-
-        for fname in os.listdir(cwd):
-            if fname.endswith(".log"):
-                fpath = os.path.join(cwd, fname)
-                logging.info(f"Copying log: {fname}")
-                shutil.copy(fpath, dst)
-
     def clean_up(self):
         cwd = os.getcwd()
         this_dir = cwd.split("/")[-1]
         if this_dir == self.repo_name:
             os.chdir(os.pardir)
 
-        logging.info(f"Deleting local repository: {self.repo_name}")
-        shutil.rmtree(self.repo_name)
-        logging.info(f"Deleted local repository: {self.repo_name}")
+        if os.path.exists(self.repo_name):
+            logging.info(f"Deleting local repository: {self.repo_name}")
+            shutil.rmtree(self.repo_name)
+            logging.info(f"Deleted local repository: {self.repo_name}")
 
 if __name__ == "__main__":
     args = parse_args()
