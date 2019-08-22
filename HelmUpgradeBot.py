@@ -7,6 +7,7 @@ import logging
 import requests
 import argparse
 import datetime
+import subprocess
 import pandas as pd
 from CustomExceptions import *
 from run_command import run_cmd
