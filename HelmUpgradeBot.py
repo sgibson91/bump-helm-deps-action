@@ -17,9 +17,7 @@ from yaml import safe_dump as dump
 # Setup log config
 logging.basicConfig(
     level=logging.DEBUG,
-    filename="HelmUpgradeBot_{}.log".format(
-        datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    ),
+    filename="HelmUpgradeBot.log",
     filemode="a",
     format="[%(asctime)s %(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
