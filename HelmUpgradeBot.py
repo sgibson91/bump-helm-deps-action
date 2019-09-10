@@ -407,7 +407,7 @@ class HelmUpgradeBot(object):
 
         today = pd.Timestamp.now().tz_localize(None)
         body = "\n".join([
-            "This PR is updating the local Helm Chart to the most recent BinderHub Helm Chart version."
+            "This PR is updating the local Helm Chart to the most recent Chart dependency versions."
         ])
 
         logging.info("Pull Request body written")
