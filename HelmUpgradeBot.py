@@ -7,6 +7,7 @@ import logging
 import requests
 import argparse
 import datetime
+import subprocess
 import numpy as np
 import pandas as pd
 from CustomExceptions import *
