@@ -148,26 +148,37 @@ class HelmUpgradeBot(object):
         self.chart_info = {}
         chart_urls = {
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
-            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
+            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
+            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
+            "cert-manager": "https://raw.githubusercontent.com/helm/charts/master/stable/cert-manager/Chart.yaml"
         }
 
-        # Hub23 local chart info
-        self.chart_info[self.deployment] = {}
-        chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
+        for chart in chart_urls.keys():
 
-        for dependency in chart_reqs["dependencies"]:
-            self.chart_info[self.deployment][dependency["name"]] = {
-                "version": dependency["version"]
-            }
+            if chart == self.deployment:
+                # Hub23 local chart info
+                self.chart_info[self.deployment] = {}
+                chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
 
-        # BinderHub chart
-        self.chart_info["binderhub"] = {}
-        chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
-        updates_sorted = sorted(
-            chart_reqs["entries"]["binderhub"],
-            key=lambda k: k["created"]
-        )
-        self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+                for dependency in chart_reqs["dependencies"]:
+                    self.chart_info[self.deployment][dependency["name"]] = {
+                        "version": dependency["version"]
+                    }
+
+            elif chart == "binderhub":
+                # BinderHub chart
+                self.chart_info["binderhub"] = {}
+                chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
+                updates_sorted = sorted(
+                    chart_reqs["entries"]["binderhub"],
+                    key=lambda k: k["created"]
+                )
+                self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+
+            else:
+                self.chart_info[chart] = {}
+                chart_reqs = load(requests.get(chart_urls[chart]).text)
+                self.chart_info[chart]["version"] = chart_reqs["version"]
 
     def set_github_config(self):
         logging.info("Setting up git configuration for HelmUpgradeBot")
