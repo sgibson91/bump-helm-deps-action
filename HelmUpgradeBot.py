@@ -232,11 +232,11 @@ class HelmUpgradeBot(object):
 
         if np.any(condition):
             logging.info(f"Helm upgrade required for the following charts: {list(compress(charts, condition))}")
-            # self.upgrade_chart()
+            self.upgrade_chart(list(compress(charts, condition)))
         else:
             logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
-    def upgrade_chart(self):
+    def upgrade_chart(self, charts_to_update):
         # Forking repo
         if not self.fork_exists:
             self.make_fork()
@@ -245,12 +245,11 @@ class HelmUpgradeBot(object):
         if not self.dry_run:
             os.chdir(self.repo_name)
             self.checkout_branch()
-            self.update_local_chart()
+            self.update_local_chart(charts_to_update)
             self.add_commit_push()
             self.create_update_pr()
 
         self.clean_up()
-        # self.remove_fork()
 
     def make_fork(self):
         logging.info(f"Forking repo: {self.repo_name}")
@@ -347,16 +346,16 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-    def update_local_chart(self):
+    def update_local_chart(self, charts_to_update):
         logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
         self.fname = f"{self.chart_name}/requirements.yaml"
         with open(self.fname, "r") as f:
             chart_yaml = load(f)
 
-        for dependency in chart_yaml["dependencies"]:
-            if dependency["name"] == "binderhub":
-                dependency["version"] = self.chart_info["binderhub"]["version"]
+        for chart, dependency in zip(charts_to_update, chart_yaml["dependencies"]):
+            if dependency["name"] == chart:
+                dependency["version"] = self.chart_info[chart]["version"]
 
         with open(self.fname, "w") as f:
             dump(chart_yaml, f)
