@@ -7,8 +7,10 @@ import logging
 import requests
 import argparse
 import datetime
+import numpy as np
 import pandas as pd
 from CustomExceptions import *
+from itertools import compress
 from run_command import run_cmd
 from yaml import safe_load as load
 from yaml import safe_dump as dump
@@ -229,13 +231,12 @@ class HelmUpgradeBot(object):
         condition = [(self.chart_info[chart]["version"] !=
             self.chart_info[self.deployment][chart]["version"])
             for chart in charts]
-        print(condition)
 
-        # if version_cond:
-        #     logging.info("Helm upgrade required")
-        #     self.upgrade_chart()
-        # else:
-        #     logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
+        if np.any(condition):
+            logging.info(f"Helm upgrade required for the following charts: {list(compress(charts, condition))}")
+            # self.upgrade_chart()
+        else:
+            logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
     def upgrade_chart(self):
         # Forking repo
