@@ -149,8 +149,7 @@ class HelmUpgradeBot(object):
         chart_urls = {
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
             "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
-            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
-            "cert-manager": "https://raw.githubusercontent.com/helm/charts/master/stable/cert-manager/Chart.yaml"
+            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml"
         }
 
         for chart in chart_urls.keys():
@@ -221,17 +220,22 @@ class HelmUpgradeBot(object):
             logging.info(f"HelmUpgradeBot does not have a fork of: {self.repo_name}")
 
     def check_versions(self):
+        charts = ["binderhub", "nginx-ingress"]
+
         if self.dry_run:
             logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
         # Create conditions
-        version_cond = (self.chart_info["binderhub"]["version"] != self.chart_info[self.deployment]["binderhub"]["version"])
+        condition = [(self.chart_info[chart]["version"] !=
+            self.chart_info[self.deployment][chart]["version"])
+            for chart in charts]
+        print(condition)
 
-        if version_cond:
-            logging.info("Helm upgrade required")
-            self.upgrade_chart()
-        else:
-            logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
+        # if version_cond:
+        #     logging.info("Helm upgrade required")
+        #     self.upgrade_chart()
+        # else:
+        #     logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
     def upgrade_chart(self):
         # Forking repo
