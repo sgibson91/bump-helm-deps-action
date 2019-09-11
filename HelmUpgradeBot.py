@@ -256,7 +256,7 @@ class HelmUpgradeBot(object):
             logging.info(f"Helm upgrade required for the following charts: {list(compress(charts, condition))}")
             self.upgrade_chart(list(compress(charts, condition)))
         else:
-            logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
+            logging.info(f"{self.deployment} is up-to-date with all current chart dependency releases!")
 
     def upgrade_chart(self, charts_to_update):
         # Forking repo
