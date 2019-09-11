@@ -8,8 +8,11 @@ import requests
 import argparse
 import datetime
 import subprocess
+import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 from CustomExceptions import *
+from itertools import compress
 from run_command import run_cmd
 from yaml import safe_load as load
 from yaml import safe_dump as dump
@@ -143,30 +146,59 @@ class HelmUpgradeBot(object):
             logging.error(result["err_msg"])
             raise AzureError(result["err_msg"])
 
+    def get_cert_manager_version(
+        self, url="https://github.com/jetstack/cert-manager/releases/latest"
+    ):
+
+        res = requests.get(url)
+        soup = BeautifulSoup(res.content, "html.parser")
+
+        links = soup.find_all("a", attrs={"title": True})
+
+        for link in links:
+            if (link.span is not None) and ("v" in link.span.text) and ("." in link.span.text):
+                return link.span.text
+
     def get_chart_versions(self):
         self.chart_info = {}
         chart_urls = {
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
-            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"
+            "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
+            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
+            "cert-manager": None  # URL for this chart is hard-coded into get_cert_manager_version function
         }
 
-        # Hub23 local chart info
-        self.chart_info[self.deployment] = {}
-        chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
+        for chart in chart_urls.keys():
 
-        for dependency in chart_reqs["dependencies"]:
-            self.chart_info[self.deployment][dependency["name"]] = {
-                "version": dependency["version"]
-            }
+            if chart == self.deployment:
+                # Hub23 local chart info
+                self.chart_info[self.deployment] = {}
+                chart_reqs = load(requests.get(chart_urls[self.deployment]).text)
 
-        # BinderHub chart
-        self.chart_info["binderhub"] = {}
-        chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
-        updates_sorted = sorted(
-            chart_reqs["entries"]["binderhub"],
-            key=lambda k: k["created"]
-        )
-        self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+                for dependency in chart_reqs["dependencies"]:
+                    self.chart_info[self.deployment][dependency["name"]] = {
+                        "version": dependency["version"]
+                    }
+
+            elif chart == "binderhub":
+                # BinderHub chart
+                self.chart_info["binderhub"] = {}
+                chart_reqs = load(requests.get(chart_urls["binderhub"]).text)
+                updates_sorted = sorted(
+                    chart_reqs["entries"]["binderhub"],
+                    key=lambda k: k["created"]
+                )
+                self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+
+            elif chart == "cert-manager":
+                # cert-manager chart
+                self.chart_info["cert-manager"] = {}
+                self.chart_info["cert-manager"]["version"] = self.get_cert_manager_version()
+
+            else:
+                self.chart_info[chart] = {}
+                chart_reqs = load(requests.get(chart_urls[chart]).text)
+                self.chart_info[chart]["version"] = chart_reqs["version"]
 
     def set_github_config(self):
         logging.info("Setting up git configuration for HelmUpgradeBot")
@@ -209,19 +241,24 @@ class HelmUpgradeBot(object):
             logging.info(f"HelmUpgradeBot does not have a fork of: {self.repo_name}")
 
     def check_versions(self):
+        charts = list(self.chart_info.keys())
+        charts.remove(self.deployment)
+
         if self.dry_run:
             logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
 
         # Create conditions
-        version_cond = (self.chart_info["binderhub"]["version"] != self.chart_info[self.deployment]["binderhub"]["version"])
+        condition = [(self.chart_info[chart]["version"] !=
+            self.chart_info[self.deployment][chart]["version"])
+            for chart in charts]
 
-        if version_cond:
-            logging.info("Helm upgrade required")
-            self.upgrade_chart()
+        if np.any(condition):
+            logging.info(f"Helm upgrade required for the following charts: {list(compress(charts, condition))}")
+            self.upgrade_chart(list(compress(charts, condition)))
         else:
             logging.info(f"{self.deployment} is up-to-date with current BinderHub Helm Chart release!")
 
-    def upgrade_chart(self):
+    def upgrade_chart(self, charts_to_update):
         # Forking repo
         if not self.fork_exists:
             self.make_fork()
@@ -230,12 +267,11 @@ class HelmUpgradeBot(object):
         if not self.dry_run:
             os.chdir(self.repo_name)
             self.checkout_branch()
-            self.update_local_chart()
+            self.update_local_chart(charts_to_update)
             self.add_commit_push()
             self.create_update_pr()
 
         self.clean_up()
-        # self.remove_fork()
 
     def make_fork(self):
         logging.info(f"Forking repo: {self.repo_name}")
@@ -332,16 +368,16 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-    def update_local_chart(self):
+    def update_local_chart(self, charts_to_update):
         logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
         self.fname = f"{self.chart_name}/requirements.yaml"
         with open(self.fname, "r") as f:
             chart_yaml = load(f)
 
-        for dependency in chart_yaml["dependencies"]:
-            if dependency["name"] == "binderhub":
-                dependency["version"] = self.chart_info["binderhub"]["version"]
+        for chart, dependency in zip(charts_to_update, chart_yaml["dependencies"]):
+            if dependency["name"] == chart:
+                dependency["version"] = self.chart_info[chart]["version"]
 
         with open(self.fname, "w") as f:
             dump(chart_yaml, f)
@@ -393,7 +429,7 @@ class HelmUpgradeBot(object):
 
         today = pd.Timestamp.now().tz_localize(None)
         body = "\n".join([
-            "This PR is updating the local Helm Chart to the most recent BinderHub Helm Chart version."
+            "This PR is updating the local Helm Chart to the most recent Chart dependency versions."
         ])
 
         logging.info("Pull Request body written")

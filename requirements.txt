@@ -1,3 +1,4 @@
 pandas
 pyyaml
 requests
+beautifulsoup4
