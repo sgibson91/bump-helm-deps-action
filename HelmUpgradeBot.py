@@ -10,6 +10,7 @@ import datetime
 import subprocess
 import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 from CustomExceptions import *
 from itertools import compress
 from run_command import run_cmd
@@ -145,6 +146,19 @@ class HelmUpgradeBot(object):
             logging.error(result["err_msg"])
             raise AzureError(result["err_msg"])
 
+    def get_cert_manager_version(
+        self, url="https://github.com/jetstack/cert-manager/releases/latest"
+    ):
+
+        res = requests.get(url)
+        soup = BeautifulSoup(res, "html.parser")
+
+        links = soup.find_all("a", attrs={"title": True})
+
+        for link in links:
+            if (link.span is not None) and ("v" in link.span.text) and ("." in link.span.text):
+                return link.span.text
+
     def get_chart_versions(self):
         self.chart_info = {}
         chart_urls = {
@@ -174,6 +188,10 @@ class HelmUpgradeBot(object):
                     key=lambda k: k["created"]
                 )
                 self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
+
+            elif chart == "cert-manager":
+                self.chart_info["cert-manager"] = {}
+                self.chart_info["cert-manager"]["version"] = self.get_cert_manager_version()
 
             else:
                 self.chart_info[chart] = {}
