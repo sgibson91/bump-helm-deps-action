@@ -191,6 +191,7 @@ class HelmUpgradeBot(object):
                 self.chart_info["binderhub"]["version"] = updates_sorted[-1]["version"]
 
             elif chart == "cert-manager":
+                # cert-manager chart
                 self.chart_info["cert-manager"] = {}
                 self.chart_info["cert-manager"]["version"] = self.get_cert_manager_version()
 
