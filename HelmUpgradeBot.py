@@ -164,7 +164,8 @@ class HelmUpgradeBot(object):
         chart_urls = {
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
             "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
-            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml"
+            "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
+            "cert-manager": None  # URL for this chart is hard-coded into get_cert_manager_version function
         }
 
         for chart in chart_urls.keys():
