@@ -151,7 +151,7 @@ class HelmUpgradeBot(object):
     ):
 
         res = requests.get(url)
-        soup = BeautifulSoup(res, "html.parser")
+        soup = BeautifulSoup(res.content, "html.parser")
 
         links = soup.find_all("a", attrs={"title": True})
 
@@ -240,7 +240,8 @@ class HelmUpgradeBot(object):
             logging.info(f"HelmUpgradeBot does not have a fork of: {self.repo_name}")
 
     def check_versions(self):
-        charts = ["binderhub", "nginx-ingress"]
+        charts = list(self.chart_info.keys())
+        charts.remove(self.deployment)
 
         if self.dry_run:
             logging.info("THIS IS A DRY-RUN. THE HELM CHART WILL NOT BE UPGRADED.")
