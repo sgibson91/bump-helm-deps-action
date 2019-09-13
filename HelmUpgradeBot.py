@@ -375,9 +375,10 @@ class HelmUpgradeBot(object):
         with open(self.fname, "r") as f:
             chart_yaml = load(f)
 
-        for chart, dependency in zip(charts_to_update, chart_yaml["dependencies"]):
-            if dependency["name"] == chart:
-                dependency["version"] = self.chart_info[chart]["version"]
+        for chart in charts_to_update:
+            for dependency in chart_yaml["dependencies"]:
+                if dependency["name"] == chart:
+                    dependency["version"] = self.chart_info[chart]["version"]
 
         with open(self.fname, "w") as f:
             dump(chart_yaml, f)
