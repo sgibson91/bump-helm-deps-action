@@ -268,7 +268,7 @@ class HelmUpgradeBot(object):
             os.chdir(self.repo_name)
             self.checkout_branch()
             self.update_local_chart(charts_to_update)
-            self.add_commit_push()
+            self.add_commit_push(charts_to_update)
             self.create_update_pr()
 
         self.clean_up()
@@ -385,7 +385,7 @@ class HelmUpgradeBot(object):
 
         logging.info(f"Updated file: {self.fname}")
 
-    def add_commit_push(self):
+    def add_commit_push(self, charts_to_update):
         logging.info(f"Adding file: {self.fname}")
         add_cmd = ["git", "add", self.fname]
         result = run_cmd(add_cmd)
@@ -397,7 +397,7 @@ class HelmUpgradeBot(object):
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        commit_msg = f"Log Helm Chart bump to version {self.chart_info['binderhub']['version']}"
+        commit_msg = f"Bump chart dependencies {[chart for chart in charts_to_update]} to versions {[self.chart_info[chart]['version'] for chart in charts_to_update]}, respectively"
 
         logging.info(f"Committing file: {self.fname}")
         commit_cmd = ["git", "commit", "-m", commit_msg]
