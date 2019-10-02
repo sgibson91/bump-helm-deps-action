@@ -131,11 +131,11 @@ class HelmUpgradeBot:
             logging.info("Login to Azure")
 
         result = run_cmd(login_cmd)
-        if result["returncode"] == 0:
-            logging.info("Successfully logged into Azure")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             raise AzureError(result["err_msg"])
+
+        logging.info("Successfully logged into Azure")
 
     def get_token(self, token_name):
         """Get GitHub Access Token from Azure Key Vault"""
@@ -158,12 +158,12 @@ class HelmUpgradeBot:
             "tsv",
         ]
         result = run_cmd(vault_cmd)
-        if result["returncode"] == 0:
-            self.token = result["output"].strip("\n")
-            logging.info(f"Successfully pulled secret: {token_name}")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             raise AzureError(result["err_msg"])
+
+        self.token = result["output"].strip("\n")
+        logging.info(f"Successfully pulled secret: {token_name}")
 
     def get_cert_manager_version(
         self, url="https://github.com/jetstack/cert-manager/releases/latest"
@@ -352,13 +352,13 @@ class HelmUpgradeBot:
             f"https://github.com/HelmUpgradeBot/{self.repo_name}.git",
         ]
         result = run_cmd(clone_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully cloned repo: {self.repo_name}")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
+
+        logging.info(f"Successfully cloned repo: {self.repo_name}")
 
     def delete_old_branch(self):
         """Delete a branch of a GitHub repo"""
@@ -373,27 +373,27 @@ class HelmUpgradeBot:
 
                 delete_cmd = ["git", "push", "--delete", "origin", self.branch]
                 result = run_cmd(delete_cmd)
-                if result["returncode"] == 0:
-                    logging.info(
-                        f"Successfully deleted remote branch: {self.branch}"
-                    )
-                else:
+                if result["returncode"] != 0:
                     logging.error(result["err_msg"])
                     self.clean_up()
                     self.remove_fork()
                     raise GitError(result["err_msg"])
 
+                logging.info(
+                    f"Successfully deleted remote branch: {self.branch}"
+                )
+
                 delete_cmd = ["git", "branch", "-d", self.branch]
                 result = run_cmd(delete_cmd)
-                if result["returncode"] == 0:
-                    logging.info(
-                        f"Successfully deleted local branch: {self.branch}"
-                    )
-                else:
+                if result["returncode"] != 0:
                     logging.error(result["err_msg"])
                     self.clean_up()
                     self.remove_fork()
                     raise GitError(result["err_msg"])
+
+                logging.info(
+                    f"Successfully deleted local branch: {self.branch}"
+                )
 
             else:
                 logging.info(f"Branch does not exist: {self.branch}")
@@ -418,26 +418,26 @@ class HelmUpgradeBot:
                 "master",
             ]
             result = run_cmd(pull_cmd)
-            if result["returncode"] == 0:
-                logging.info(
-                    f"Successfully pulled master branch of: {self.repo_owner}/{self.repo_name}"
-                )
-            else:
+            if result["returncode"] != 0:
                 logging.error(result["err_msg"])
                 self.clean_up()
                 self.remove_fork()
                 raise GitError(result["err_msg"])
 
+            logging.info(
+                f"Successfully pulled master branch of: {self.repo_owner}/{self.repo_name}"
+            )
+
         logging.info(f"Checking out branch: {self.branch}")
         chkt_cmd = ["git", "checkout", "-b", self.branch]
         result = run_cmd(chkt_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully checked out branch: {self.branch}")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
+
+        logging.info(f"Successfully checked out branch: {self.branch}")
 
     def update_local_chart(self, charts_to_update):
         """Update the local helm chart"""
@@ -464,26 +464,26 @@ class HelmUpgradeBot:
         logging.info(f"Adding file: {self.fname}")
         add_cmd = ["git", "add", self.fname]
         result = run_cmd(add_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully added file: {self.fname}")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
+
+        logging.info(f"Successfully added file: {self.fname}")
 
         commit_msg = f"Bump chart dependencies {[chart for chart in charts_to_update]} to versions {[self.chart_info[chart]['version'] for chart in charts_to_update]}, respectively"
 
         logging.info(f"Committing file: {self.fname}")
         commit_cmd = ["git", "commit", "-m", commit_msg]
         result = run_cmd(commit_cmd)
-        if result["returncode"] == 0:
-            logging.info(f"Successfully committed file: {self.fname}")
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
+
+        logging.info(f"Successfully committed file: {self.fname}")
 
         logging.info(f"Pushing commits to branch: {self.branch}")
         push_cmd = [
@@ -493,15 +493,13 @@ class HelmUpgradeBot:
             self.branch,
         ]
         result = run_cmd(push_cmd)
-        if result["returncode"] == 0:
-            logging.info(
-                f"Successfully pushed changes to branch: {self.branch}"
-            )
-        else:
+        if result["returncode"] != 0:
             logging.error(result["err_msg"])
             self.clean_up()
             self.remove_fork()
             raise GitError(result["err_msg"])
+
+        logging.info(f"Successfully pushed changes to branch: {self.branch}")
 
     def make_pr_body(self):
         logging.info("Writing Pull Request body")
