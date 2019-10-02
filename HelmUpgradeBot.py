@@ -502,29 +502,14 @@ class HelmUpgradeBot:
 
         logging.info("Successfully pushed changes to branch: %s" % self.branch)
 
-    def make_pr_body(self):
-        logging.info("Writing Pull Request body")
-
-        body = "\n".join(
-            [
-                "This PR is updating the local Helm Chart to the most recent Chart dependency versions."
-            ]
-        )
-
-        logging.info("Pull Request body written")
-
-        return body
-
     def create_update_pr(self):
         """Open a Pull Request to the original repo on GitHub"""
 
         logging.info("Creating Pull Request")
 
-        body = self.make_pr_body()
-
         pr = {
             "title": "Logging Helm Chart version upgrade",
-            "body": body,
+            "body": "This PR is updating the local Helm Chart to the most recent Chart dependency versions.",
             "base": "master",
             "head": f"HelmUpgradeBot:{self.branch}",
         }
