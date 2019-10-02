@@ -542,7 +542,12 @@ class HelmUpgradeBot:
             logging.info("Deleted local repository: %s" % self.repo_name)
 
 
-if __name__ == "__main__":
+def main():
+    """Main function"""
     args = parse_args()
     bot = HelmUpgradeBot(vars(args))
     bot.check_versions()
+
+
+if __name__ == "__main__":
+    main()
