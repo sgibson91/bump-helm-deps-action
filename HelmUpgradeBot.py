@@ -247,14 +247,14 @@ class HelmUpgradeBot:
 
         res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
 
-        if res:
-            self.fork_exists = bool(
-                [x for x in res.json() if x["name"] == self.repo_name]
-            )
-        else:
+        if not res:
             logging.error(res.text)
             self.clean_up(self.repo_name)
             raise GitError(res.text)
+
+        self.fork_exists = bool(
+            [x for x in res.json() if x["name"] == self.repo_name]
+        )
 
     def remove_fork(self):
         """Delete a fork of a GitHub repo"""
@@ -267,13 +267,13 @@ class HelmUpgradeBot:
                 f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}",
                 headers={"Authorization": f"token {self.token}"},
             )
-            if res:
-                self.fork_exists = False
-                time.sleep(5)
-                logging.info(f"Deleted fork: {self.repo_name}")
-            else:
+            if not res:
                 logging.error(res.text)
                 raise GitError(res.text)
+
+            self.fork_exists = False
+            time.sleep(5)
+            logging.info(f"Deleted fork: {self.repo_name}")
 
         else:
             logging.info(
@@ -334,12 +334,12 @@ class HelmUpgradeBot:
             headers={"Authorization": f"token {self.token}"},
         )
 
-        if res:
-            self.fork_exists = True
-            logging.info(f"Created fork: {self.repo_name}")
-        else:
+        if not res:
             logging.error(res.text)
             raise GitError(res.text)
+
+        self.fork_exists = True
+        logging.info(f"Created fork: {self.repo_name}")
 
     def clone_fork(self):
         """Clone a fork of a GitHub repo"""
@@ -367,40 +367,35 @@ class HelmUpgradeBot:
             f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}/branches"
         )
 
-        if res:
-            if self.branch in [x["name"] for x in res.json()]:
-                logging.info(f"Deleting branch: {self.branch}")
-
-                delete_cmd = ["git", "push", "--delete", "origin", self.branch]
-                result = run_cmd(delete_cmd)
-                if result["returncode"] != 0:
-                    logging.error(result["err_msg"])
-                    self.clean_up()
-                    self.remove_fork()
-                    raise GitError(result["err_msg"])
-
-                logging.info(
-                    f"Successfully deleted remote branch: {self.branch}"
-                )
-
-                delete_cmd = ["git", "branch", "-d", self.branch]
-                result = run_cmd(delete_cmd)
-                if result["returncode"] != 0:
-                    logging.error(result["err_msg"])
-                    self.clean_up()
-                    self.remove_fork()
-                    raise GitError(result["err_msg"])
-
-                logging.info(
-                    f"Successfully deleted local branch: {self.branch}"
-                )
-
-            else:
-                logging.info(f"Branch does not exist: {self.branch}")
-
-        else:
+        if not res:
             logging.error(res.text)
             raise GitError(res.text)
+
+        if self.branch in [x["name"] for x in res.json()]:
+            logging.info(f"Deleting branch: {self.branch}")
+
+            delete_cmd = ["git", "push", "--delete", "origin", self.branch]
+            result = run_cmd(delete_cmd)
+            if result["returncode"] != 0:
+                logging.error(result["err_msg"])
+                self.clean_up()
+                self.remove_fork()
+                raise GitError(result["err_msg"])
+
+            logging.info(f"Successfully deleted remote branch: {self.branch}")
+
+            delete_cmd = ["git", "branch", "-d", self.branch]
+            result = run_cmd(delete_cmd)
+            if result["returncode"] != 0:
+                logging.error(result["err_msg"])
+                self.clean_up()
+                self.remove_fork()
+                raise GitError(result["err_msg"])
+
+            logging.info(f"Successfully deleted local branch: {self.branch}")
+
+        else:
+            logging.info(f"Branch does not exist: {self.branch}")
 
     def checkout_branch(self):
         """Checkout a branch of a GitHub repo"""
@@ -534,13 +529,13 @@ class HelmUpgradeBot:
             json=pr,
         )
 
-        if res:
-            logging.info("Pull Request created")
-        else:
+        if not res:
             logging.error(res.text)
             self.clean_up()
             self.remove_fork()
             raise GitError(res.text)
+
+        logging.info("Pull Request created")
 
     def clean_up(self):
         """Clean up cloned repo"""
