@@ -142,7 +142,7 @@ class HelmUpgradeBot:
 
         self.login()
 
-        logging.info(f"Retrieving secret: {token_name}")
+        logging.info("Retrieving secret: %s" % token_name)
         vault_cmd = [
             "az",
             "keyvault",
@@ -163,7 +163,7 @@ class HelmUpgradeBot:
             raise AzureError(result["err_msg"])
 
         self.token = result["output"].strip("\n")
-        logging.info(f"Successfully pulled secret: {token_name}")
+        logging.info("Successfully pulled secret: %s" % token_name)
 
     def get_cert_manager_version(
         self, url="https://github.com/jetstack/cert-manager/releases/latest"
@@ -262,7 +262,7 @@ class HelmUpgradeBot:
         self.check_fork_exists()
 
         if self.fork_exists:
-            logging.info(f"HelmUpgradeBot has a fork of: {self.repo_name}")
+            logging.info("HelmUpgradeBot has a fork of: %s" % self.repo_name)
             res = requests.delete(
                 f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}",
                 headers={"Authorization": f"token {self.token}"},
@@ -273,11 +273,11 @@ class HelmUpgradeBot:
 
             self.fork_exists = False
             time.sleep(5)
-            logging.info(f"Deleted fork: {self.repo_name}")
+            logging.info("Deleted fork: %s" % self.repo_name)
 
         else:
             logging.info(
-                f"HelmUpgradeBot does not have a fork of: {self.repo_name}"
+                "HelmUpgradeBot does not have a fork of: %s" % self.repo_name
             )
 
     def check_versions(self):
@@ -302,12 +302,14 @@ class HelmUpgradeBot:
 
         if np.any(condition):
             logging.info(
-                f"Helm upgrade required for the following charts: {list(compress(charts, condition))}"
+                "Helm upgrade required for the following charts: %s"
+                % list(compress(charts, condition))
             )
             self.upgrade_chart(list(compress(charts, condition)))
         else:
             logging.info(
-                f"{self.deployment} is up-to-date with all current chart dependency releases!"
+                "%s is up-to-date with all current chart dependency releases!"
+                % self.deployment
             )
 
     def upgrade_chart(self, charts_to_update):
@@ -328,7 +330,7 @@ class HelmUpgradeBot:
 
     def make_fork(self):
         """Fork a GitHub repo"""
-        logging.info(f"Forking repo: {self.repo_name}")
+        logging.info("Forking repo: %s" % self.repo_name)
         res = requests.post(
             self.repo_api + "forks",
             headers={"Authorization": f"token {self.token}"},
@@ -339,12 +341,12 @@ class HelmUpgradeBot:
             raise GitError(res.text)
 
         self.fork_exists = True
-        logging.info(f"Created fork: {self.repo_name}")
+        logging.info("Created fork: %s" % self.repo_name)
 
     def clone_fork(self):
         """Clone a fork of a GitHub repo"""
 
-        logging.info(f"Cloning fork: {self.repo_name}")
+        logging.info("Cloning fork: %s" % self.repo_name)
 
         clone_cmd = [
             "git",
@@ -358,7 +360,7 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info(f"Successfully cloned repo: {self.repo_name}")
+        logging.info("Successfully cloned repo: %s" % self.repo_name)
 
     def delete_old_branch(self):
         """Delete a branch of a GitHub repo"""
@@ -372,7 +374,7 @@ class HelmUpgradeBot:
             raise GitError(res.text)
 
         if self.branch in [x["name"] for x in res.json()]:
-            logging.info(f"Deleting branch: {self.branch}")
+            logging.info("Deleting branch: %s" % self.branch)
 
             delete_cmd = ["git", "push", "--delete", "origin", self.branch]
             result = run_cmd(delete_cmd)
@@ -382,7 +384,9 @@ class HelmUpgradeBot:
                 self.remove_fork()
                 raise GitError(result["err_msg"])
 
-            logging.info(f"Successfully deleted remote branch: {self.branch}")
+            logging.info(
+                "Successfully deleted remote branch: %s" % self.branch
+            )
 
             delete_cmd = ["git", "branch", "-d", self.branch]
             result = run_cmd(delete_cmd)
@@ -392,10 +396,10 @@ class HelmUpgradeBot:
                 self.remove_fork()
                 raise GitError(result["err_msg"])
 
-            logging.info(f"Successfully deleted local branch: {self.branch}")
+            logging.info("Successfully deleted local branch: %s" % self.branch)
 
         else:
-            logging.info(f"Branch does not exist: {self.branch}")
+            logging.info("Branch does not exist: %s" % self.branch)
 
     def checkout_branch(self):
         """Checkout a branch of a GitHub repo"""
@@ -404,7 +408,8 @@ class HelmUpgradeBot:
             self.delete_old_branch()
 
             logging.info(
-                f"Pulling master branch of: {self.repo_owner}/{self.repo_name}"
+                "Pulling master branch of: %s/%s"
+                % (self.repo_owner, self.repo_name)
             )
             pull_cmd = [
                 "git",
@@ -420,10 +425,11 @@ class HelmUpgradeBot:
                 raise GitError(result["err_msg"])
 
             logging.info(
-                f"Successfully pulled master branch of: {self.repo_owner}/{self.repo_name}"
+                "Successfully pulled master branch of: %s/%s"
+                % (self.repo_owner, self.repo_name)
             )
 
-        logging.info(f"Checking out branch: {self.branch}")
+        logging.info("Checking out branch: %s" % self.branch)
         chkt_cmd = ["git", "checkout", "-b", self.branch]
         result = run_cmd(chkt_cmd)
         if result["returncode"] != 0:
@@ -432,12 +438,12 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info(f"Successfully checked out branch: {self.branch}")
+        logging.info("Successfully checked out branch: %s" % self.branch)
 
     def update_local_chart(self, charts_to_update):
         """Update the local helm chart"""
 
-        logging.info(f"Updating local Helm Chart: {self.chart_name}")
+        logging.info("Updating local Helm Chart: %s" % self.chart_name)
 
         self.fname = os.path.join(self.chart_name, "requirements.yaml")
         with open(self.fname, "r") as f:
@@ -451,12 +457,12 @@ class HelmUpgradeBot:
         with open(self.fname, "w") as f:
             dump(chart_yaml, f)
 
-        logging.info(f"Updated file: {self.fname}")
+        logging.info("Updated file: %s" % self.fname)
 
     def add_commit_push(self, charts_to_update):
         """Perform git add, commit, push actions to an edited file"""
 
-        logging.info(f"Adding file: {self.fname}")
+        logging.info("Adding file: %s" % self.fname)
         add_cmd = ["git", "add", self.fname]
         result = run_cmd(add_cmd)
         if result["returncode"] != 0:
@@ -465,11 +471,11 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info(f"Successfully added file: {self.fname}")
+        logging.info("Successfully added file: %s" % self.fname)
 
         commit_msg = f"Bump chart dependencies {[chart for chart in charts_to_update]} to versions {[self.chart_info[chart]['version'] for chart in charts_to_update]}, respectively"
 
-        logging.info(f"Committing file: {self.fname}")
+        logging.info("Committing file: %s" % self.fname)
         commit_cmd = ["git", "commit", "-m", commit_msg]
         result = run_cmd(commit_cmd)
         if result["returncode"] != 0:
@@ -478,9 +484,9 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info(f"Successfully committed file: {self.fname}")
+        logging.info("Successfully committed file: %s" % self.fname)
 
-        logging.info(f"Pushing commits to branch: {self.branch}")
+        logging.info("Pushing commits to branch: %s" % self.branch)
         push_cmd = [
             "git",
             "push",
@@ -494,7 +500,7 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info(f"Successfully pushed changes to branch: {self.branch}")
+        logging.info("Successfully pushed changes to branch: %s" % self.branch)
 
     def make_pr_body(self):
         logging.info("Writing Pull Request body")
@@ -546,9 +552,9 @@ class HelmUpgradeBot:
             os.chdir(os.pardir)
 
         if os.path.exists(self.repo_name):
-            logging.info(f"Deleting local repository: {self.repo_name}")
+            logging.info("Deleting local repository: %s" % self.repo_name)
             shutil.rmtree(self.repo_name)
-            logging.info(f"Deleted local repository: {self.repo_name}")
+            logging.info("Deleted local repository: %s" % self.repo_name)
 
 
 if __name__ == "__main__":
