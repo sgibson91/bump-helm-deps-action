@@ -1,3 +1,6 @@
+"""
+Script to upgrade Helm Chart dependencies of the Hub23 chart
+"""
 import os
 import time
 import json
@@ -27,7 +30,7 @@ logging.basicConfig(
 
 
 def parse_args():
-    """Command line argument parser"""
+    """Parse command line arguments and return them"""
     parser = argparse.ArgumentParser(
         description="Upgrade the Helm Chart of a BinderHub Helm Chart in the deployment GitHub repository"
     )
@@ -93,7 +96,9 @@ def parse_args():
     return parser.parse_args()
 
 
-class HelmUpgradeBot(object):
+class HelmUpgradeBot:
+    """Upgrade the dependencies of the Hub23 helm chart"""
+
     def __init__(self, argsDict):
         # Parse args from dict
         self.repo_owner = argsDict["repo_owner"]
@@ -106,14 +111,17 @@ class HelmUpgradeBot(object):
         self.dry_run = argsDict["dry_run"]
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
+        # Initialise GitHub token, Chart info dict and clean up forked repo
         self.get_token(argsDict["token_name"])
         self.get_chart_versions()
         self.remove_fork()
 
         if argsDict["identity"]:
+            # Set GitHub credentials for managed identity
             self.set_github_config()
 
     def login(self):
+        """Login to Azure"""
         login_cmd = ["az", "login"]
 
         if self.identity:
@@ -130,6 +138,8 @@ class HelmUpgradeBot(object):
             raise AzureError(result["err_msg"])
 
     def get_token(self, token_name):
+        """Get GitHub Access Token from Azure Key Vault"""
+
         self.login()
 
         logging.info(f"Retrieving secret: {token_name}")
@@ -158,6 +168,7 @@ class HelmUpgradeBot(object):
     def get_cert_manager_version(
         self, url="https://github.com/jetstack/cert-manager/releases/latest"
     ):
+        """Get most-recent published version of cert-manager from GitHub"""
 
         res = requests.get(url)
         soup = BeautifulSoup(res.content, "html.parser")
@@ -173,6 +184,8 @@ class HelmUpgradeBot(object):
                 return link.span.text
 
     def get_chart_versions(self):
+        """Get versions of dependent charts"""
+
         self.chart_info = {}
         chart_urls = {
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
@@ -220,6 +233,8 @@ class HelmUpgradeBot(object):
                 self.chart_info[chart]["version"] = chart_reqs["version"]
 
     def set_github_config(self):
+        """Set up GitHub configuration for API calls"""
+
         logging.info("Setting up git configuration for HelmUpgradeBot")
 
         subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
@@ -228,6 +243,8 @@ class HelmUpgradeBot(object):
         )
 
     def check_fork_exists(self):
+        """Check if a fork of GitHub repo exists"""
+
         res = requests.get("https://api.github.com/users/HelmUpgradeBot/repos")
 
         if res:
@@ -240,6 +257,8 @@ class HelmUpgradeBot(object):
             raise GitError(res.text)
 
     def remove_fork(self):
+        """Delete a fork of a GitHub repo"""
+
         self.check_fork_exists()
 
         if self.fork_exists:
@@ -262,6 +281,8 @@ class HelmUpgradeBot(object):
             )
 
     def check_versions(self):
+        """Check if chart dependency versions are up-to-date"""
+
         charts = list(self.chart_info.keys())
         charts.remove(self.deployment)
 
@@ -290,7 +311,8 @@ class HelmUpgradeBot(object):
             )
 
     def upgrade_chart(self, charts_to_update):
-        # Forking repo
+        """Update the dependencies in the helm chart"""
+
         if not self.fork_exists:
             self.make_fork()
         self.clone_fork()
@@ -305,6 +327,7 @@ class HelmUpgradeBot(object):
         self.clean_up()
 
     def make_fork(self):
+        """Fork a GitHub repo"""
         logging.info(f"Forking repo: {self.repo_name}")
         res = requests.post(
             self.repo_api + "forks",
@@ -319,6 +342,8 @@ class HelmUpgradeBot(object):
             raise GitError(res.text)
 
     def clone_fork(self):
+        """Clone a fork of a GitHub repo"""
+
         logging.info(f"Cloning fork: {self.repo_name}")
 
         clone_cmd = [
@@ -336,6 +361,8 @@ class HelmUpgradeBot(object):
             raise GitError(result["err_msg"])
 
     def delete_old_branch(self):
+        """Delete a branch of a GitHub repo"""
+
         res = requests.get(
             f"https://api.github.com/repos/HelmUpgradeBot/{self.repo_name}/branches"
         )
@@ -376,6 +403,8 @@ class HelmUpgradeBot(object):
             raise GitError(res.text)
 
     def checkout_branch(self):
+        """Checkout a branch of a GitHub repo"""
+
         if self.fork_exists:
             self.delete_old_branch()
 
@@ -411,9 +440,11 @@ class HelmUpgradeBot(object):
             raise GitError(result["err_msg"])
 
     def update_local_chart(self, charts_to_update):
+        """Update the local helm chart"""
+
         logging.info(f"Updating local Helm Chart: {self.chart_name}")
 
-        self.fname = f"{self.chart_name}/requirements.yaml"
+        self.fname = os.path.join(self.chart_name, "requirements.yaml")
         with open(self.fname, "r") as f:
             chart_yaml = load(f)
 
@@ -428,6 +459,8 @@ class HelmUpgradeBot(object):
         logging.info(f"Updated file: {self.fname}")
 
     def add_commit_push(self, charts_to_update):
+        """Perform git add, commit, push actions to an edited file"""
+
         logging.info(f"Adding file: {self.fname}")
         add_cmd = ["git", "add", self.fname]
         result = run_cmd(add_cmd)
@@ -484,6 +517,8 @@ class HelmUpgradeBot(object):
         return body
 
     def create_update_pr(self):
+        """Open a Pull Request to the original repo on GitHub"""
+
         logging.info("Creating Pull Request")
 
         body = self.make_pr_body()
@@ -510,6 +545,8 @@ class HelmUpgradeBot(object):
             raise GitError(res.text)
 
     def clean_up(self):
+        """Clean up cloned repo"""
+
         cwd = os.getcwd()
         this_dir = cwd.split("/")[-1]
         if this_dir == self.repo_name:
