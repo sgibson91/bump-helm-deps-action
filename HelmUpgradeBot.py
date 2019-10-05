@@ -300,12 +300,17 @@ class HelmUpgradeBot:
             for chart in charts
         ]
 
-        if np.any(condition):
+        if np.any(condition) and (not self.dry_run):
             logging.info(
                 "Helm upgrade required for the following charts: %s"
                 % list(compress(charts, condition))
             )
             self.upgrade_chart(list(compress(charts, condition)))
+        elif np.any(condition) and self.dry_run:
+            logging.info(
+                "Helm upgrade required for the following charts: %s. PR won't be opened due to --dry-run flag being set."
+                % list(compress(charts, condition))
+            )
         else:
             logging.info(
                 "%s is up-to-date with all current chart dependency releases!"
