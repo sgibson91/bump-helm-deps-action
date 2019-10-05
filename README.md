@@ -103,7 +103,7 @@ To run this script at 10am daily, use the following cron expression:
 
 ## Pre-commit Hook
 
-For developing this bot, there is a pre-commit hook that will format the Python code using [black]() and [flake8]().
+For developing this bot, there is a pre-commit hook that will format the Python code using [black](https://github.com/psf/black) and [flake8](http://flake8.pycqa.org/en/latest/).
 To install the hook, do the following:
 
 ```bash
