@@ -101,14 +101,10 @@ class HelmUpgradeBot:
 
     def __init__(self, argsDict):
         # Parse args from dict
-        self.repo_owner = argsDict["repo_owner"]
-        self.repo_name = argsDict["repo_name"]
-        self.branch = argsDict["branch"]
-        self.chart_name = argsDict["chart_name"]
-        self.deployment = argsDict["deployment"]
-        self.keyvault = argsDict["keyvault"]
-        self.identity = argsDict["identity"]
-        self.dry_run = argsDict["dry_run"]
+        for k, v in argsDict.items():
+            setattr(self, k, v)
+
+        # Set the repo API
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
         # Initialise GitHub token, Chart info dict and clean up forked repo
@@ -300,12 +296,17 @@ class HelmUpgradeBot:
             for chart in charts
         ]
 
-        if np.any(condition):
+        if np.any(condition) and (not self.dry_run):
             logging.info(
                 "Helm upgrade required for the following charts: %s"
                 % list(compress(charts, condition))
             )
             self.upgrade_chart(list(compress(charts, condition)))
+        elif np.any(condition) and self.dry_run:
+            logging.info(
+                "Helm upgrade required for the following charts: %s. PR won't be opened due to --dry-run flag being set."
+                % list(compress(charts, condition))
+            )
         else:
             logging.info(
                 "%s is up-to-date with all current chart dependency releases!"
