@@ -101,14 +101,10 @@ class HelmUpgradeBot:
 
     def __init__(self, argsDict):
         # Parse args from dict
-        self.repo_owner = argsDict["repo_owner"]
-        self.repo_name = argsDict["repo_name"]
-        self.branch = argsDict["branch"]
-        self.chart_name = argsDict["chart_name"]
-        self.deployment = argsDict["deployment"]
-        self.keyvault = argsDict["keyvault"]
-        self.identity = argsDict["identity"]
-        self.dry_run = argsDict["dry_run"]
+        for k, v in argsDict.items():
+            setattr(self, k, v)
+
+        # Set the repo API
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
         # Initialise GitHub token, Chart info dict and clean up forked repo
