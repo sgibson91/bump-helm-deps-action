@@ -161,24 +161,6 @@ class HelmUpgradeBot:
         self.token = result["output"].strip("\n")
         logging.info("Successfully pulled secret: %s" % token_name)
 
-    def get_cert_manager_version(
-        self, url="https://github.com/jetstack/cert-manager/releases/latest"
-    ):
-        """Get most-recent published version of cert-manager from GitHub"""
-
-        res = requests.get(url)
-        soup = BeautifulSoup(res.content, "html.parser")
-
-        links = soup.find_all("a", attrs={"title": True})
-
-        for link in links:
-            if (
-                (link.span is not None)
-                and ("v" in link.span.text)
-                and ("." in link.span.text)
-            ):
-                return link.span.text
-
     def get_chart_versions(self):
         """Get versions of dependent charts"""
 
@@ -187,7 +169,6 @@ class HelmUpgradeBot:
             self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
             "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
             "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
-            "cert-manager": None,  # URL for this chart is hard-coded into get_cert_manager_version function
         }
 
         for chart in chart_urls.keys():
@@ -215,13 +196,6 @@ class HelmUpgradeBot:
                 self.chart_info["binderhub"]["version"] = updates_sorted[-1][
                     "version"
                 ]
-
-            elif chart == "cert-manager":
-                # cert-manager chart
-                self.chart_info["cert-manager"] = {}
-                self.chart_info["cert-manager"][
-                    "version"
-                ] = self.get_cert_manager_version()
 
             else:
                 self.chart_info[chart] = {}
