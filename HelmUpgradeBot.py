@@ -207,9 +207,17 @@ class HelmUpgradeBot:
 
         logging.info("Setting up git configuration for HelmUpgradeBot")
 
-        subprocess.check_call(["git", "config", "user.name", "HelmUpgradeBot"])
         subprocess.check_call(
-            ["git", "config", "user.email", "helmupgradebot.github@gmail.com"]
+            ["git", "config", "--global", "user.name", "HelmUpgradeBot"]
+        )
+        subprocess.check_call(
+            [
+                "git",
+                "config",
+                "--global",
+                "user.email",
+                "helmupgradebot.github@gmail.com",
+            ]
         )
 
     def check_fork_exists(self):
