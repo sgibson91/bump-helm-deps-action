@@ -511,6 +511,25 @@ class HelmUpgradeBot:
 
         logging.info("Pull Request created")
 
+        output = res.json()
+        self.add_automerge_label(output["url"])
+
+    def add_automerge_label(self, url):
+        """Adds the automerge label to the Pull Request"""
+        logging.info("Adding 'automerge' label to PR: %s" % url)
+
+        labels = {"labels": ["automerge"]}
+
+        res = requests.post(
+            url, headers={"Authorization": f"token {self.token}"}, json=labels
+        )
+
+        if not res:
+            logging.error(res.text)
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(res.text)
+
     def clean_up(self):
         """Clean up cloned repo"""
 
