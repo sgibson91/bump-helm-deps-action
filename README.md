@@ -28,6 +28,8 @@ This is an overview of the steps the bot executes.
   - Add the new version(s) to the hub23-chart requirements file
   - Stage, commit and push the file to the branch
   - Open a Pull Request to the parent repo
+  - Assign the `automerge` label to the Pull Request.
+    This will allow the GitHub Action operating on the `hub23-deploy` repo to automatically merge the PR once all the status checks have passed.
 
 A moderator should check and merge the PR as appropriate.
 
