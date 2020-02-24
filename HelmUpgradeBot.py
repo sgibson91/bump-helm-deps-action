@@ -57,6 +57,13 @@ def parse_args():
         help="The git branch name to commit to",
     )
     parser.add_argument(
+        "-l",
+        "--labels",
+        nargs="+",
+        default=None,
+        help="List of labels to assign to the Pull Request",
+    )
+    parser.add_argument(
         "-d",
         "--deployment",
         type=str,
@@ -511,19 +518,21 @@ class HelmUpgradeBot:
 
         logging.info("Pull Request created")
 
-        output = res.json()
-        self.add_automerge_label(output["issue_url"])
+        if self.labels is not None:
+            output = res.json()
+            self.add_labels(output["issue_url"])
 
-    def add_automerge_label(self, url):
-        """Adds the automerge label to the Pull Request"""
-        logging.info("Adding 'automerge' label to PR: %s" % url)
+    def add_labels(self, url):
+        """Adds labels to the Pull Request"""
+        logging.info("Adding labels to PR: %s" % url)
+        logging.info("Labels to be added: %s" % self.labels)
 
-        labels = {"labels": ["automerge"]}
+        labels_to_be_added = {"labels": self.labels}
 
         res = requests.post(
             url + "/labels",
             headers={"Authorization": f"token {self.token}"},
-            json=labels,
+            json=labels_to_be_added,
         )
 
         if not res:
