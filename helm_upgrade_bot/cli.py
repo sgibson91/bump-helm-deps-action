@@ -49,7 +49,7 @@ def main():
     """Main Function"""
     args = parser.parse_args(sys.argv[1:])
     obj = HelmUpgradeBot(vars(args))
-    obj.helm_upgrade()
+    obj.check_versions()
 
 
 if __name__ == "__main__":
