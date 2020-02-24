@@ -512,7 +512,7 @@ class HelmUpgradeBot:
         logging.info("Pull Request created")
 
         output = res.json()
-        self.add_automerge_label(output["url"])
+        self.add_automerge_label(output["issue_url"])
 
     def add_automerge_label(self, url):
         """Adds the automerge label to the Pull Request"""
@@ -521,7 +521,9 @@ class HelmUpgradeBot:
         labels = {"labels": ["automerge"]}
 
         res = requests.post(
-            url, headers={"Authorization": f"token {self.token}"}, json=labels
+            url + "/labels",
+            headers={"Authorization": f"token {self.token}"},
+            json=labels,
         )
 
         if not res:
