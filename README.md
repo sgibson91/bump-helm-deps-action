@@ -68,6 +68,7 @@ python HelmUpgradeBot.py \
     --repo-owner [-o] REPO-OWNER \
     --repo-name [-n] REPO-NAME \
     --branch [-b] BRANCH \
+    --labels [-l] LABELS \
     --deployment [-d] BINDERHUB-NAME \
     --token-name [-t] TOKEN-NAME \
     --keyvault [-v] KEYVAULT \
@@ -81,6 +82,7 @@ where:
 - `REPO-OWNER` is the owner of the deployment repo;
 - `REPO-NAME` is the name of the deployment repo;
 - `BRANCH` is the git branch name to commit changes to;
+- `LABELS` are the labels to be assigned to the Pull Request (can accept multiple values);
 - `BINDERHUB-NAME` is the name your BinderHub is deployed under;
 - `TOKEN-NAME` is the name of the secret containing the PAT in the Azure Key Vault;
 - `KEYVAULT` is the name of the Azure Key Vault;
