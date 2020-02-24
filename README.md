@@ -41,15 +41,18 @@ Here is a list detailing the assumptions that the bot makes.
 2. The configuration for your BinderHub deployment is in a pulic GitHub repo.
 3. Your deployment repo contains a local Helm Chart with a `requirements.yaml` file.
 
-## Requirements
+## Installation and Requirements
 
-The bot requires Python v3.7 and the `pandas` and `pyyaml` packages listed in [`requirements.txt`](./requirements.txt), which can be installed using `pip`:
+To install the bot, you will need to clone this repo and install the package.
+It requires Python version >=3.7.
 
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/HelmUpgradeBot/hub23-deploy-upgrades.git
+cd hub23-deploy-upgrades
+python setup.py install
 ```
 
-It will require the following command line interface:
+You will also need to install the following command line interface:
 
 - [Microsoft Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
 
@@ -64,15 +67,8 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 To run the bot, simply execute the following:
 
 ```bash
-python HelmUpgradeBot.py \
-    --repo-owner [-o] REPO-OWNER \
-    --repo-name [-n] REPO-NAME \
+HelmUpgradeBot REPO-OWNER REPO-NAME BINDERHUB-NAME CHART-NAME KEYVAULT TOKEN-NAME \
     --branch [-b] BRANCH \
-    --labels [-l] LABELS \
-    --deployment [-d] BINDERHUB-NAME \
-    --token-name [-t] TOKEN-NAME \
-    --keyvault [-v] KEYVAULT \
-    --chart-name [-c] CHART-NAME \
     --identity \
     --dry-run
 ```
@@ -84,9 +80,10 @@ where:
 - `BRANCH` is the git branch name to commit changes to;
 - `LABELS` are the labels to be assigned to the Pull Request (can accept multiple values);
 - `BINDERHUB-NAME` is the name your BinderHub is deployed under;
-- `TOKEN-NAME` is the name of the secret containing the PAT in the Azure Key Vault;
-- `KEYVAULT` is the name of the Azure Key Vault;
 - `CHART-NAME` is the name of the local Helm Chart;
+- `KEYVAULT` is the name of the Azure Key Vault;
+- `TOKEN-NAME` is the name of the secret containing the PAT in the Azure Key Vault;
+- `BRANCH` is the git branch name to commit changes to;
 - `--identity` enables logging into Azure with a [Managed System Identity](https://docs.microsoft.com/en-gb/azure/active-directory/managed-identities-azure-resources/overview); and
 - `--dry-run` performs a dry-run of the upgrade and does not open a Pull Request.
 
@@ -102,7 +99,7 @@ The user (or machine) running this script will need _at least_:
 To run this script at 10am daily, use the following cron expression:
 
 ```bash
-0 10 * * * cd /path/to/hub23-deploy-upgrades && ~/path/to/python HelmUpgradeBot.py [--flags]
+0 10 * * * cd /path/to/hub23-deploy-upgrades && ~/path/to/python setup.py install && HelmUpgradeBot [--flags]
 ```
 
 ## Pre-commit Hook
