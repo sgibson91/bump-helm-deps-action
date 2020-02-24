@@ -127,6 +127,25 @@ class HelmUpgradeBot:
 
         logging.info("Successfully pushed changes to branch: %s" % self.branch)
 
+    def add_labels(self, url):
+        """Adds labels to the Pull Request"""
+        logging.info("Adding labels to PR: %s" % url)
+        logging.info("Labels to be added: %s" % self.labels)
+
+        labels_to_be_added = {"labels": self.labels}
+
+        res = requests.post(
+            url + "/labels",
+            headers={"Authorization": f"token {self.token}"},
+            json=labels_to_be_added,
+        )
+
+        if not res:
+            logging.error(res.text)
+            self.clean_up()
+            self.remove_fork()
+            raise GitError(res.text)
+
     def check_fork_exists(self):
         """Check if a fork of GitHub repo exists"""
 
@@ -237,6 +256,10 @@ class HelmUpgradeBot:
             raise GitError(res.text)
 
         logging.info("Pull Request created")
+
+        if self.labels is not None:
+            output = res.json()
+            self.add_labels(output["issue_url"])
 
     def delete_old_branch(self):
         """Delete a branch of a GitHub repo"""

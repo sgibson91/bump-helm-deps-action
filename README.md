@@ -28,6 +28,8 @@ This is an overview of the steps the bot executes.
   - Add the new version(s) to the hub23-chart requirements file
   - Stage, commit and push the file to the branch
   - Open a Pull Request to the parent repo
+  - Assign the `automerge` label to the Pull Request.
+    This will allow the GitHub Action operating on the `hub23-deploy` repo to automatically merge the PR once all the status checks have passed.
 
 A moderator should check and merge the PR as appropriate.
 
@@ -75,6 +77,8 @@ where:
 
 - `REPO-OWNER` is the owner of the deployment repo;
 - `REPO-NAME` is the name of the deployment repo;
+- `BRANCH` is the git branch name to commit changes to;
+- `LABELS` are the labels to be assigned to the Pull Request (can accept multiple values);
 - `BINDERHUB-NAME` is the name your BinderHub is deployed under;
 - `CHART-NAME` is the name of the local Helm Chart;
 - `KEYVAULT` is the name of the Azure Key Vault;

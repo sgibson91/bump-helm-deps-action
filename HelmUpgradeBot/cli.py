@@ -33,6 +33,13 @@ parser.add_argument(
     default="helm_chart_bump",
     help="The git branch to commit to",
 )
+parser.add_argument(
+    "-l",
+    "--labels",
+    nargs="+",
+    default=None,
+    help="List of labels to assign to the Pull Request",
+)
 
 # Define optional boolean flags
 parser.add_argument(
