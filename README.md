@@ -28,8 +28,7 @@ This is an overview of the steps the bot executes.
   - Add the new version(s) to the hub23-chart requirements file
   - Stage, commit and push the file to the branch
   - Open a Pull Request to the parent repo
-  - Assign the `automerge` label to the Pull Request.
-    This will allow the GitHub Action operating on the `hub23-deploy` repo to automatically merge the PR once all the status checks have passed.
+  - Assign labels to the Pull Request if required.
 
 A moderator should check and merge the PR as appropriate.
 
@@ -67,8 +66,10 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 To run the bot, simply execute the following:
 
 ```bash
-HelmUpgradeBot REPO-OWNER REPO-NAME BINDERHUB-NAME CHART-NAME KEYVAULT TOKEN-NAME \
+HelmUpgradeBot REPO-OWNER REPO-NAME BINDERHUB-NAME \
+    CHART-NAME KEYVAULT TOKEN-NAME \
     --branch [-b] BRANCH \
+    --labels [-l] LABELS \
     --identity \
     --dry-run
 ```
