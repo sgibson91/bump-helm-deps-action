@@ -57,7 +57,7 @@ This repository has a [feature request template](.github/ISSUE_TEMPLATE/feature_
 ### :hatching_chick: Your First Contribution
 
 Unsure where to start contributing?
-Check out the good first issue and help wanted labels to see where the project is looking for input.
+Check out the [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) and [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted) labels to see where the project is looking for input.
 
 ### :arrow_right: Pull Requests
 
@@ -110,8 +110,8 @@ Below is a table with the currently used labels in the repo.
 
 | Label | Description |
 | :--- | :--- |
-| `bug` | Something isn't working |
-| `documentation` | Improvements or additions to the documentation |
-| `enhancement` | New feature or request |
-| `good first issue` | Good for newcomers |
-| `help wanted` | Extra attention is needed |
+| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/bug)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/bug) | Something isn't working |
+| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/documentation)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/documentation) | Improvements or additions to the documentation |
+| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/enhancement)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/enhancement) | New feature or request |
+| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) | Good for newcomers |
+| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted) | Extra attention is needed |
