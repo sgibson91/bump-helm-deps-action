@@ -3,7 +3,7 @@
 This is an automatable bot that will check the chart dependencies of the Hub23 Helm chart are up to date with their source.
 If a new version is available, the bot will open a Pull Request to the [`alan-turing-institute/hub23-deploy` repository](https://github.com/alan-turing-institute/hub23-deploy) inserting the new chart dependency versions into the Hub23 Helm Chart requirements file.
 
-[![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted)
+![GitHub](https://img.shields.io/github/license/HelmUpgradeBot/hub23-deploy-upgrades) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted)
 
 **Table of Contents:**
 
@@ -16,6 +16,7 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
   - [:clock2: CRON Expression](#clock2-cron-expression)
 - [:leftwards_arrow_with_hook: Pre-commit Hook](#leftwards_arrow_with_hook-pre-commit-hook)
 - [:gift: Acknowledgements](#gift-acknowledgements)
+- [:sparkles: Contributing](#sparkles-contributing)
 
 ---
 
@@ -123,3 +124,8 @@ pre-commit install
 
 Thank you to Christopher Hench ([@henchc](https://github.com/henchc)) who wrote and documented [`henchbot`](https://github.com/henchbot) which automatically opens Pull Requests to upgrade mybinder.org.
 [Give his blog post a read!](https://hackmd.io/qC4ooA5TTn6xA2w-2OLHbA)
+
+## :sparkles: Contributing
+
+Thank you for wanting to contribute to the project! :tada:
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) :purple_heart: and [Contributing Guidelines](CONTRIBUTING.md) :space_invader: to get you started.
