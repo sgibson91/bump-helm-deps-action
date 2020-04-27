@@ -109,7 +109,7 @@ For developing this bot, there is a pre-commit hook that will format the Python 
 To install the hook, do the following:
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -r dev-requirements.txt
 pre-commit install
 ```
 
