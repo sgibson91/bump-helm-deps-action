@@ -10,6 +10,7 @@ Use your best judgement and feel free to propose changes to this document in a P
 
 - [:purple_heart: Code of Conduct](#purple_heart-code-of-conduct)
 - [:question: What should I know before I get started?](#question-what-should-i-know-before-i-get-started)
+  - [:robot: What is the project?](#robot-what-is-the-project)
 - [:gift: How can I contribute?](#gift-how-can-i-contribute)
   - [:bug: Reporting Bugs](#bug-reporting-bugs)
   - [:sparkles: Requesting Features](#sparkles-requesting-features)
@@ -30,7 +31,13 @@ Please report any unacceptable behaviour to [Dr Sarah Gibson](mailto:drsarahlgib
 
 ## :question: What should I know before I get started?
 
-> TBA: This section should be updated with information relevant to the project.
+### :robot: What is the project?
+
+[HelmUpgradeBot](https://github.com/HelmUpgradeBot) is a series of repositories that tackle and automate specific tasks designed to make the experience of maintaining a [JupyterHub](https://jupyterhub.readthedocs.io) or [BinderHub](https://binderhub.readthedocs.io) deployment easier.
+
+This repository (<https://github.com/HelmUpgradeBot/hub23-deploy-upgrades>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of the [Hub23 deployment](https://github.com/alan-turing-institute/hub23-deploy) can be updated, and opens a Pull Request with the new versions if so.
+
+This project is mostly a Python wrapper around [HTTP requests](https://www.codecademy.com/articles/http-requests) to the [GitHub REST API](https://developer.github.com/v3/), with some YAML/JSON handling and a dash of the [Azure command line interface](https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest) thrown in.
 
 ## :gift: How can I contribute?
 
@@ -85,7 +92,7 @@ Once you and the maintainers are happy, your contribution will be merged!
 ### :snake: Python Styleguide
 
 When writing Python scripts for this repository, it is recommended that contributors use [black](https://github.com/psf/black) and [flake8](https://flake8.pycqa.org/en/latest/) for formatting and linting styles.
-The repository has GitHub Actions to check files are conforming to this styleguide, though not doing so will not prevent your contribution from being merged.
+The repository has [GitHub Actions](.github/workflows) to check files are conforming to this styleguide, though not doing so will not prevent your contribution from being merged.
 These tools are used as the maintainers believe this makes the code easier to read and keeps consistent formatting as more people contribute to the project.
 
 While flake8 commands can be [disabled](https://flake8.pycqa.org/en/latest/user/violations.html), we only recommend doing this for [specific lines](https://flake8.pycqa.org/en/latest/user/violations.html#in-line-ignoring-errors) in such cases where reformatting would produce "ugly code".
