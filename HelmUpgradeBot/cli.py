@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 from .HelmUpgradeBot import HelmUpgradeBot
@@ -15,18 +16,20 @@ parser.add_argument(
 parser.add_argument(
     "chart_name", type=str, help="The name of the local helm chart"
 )
+
+# Define optional arguments that take parameters
 parser.add_argument(
-    "keyvault",
+    "-k",
+    "--keyvault",
     type=str,
     help="Name of the Azure Key Vault storing secrets for the BinderHub",
 )
 parser.add_argument(
-    "token_name",
+    "-n",
+    "--token-name",
     type=str,
     help="Name of the bot's access token as stored in the Azure Key Vault",
 )
-
-# Define optional arguments that take parameters
 parser.add_argument(
     "--branch",
     type=str,
@@ -61,6 +64,29 @@ parser.add_argument(
 def main():
     """Main Function"""
     args = parser.parse_args(sys.argv[1:])
+
+    keyvault_cond = args.keyvault is None
+    token_cond = args.token_name is None
+
+    if (keyvault_cond and not token_cond) or (
+        token_cond and not keyvault_cond
+    ):
+        raise ValueError(
+            "Both --keyvault [-k] and --token-name [-n] flags must be set"
+        )
+    elif keyvault_cond and token_cond:
+        # Check environment variables
+        api_token = os.environ.get("API_TOKEN")
+
+        if api_token is None:
+            raise ValueError(
+                "An API token must be provided. This can be done either with the API_TOKEN environment variable, or by providing keyvault and token names via the --keyvault [-k] and --token-name [-n] flags respectively."
+            )
+        else:
+            setattr(args, "token", api_token)
+    else:
+        setattr(args, "token", None)
+
     obj = HelmUpgradeBot(vars(args))
     obj.check_versions()
 

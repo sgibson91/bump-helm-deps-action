@@ -32,7 +32,8 @@ class HelmUpgradeBot:
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
         # Initialise GitHub token, Chart info dict and clean up forked repo
-        self.get_token(argsDict["token_name"])
+        if argsDict["token"] is None:
+            self.get_token(argsDict["token_name"])
         self.get_chart_versions()
         self.remove_fork()
 
