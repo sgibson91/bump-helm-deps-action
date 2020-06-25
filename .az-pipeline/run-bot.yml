@@ -1,0 +1,13 @@
+  
+schedules:
+- cron: "0 10 * * *"
+  displayName: Hourly subscription test
+  branches:
+    include:
+    - main
+  always: true
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
