@@ -17,15 +17,6 @@ from yaml import safe_dump as dump
 from .run_command import run_cmd
 from .CustomExceptions import AzureError, GitError
 
-# Setup log config
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="HelmUpgradeBot.log",
-    filemode="a",
-    format="[%(asctime)s %(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 
 class HelmUpgradeBot:
     """Upgrade the dependencies of the Hub23 helm chart"""
@@ -35,11 +26,14 @@ class HelmUpgradeBot:
         for k, v in argsDict.items():
             setattr(self, k, v)
 
+        self.logging_setup(verbose=argsDict["verbose"])
+
         # Set the repo API
         self.repo_api = f"https://api.github.com/repos/{argsDict['repo_owner']}/{argsDict['repo_name']}/"
 
         # Initialise GitHub token, Chart info dict and clean up forked repo
-        self.get_token(argsDict["token_name"])
+        if argsDict["token"] is None:
+            self.get_token(argsDict["token_name"])
         self.get_chart_versions()
         self.remove_fork()
 
@@ -380,6 +374,23 @@ class HelmUpgradeBot:
 
         self.token = result["output"].strip("\n")
         logging.info("Successfully pulled secret: %s" % token_name)
+
+    def logging_setup(self, verbose=False):
+        # Setup log config
+        if verbose:
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="[%(asctime)s %(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        else:
+            logging.basicConfig(
+                level=logging.DEBUG,
+                filename="HelmUpgradeBot.log",
+                filemode="a",
+                format="[%(asctime)s %(levelname)s] %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
 
     def login(self):
         """Login to Azure"""
