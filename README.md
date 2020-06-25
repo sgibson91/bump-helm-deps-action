@@ -73,27 +73,35 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 To run the bot, execute the following:
 
 ```bash
-HelmUpgradeBot REPO-OWNER REPO-NAME BINDERHUB-NAME \
-    CHART-NAME KEYVAULT TOKEN-NAME \
-    --branch [-b] BRANCH \
-    --labels [-l] LABELS \
-    --identity \
-    --dry-run
+usage: HelmUpgradeBot [-h] [-k KEYVAULT] [-n TOKEN_NAME] [--branch BRANCH]
+                      [-l LABELS [LABELS ...]] [--identity] [--dry-run] [-v]
+                      repo_owner repo_name deployment chart_name
+
+Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub
+repository
+
+positional arguments:
+  repo_owner            The GitHub repository owner
+  repo_name             The deployment repo name
+  deployment            The name of the deployed BinderHub
+  chart_name            The name of the local helm chart
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -k KEYVAULT, --keyvault KEYVAULT
+                        Name of the Azure Key Vault storing secrets for the
+                        BinderHub
+  -n TOKEN_NAME, --token-name TOKEN_NAME
+                        Name of the bots access token as stored in the Azure
+                        Key Vault
+  --branch BRANCH       The git branch to commit to
+  -l LABELS [LABELS ...], --labels LABELS [LABELS ...]
+                        List of labels to assign to the Pull Request
+  --identity            Login to Azure using a Managed System Identity
+  --dry-run             Perform a dry-run helm upgrade
+  -v, --verbose         Print output to the console. Default is to write to a
+                        log file.
 ```
-
-where:
-
-- `REPO-OWNER` is the owner of the deployment repository;
-- `REPO-NAME` is the name of the deployment repository;
-- `BRANCH` is the git branch name to commit changes to;
-- `LABELS` are the labels to be assigned to the Pull Request (can accept multiple values);
-- `BINDERHUB-NAME` is the name your BinderHub is deployed under;
-- `CHART-NAME` is the name of the local Helm chart;
-- `KEYVAULT` is the name of the Azure Key Vault;
-- `TOKEN-NAME` is the name of the secret containing the GitHub PAT in the Azure Key Vault;
-- `BRANCH` is the git branch name to commit changes to;
-- `--identity` enables logging into Azure with a [Managed System Identity](https://docs.microsoft.com/en-gb/azure/active-directory/managed-identities-azure-resources/overview); and
-- `--dry-run` performs a dry-run of the upgrade and does not open a Pull Request.
 
 ### :lock: Permissions
 
