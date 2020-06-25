@@ -111,12 +111,12 @@ class HelmUpgradeBot:
 
         logging.info("Successfully committed file: %s" % self.fname)
 
-        logging.info("Pushing commits to branch: %s" % self.branch)
+        logging.info("Pushing commits to branch: %s" % self.target_branch)
         push_cmd = [
             "git",
             "push",
             f"https://HelmUpgradeBot:{self.token}@github.com/HelmUpgradeBot/{self.repo_name}",
-            self.branch,
+            self.target_branch,
         ]
         result = run_cmd(push_cmd)
         if result["returncode"] != 0:
@@ -125,7 +125,9 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info("Successfully pushed changes to branch: %s" % self.branch)
+        logging.info(
+            "Successfully pushed changes to branch: %s" % self.target_branch
+        )
 
     def add_labels(self, url):
         """Adds labels to the Pull Request"""
@@ -188,8 +190,8 @@ class HelmUpgradeBot:
                 % (self.repo_owner, self.repo_name)
             )
 
-        logging.info("Checking out branch: %s" % self.branch)
-        chkt_cmd = ["git", "checkout", "-b", self.branch]
+        logging.info("Checking out branch: %s" % self.target_branch)
+        chkt_cmd = ["git", "checkout", "-b", self.target_branch]
         result = run_cmd(chkt_cmd)
         if result["returncode"] != 0:
             logging.error(result["err_msg"])
@@ -197,7 +199,9 @@ class HelmUpgradeBot:
             self.remove_fork()
             raise GitError(result["err_msg"])
 
-        logging.info("Successfully checked out branch: %s" % self.branch)
+        logging.info(
+            "Successfully checked out branch: %s" % self.target_branch
+        )
 
     def clean_up(self):
         """Clean up cloned repo"""
@@ -239,8 +243,8 @@ class HelmUpgradeBot:
         pr = {
             "title": "Logging Helm Chart version upgrade",
             "body": "This PR is updating the local Helm Chart to the most recent Chart dependency versions.",
-            "base": "master",
-            "head": f"HelmUpgradeBot:{self.branch}",
+            "base": self.base_branch,
+            "head": f"HelmUpgradeBot:{self.target_branch}",
         }
 
         res = requests.post(
@@ -272,10 +276,16 @@ class HelmUpgradeBot:
             logging.error(res.text)
             raise GitError(res.text)
 
-        if self.branch in [x["name"] for x in res.json()]:
-            logging.info("Deleting branch: %s" % self.branch)
+        if self.target_branch in [x["name"] for x in res.json()]:
+            logging.info("Deleting branch: %s" % self.target_branch)
 
-            delete_cmd = ["git", "push", "--delete", "origin", self.branch]
+            delete_cmd = [
+                "git",
+                "push",
+                "--delete",
+                "origin",
+                self.target_branch,
+            ]
             result = run_cmd(delete_cmd)
             if result["returncode"] != 0:
                 logging.error(result["err_msg"])
@@ -284,10 +294,10 @@ class HelmUpgradeBot:
                 raise GitError(result["err_msg"])
 
             logging.info(
-                "Successfully deleted remote branch: %s" % self.branch
+                "Successfully deleted remote branch: %s" % self.target_branch
             )
 
-            delete_cmd = ["git", "branch", "-d", self.branch]
+            delete_cmd = ["git", "branch", "-d", self.target_branch]
             result = run_cmd(delete_cmd)
             if result["returncode"] != 0:
                 logging.error(result["err_msg"])
@@ -295,10 +305,12 @@ class HelmUpgradeBot:
                 self.remove_fork()
                 raise GitError(result["err_msg"])
 
-            logging.info("Successfully deleted local branch: %s" % self.branch)
+            logging.info(
+                "Successfully deleted local branch: %s" % self.target_branch
+            )
 
         else:
-            logging.info("Branch does not exist: %s" % self.branch)
+            logging.info("Branch does not exist: %s" % self.target_branch)
 
     def get_chart_versions(self):
         """Get versions of dependent charts"""
