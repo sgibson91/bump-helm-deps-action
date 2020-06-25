@@ -11,18 +11,15 @@ pr: none
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  service_connection: 'hub23-deploy-scn'
-
 jobs:
 - job: RunHelmUpgradeBot
   steps:
   - task: AzureKeyVault@1
     displayName: 'Pull GitHub Token from Key Vault'
     inputs:
-      azureSubscription: $(SERVICE_CONNECTION)
+      azureSubscription: 'hub23-deploy-scn'
       KeyVaultName: 'hub23-keyvault'
-      SecretsFilter: 'githubToken'
+      SecretsFilter: 'apiToken'
 
   - task: UsePythonVersion@0
     displayName: 'Install Python 3.7'
@@ -35,3 +32,6 @@ jobs:
 
   - script: python -m pip install -e .
     displayName: 'Install HelmUpgradeBot'
+
+  - script: API_TOKEN="$(apiToken)" HelmUpgradeBot alan-turing-institute hub23-deploy Hub23 hub23-chart --verbose
+    displayName: 'Run HelmUpgradeBot'
