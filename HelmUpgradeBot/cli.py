@@ -50,6 +50,12 @@ parser.add_argument(
 parser.add_argument(
     "--dry-run", action="store_true", help="Perform a dry-run helm upgrade"
 )
+parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="Print output to the console. Default is to write to a log file.",
+)
 
 
 def main():
