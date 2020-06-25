@@ -28,10 +28,18 @@ parser.add_argument(
 
 # Define optional arguments that take parameters
 parser.add_argument(
-    "--branch",
+    "-t",
+    "--target-branch",
     type=str,
     default="helm_chart_bump",
-    help="The git branch to commit to",
+    help="The git branch to commit to. Default: helm_chart_bump.",
+)
+parser.add_argument(
+    "-b",
+    "--base-branch",
+    type=str,
+    default="main",
+    help="The base branch to open the Pull Request against. Default: main.",
 )
 parser.add_argument(
     "-l",
