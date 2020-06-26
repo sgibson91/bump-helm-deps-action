@@ -163,14 +163,14 @@ class HelmUpgradeBot:
             self.delete_old_branch()
 
             logging.info(
-                "Pulling master branch of: %s/%s"
+                "Pulling main branch of: %s/%s"
                 % (self.repo_owner, self.repo_name)
             )
             pull_cmd = [
                 "git",
                 "pull",
                 f"https://github.com/{self.repo_owner}/{self.repo_name}.git",
-                "master",
+                "main",
             ]
             result = run_cmd(pull_cmd)
             if result["returncode"] != 0:
@@ -180,7 +180,7 @@ class HelmUpgradeBot:
                 raise GitError(result["err_msg"])
 
             logging.info(
-                "Successfully pulled master branch of: %s/%s"
+                "Successfully pulled main branch of: %s/%s"
                 % (self.repo_owner, self.repo_name)
             )
 
@@ -311,7 +311,7 @@ class HelmUpgradeBot:
 
         self.chart_info = {}
         chart_urls = {
-            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/master/{self.chart_name}/requirements.yaml",
+            self.deployment: f"https://raw.githubusercontent.com/{self.repo_owner}/{self.repo_name}/main/{self.chart_name}/requirements.yaml",
             "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
             "nginx-ingress": "https://raw.githubusercontent.com/helm/charts/master/stable/nginx-ingress/Chart.yaml",
         }
