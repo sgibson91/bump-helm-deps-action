@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m pip install -e .
       - name: Dry-Run HelmUpgradeBot
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/test-action'
         run: |
           API_TOKEN="${{ secrets.GITHUB_TOKEN }}" python -m HelmUpgradeBot \
             alan-turing-institute \
