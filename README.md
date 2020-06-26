@@ -12,8 +12,9 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 - [:pushpin: Requirements](#pushpin-installation-and-requirements)
   - [:cloud: Install Azure CLI](#cloud-install-azure-cli)
 - [:children_crossing: Usage](#children_crossing-usage)
-  - [:lock: Permissions](#lock-permissions)
+  - [:lock: User Permissions](#lock-user-permissions)
   - [:clock2: CRON Expression](#clock2-cron-expression)
+  - [:clapper: GitHub Action](#clapper-github-action)
 - [:leftwards_arrow_with_hook: Pre-commit Hook](#leftwards_arrow_with_hook-pre-commit-hook)
 - [:gift: Acknowledgements](#gift-acknowledgements)
 - [:sparkles: Contributing](#sparkles-contributing)
@@ -24,7 +25,7 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 This is an overview of the steps the bot executes.
 
-- Log into Azure and pull a GitHub Personal Access Token (PAT) from an Azure Key Vault
+- If a GitHub Personal Access Token (PAT) is not provided as an environment variable, log into Azure and pull one from an Azure Key Vault
   - The login will either be interactively if run locally or via a [Managed System Identity](https://docs.microsoft.com/en-gb/azure/active-directory/managed-identities-azure-resources/overview) if run from a server.
     The server will require [`GET` permissions to the secrets](https://docs.microsoft.com/en-us/azure/key-vault/secrets/about-secrets#secret-access-control) stored in the Azure Key Vault.
 - Read Hub23's Helm chart requirements file and find the versions of the dependencies
@@ -43,7 +44,8 @@ A moderator should check and merge the Pull Request as appropriate.
 
 Here is a list detailing the assumptions that the bot makes.
 
-1. A GitHub PAT is stored in an Azure Key Vault.
+1. You have a GitHub PAT
+   1. It is stored in an Azure Key Vault or provided by the `API_TOKEN` environment variable
 2. The configuration for your BinderHub deployment is in a pulic GitHub repository.
 3. Your deployment repository contains a local Helm chart with a `requirements.yaml` file.
 
@@ -108,7 +110,13 @@ optional arguments:
                         log file.
 ```
 
-### :lock: Permissions
+Alternatively, the GitHub PAT can be provided directly using the `API_TOKEN` environment variable, like so:
+
+```bash
+API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart_name [--flags]
+```
+
+### :lock: User Permissions
 
 The user (or machine) running this script will need _at least_:
 
@@ -122,6 +130,11 @@ To run this script at 10am daily, use the following cron expression:
 ```bash
 0 10 * * * cd /path/to/hub23-deploy-upgrades && /path/to/python setup.py install && /path/to/HelmUpgradeBot [--flags]
 ```
+
+### :clapper: GitHub Action
+
+Rather than pay for a Virtual Machine to run the bot, it could be run in a [GitHub Action workflow](.github/workflows/run-bot.yml) instead.
+The default secret `GITHUB_TOKEN` should have enough permissions for everything provided all repositories are public.
 
 ## :leftwards_arrow_with_hook: Pre-commit Hook
 
