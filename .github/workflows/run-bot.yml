@@ -1,0 +1,43 @@
+name: Run HelmUpgradeBot
+
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  helmupgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install HelmUpgradeBot
+        run: |
+          python -m pip install -e .
+      - name: Dry-Run HelmUpgradeBot
+        if: github.event.pull_request
+        run: |
+          API_TOKEN="${{ secrets.GITHUB_TOKEN }}" HelmUpgradeBot \
+            alan-turing-institute \
+            hub23-deploy \
+            Hub23 \
+            hub23-chart \
+            --dry-run \
+            --verbose
+      - name: Run HelmUpgradeBot
+        if: github.event_name == 'schedule'
+        run: |
+          API_TOKEN="${{ secrets.GITHUB_TOKEN }}" HelmUpgradeBot \
+            alan-turing-institute \
+            hub23-deploy \
+            Hub23 \
+            hub23-chart \
+            --verbose
