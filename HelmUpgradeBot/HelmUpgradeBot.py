@@ -37,9 +37,8 @@ class HelmUpgradeBot:
         self.get_chart_versions()
         self.remove_fork()
 
-        if argsDict["identity"]:
-            # Set GitHub credentials for managed identity
-            self.set_github_config()
+        # Set GitHub credentials for managed identity
+        self.set_github_config()
 
     def check_versions(self):
         """Check if chart dependency versions are up-to-date"""
