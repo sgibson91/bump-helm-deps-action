@@ -1,6 +1,11 @@
 import logging
 
-from .helper_functions import get_request, post_request, run_cmd
+from .helper_functions import (
+    delete_request,
+    get_request,
+    post_request,
+    run_cmd,
+)
 
 logger = logging.getLogger()
 
@@ -78,13 +83,41 @@ def check_fork_exists(repo_name: str) -> bool:
     return fork_exists
 
 
+def delete_old_branch(repo_name: str, target_branch: str) -> None:
+    resp = get_request(
+        f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}"
+    )
+
+    if target_branch in [x["name"] for x in resp.json()]:
+        logger.info("Deleting branch: %s" % target_branch)
+        delete_cmd = ["git", "push", "--delete", "origin", target_branch]
+        result = run_cmd(delete_cmd)
+
+        if result["returncode"] != 0:
+            logger.error(result["err_msg"])
+            # Add clean-up functions here
+            raise RuntimeError(resp["err_msg"])
+
+        logger.info("Successfully deleted remote branch")
+
+        delete_cmd = ["git", "branch", "-d", target_branch]
+        result = run_cmd(delete_cmd)
+
+        if result["returncode"] != 0:
+            logger.error(result["err_msg"])
+            # Add clean-up functions here
+            raise RuntimeError(resp["err_msg"])
+
+        logger.info("Successfully deleted local branch")
+
+
 def checkout_branch(
     repo_owner: str, repo_name: str, target_branch: str
 ) -> None:
     fork_exists = check_fork_exists(repo_name)
 
     if fork_exists:
-        # delete_old_branch()
+        delete_old_branch(repo_name, target_branch)
 
         logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
         pull_cmd = [
