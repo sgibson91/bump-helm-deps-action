@@ -9,6 +9,12 @@ from .azure import get_token
 
 from .helper_functions import run_cmd
 
+from .pull_version_info import (
+    pull_version_from_requirements_file,
+    pull_version_from_chart_file,
+    pull_version_from_github_pages,
+)
+
 from .github import (
     add_commit_push,
     check_fork_exists,
@@ -110,14 +116,18 @@ def get_chart_versions(
 
     for (chart, chart_url) in chart_urls.items():
         if "requirements.yaml" in chart_url:
-            # Get the versions from a requirements.yaml file
-            pass
+            filename = os.path.join(HERE, chart_name, "requirements.yaml")
+            chart_info = pull_version_from_requirements_file(
+                chart_info, chart, filename
+            )
         elif "Chart.yaml" in chart_url:
-            # Get the versions from a Chart.yaml file
-            pass
+            chart_info = pull_version_from_chart_file(
+                chart_info, chart, chart_url
+            )
         elif "/gh-pages/" in chart_url:
-            # Get the versions from a gh-pages page
-            pass
+            chart_info = pull_version_from_github_pages(
+                chart_info, chart, chart_url
+            )
         else:
             msg = (
                 "Scraping from the following URL type is currently not implemented\n\t%s"
