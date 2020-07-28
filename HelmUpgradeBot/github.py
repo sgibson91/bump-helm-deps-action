@@ -195,3 +195,15 @@ def create_pr(
     if labels is not None:
         output = resp.json()
         add_labels(labels, output["issue_url"], token)
+
+
+def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
+    logger.info("Forking repo: %s" % repo_name)
+
+    post_request(
+        repo_api + "forks", headers={"Authorization": f"token {token}"}
+    )
+
+    logger.info("Created fork")
+
+    return True
