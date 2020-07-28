@@ -14,7 +14,7 @@ from .github import (
     create_pr,
     make_fork,
     remove_fork,
-    set_github_config,
+    set_git_config,
 )
 
 from .helper_functions import (
