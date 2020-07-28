@@ -18,7 +18,7 @@ def check_versions(
     chart_name: str, chart_info: dict, dry_run: bool = False
 ) -> list:
     charts = list(chart_info.keys())
-    charts.remove(deployment)
+    charts.remove(chart_name)
 
     condition = [
         (
@@ -60,7 +60,9 @@ def clean_up(repo_name: str) -> None:
         logger.info("Deleted local repository: %s" % repo_name)
 
 
-def get_chart_versions(chart_name: str, repo_owner: str, repo_name: str):
+def get_chart_versions(
+    chart_name: str, repo_owner: str, repo_name: str
+) -> dict:
     chart_info = {}
     chart_urls = {
         chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
@@ -79,8 +81,15 @@ def get_chart_versions(chart_name: str, repo_owner: str, repo_name: str):
             # Get the versions from a gh-pages page
             pass
         else:
-            msg = "Scraping from the following URL type is currently not implemented\n\t%s" % chart_url
+            msg = (
+                "Scraping from the following URL type is currently not implemented\n\t%s"
+                % chart_url
+            )
             logger.error(NotImplementedError(msg))
             raise NotImplementedError(msg)
 
     return chart_info
+
+
+def update_local_file():
+    pass
