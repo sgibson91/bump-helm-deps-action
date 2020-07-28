@@ -21,20 +21,15 @@ def delete_request(url: str, headers: dict = None) -> None:
         raise RuntimeError(resp.text)
 
 
-def get_request(url: str, text: bool = False):
-    """[summary]
+def get_request(url: str, headers: dict = None, text: bool = False):
+    """Send a GET request to an HTTP API endpoint
 
     Args:
-        url (str): [description]
-        text (bool, optional): [description]. Defaults to False.
-
-    Raises:
-        RuntimeError: [description]
-
-    Returns:
-        [type]: [description]
+        url (str): The URL to send the request to
+        headers (dict): A dictionary of headers to send with the request
+        text (bool, optional): Returns the text payload. Defaults to False.
     """
-    resp = requests.get(url)
+    resp = requests.get(url, headers=headers)
 
     if not resp:
         # Add in clean up functions here
