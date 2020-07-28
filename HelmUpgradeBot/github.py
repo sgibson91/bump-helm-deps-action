@@ -110,6 +110,9 @@ def delete_old_branch(repo_name: str, target_branch: str) -> None:
 
         logger.info("Successfully deleted local branch")
 
+    else:
+        logger.info("Branch does not exist: %s" % target_branch)
+
 
 def checkout_branch(
     repo_owner: str, repo_name: str, target_branch: str
