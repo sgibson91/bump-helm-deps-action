@@ -44,7 +44,7 @@ def add_commit_push(
     logger.info("Successfully added file: %s" % filename)
 
     # Commit the edited file
-    commit_msg = f"Bump chart dependencies {[chart for chart in charts_to_update]} to versions {[chart_info[chart]['version'] for chart in charts_to_update]}, respectively"
+    commit_msg = f"Bump chart dependencies {[chart for chart in charts_to_update]} to versions {[chart_info[chart] for chart in charts_to_update]}, respectively"
     logger.info("Committing file: %s" % filename)
 
     commit_cmd = ["git", "commit", "-m", commit_msg]
@@ -94,31 +94,36 @@ def add_labels(labels: list, pr_url: str, token: str) -> None:
     )
 
 
-def check_fork_exists(repo_name: str) -> bool:
+def check_fork_exists(repo_name: str, token: str) -> bool:
     """Check if HelmUpgradeBot has a fork of a GitHub repository
 
     Args:
         repo_name (str): The name of the repository to check for
+        token (str): A GitHub API token
 
     Returns:
         bool: True if a fork exists, False if not
     """
-    resp = get_request("https://api.github.com/users/HelmUpgradeBot/repos")
+    header = {"Authorization": f"token {token}"}
+    resp = get_request("https://api.github.com/users/HelmUpgradeBot/repos", headers=header)
 
     fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
 
     return fork_exists
 
 
-def delete_old_branch(repo_name: str, target_branch: str) -> None:
+def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
     """Delete a branch of a GitHub repository
 
     Args:
         repo_name (str): The name of the repository
         target_branch (str): The name of the branch to be deleted
+        token (str): A GitHub API token
     """
+    header = {"Authorization": f"token {token}"}
     resp = get_request(
-        f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}"
+        f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches",
+        headers=header
     )
 
     if target_branch in [x["name"] for x in resp.json()]:
@@ -148,7 +153,7 @@ def delete_old_branch(repo_name: str, target_branch: str) -> None:
 
 
 def checkout_branch(
-    repo_owner: str, repo_name: str, target_branch: str
+    repo_owner: str, repo_name: str, target_branch: str, token: str
 ) -> None:
     """Checkout a branch of a GitHub repository
 
@@ -156,11 +161,12 @@ def checkout_branch(
         repo_owner (str): The owner of the repository (user or org)
         repo_name (str): The name of the repository
         target_branch (str): The branch to checkout
+        token (str): A GitHub API token
     """
-    fork_exists = check_fork_exists(repo_name)
+    fork_exists = check_fork_exists(repo_name, token)
 
     if fork_exists:
-        delete_old_branch(repo_name, target_branch)
+        delete_old_branch(repo_name, target_branch, token)
 
         logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
         pull_cmd = [
@@ -281,7 +287,7 @@ def remove_fork(repo_name: str, token: str) -> bool:
     Returns:
         bool: False since fork no longer exists
     """
-    fork_exists = check_fork_exists(repo_name)
+    fork_exists = check_fork_exists(repo_name, token)
 
     if fork_exists:
         logger.info("HelmUpgradeBot has a fork of: %s" % repo_name)
