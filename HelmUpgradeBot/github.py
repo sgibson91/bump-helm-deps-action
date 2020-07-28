@@ -76,3 +76,37 @@ def check_fork_exists(repo_name: str) -> bool:
     fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
 
     return fork_exists
+
+
+def checkout_branch(repo_owner: str, repo_name: str, target_branch: str):
+    fork_exists = check_fork_exists(repo_name)
+
+    if fork_exists:
+        # delete_old_branch()
+
+        logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
+        pull_cmd = [
+            "git",
+            "pull",
+            f"https://github.com/{repo_owner}/{repo_name}.git",
+            "main",
+        ]
+        result = run_cmd(pull_cmd)
+
+        if result["returncode"] != 0:
+            logger.error(result["err_msg"])
+            # Add clean-up functions here
+            raise RuntimeError(result["err_msg"])
+
+        logger.info("Successfully pulled main branch")
+
+    logging.info("Checking out branch: %s" % target_branch)
+    chkt_cmd = ["git", "checkout", "-b", target_branch]
+    result = run_cmd(chkt_cmd)
+
+    if result["returncode"] != 0:
+        logger.error(result["err_msg"])
+        # Add clean-up functions here
+        raise RuntimeError(result["err_msg"])
+
+    logger.info("Successfully checked out branch")
