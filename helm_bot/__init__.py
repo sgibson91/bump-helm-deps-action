@@ -4,6 +4,8 @@ from .app import run
 
 from .azure import login, get_token
 
+from .cli import parse_args, check_parser
+
 from .github import (
     add_commit_push,
     add_labels,
