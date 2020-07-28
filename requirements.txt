@@ -2,3 +2,5 @@ pandas
 pytest
 pyyaml
 requests
+responses
+textfixtures
