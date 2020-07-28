@@ -1,3 +1,4 @@
+import time
 import logging
 
 from .helper_functions import (
@@ -207,3 +208,23 @@ def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
     logger.info("Created fork")
 
     return True
+
+
+def remove_fork(repo_name: str, token: str) -> bool:
+    fork_exists = check_fork_exists(repo_name)
+
+    if fork_exists:
+        logger.info("HelmUpgradeBot has a fork of: %s" % repo_name)
+
+        delete_request(
+            f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}",
+            headers={"Authorization": f"token {token}"},
+        )
+
+        time.sleep(5)
+        logger.info("Deleted fork")
+
+    else:
+        logger.info("HelmUpgradeBot does not have a fork of: %s" % repo_name)
+
+    return False
