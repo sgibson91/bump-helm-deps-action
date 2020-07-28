@@ -7,6 +7,15 @@ from itertools import compress
 
 from .helper_functions import run_cmd
 
+from .github import (
+    add_commit_push,
+    check_fork_exists,
+    checkout_branch,
+    clone_fork,
+    create_pr,
+    make_fork,
+)
+
 HERE = os.getcwd()
 
 logger = logging.getLogger()
@@ -142,3 +151,47 @@ def update_local_file(
         yaml.safe_dump(chart_yaml, stream)
 
     logger.info("Updated file: %s" % filename)
+
+
+def upgrade_chart(
+    chart_name: str,
+    chart_info: dict,
+    charts_to_update: list,
+    repo_owner: str,
+    repo_name: str,
+    repo_api: str,
+    base_branch: str,
+    target_branch: str,
+    token: str,
+    labels: list,
+) -> None:
+    """Upgrade the dependencies in the helm chart
+
+    Args:
+        chart_name (str): The name of the helm-chart
+        chart_info (dict): A dictionary of the dependencies and their versions
+        charts_to_update (list): The dependencies that need updating
+        repo_owner (str): The owner of the repository (user or org)
+        repo_name (str): The name of the repository hosting the helm chart
+        repo_api (str): The API URL of the original repository
+                        (not HelmUpgradeBot's fork)
+        base_branch (str): The base branch for opening the Pull Request
+        target_branch (str): The target branch for opening the Pull Request
+        token (str): A GitHub API token
+        labels (list): A list of labels to add the the Pull Request
+    """
+    filename = os.path.join(HERE, chart_name, "requirements.yaml")
+
+    fork_exists = check_fork_exists(repo_name)
+
+    if fork_exists:
+        make_fork(repo_name, repo_api, token)
+    clone_fork(repo_name)
+
+    os.chdir(repo_name)
+    checkout_branch(repo_owner, repo_name, target_branch)
+    update_local_file(chart_name, charts_to_update, chart_info)
+    add_commit_push(
+        filename, charts_to_update, chart_info, repo_name, target_branch, token
+    )
+    create_pr(repo_api, base_branch, target_branch, token, labels)
