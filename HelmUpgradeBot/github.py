@@ -1,6 +1,6 @@
 import logging
 
-from .helper_functions import post_request, run_cmd
+from .helper_functions import get_request, post_request, run_cmd
 
 logger = logging.getLogger()
 
@@ -68,3 +68,11 @@ def add_labels(labels: list, pr_url: str, token: str) -> None:
         headers={"Authorization": f"token {token}"},
         json={"labels": labels},
     )
+
+
+def check_fork_exists(repo_name: str) -> bool:
+    resp = get_request("https://api.github.com/users/HelmUpgradeBot/repos")
+
+    fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
+
+    return fork_exists
