@@ -59,7 +59,7 @@ def add_commit_push(
     logging.info("Successfully pushed changes to branch: %s" % target_branch)
 
 
-def add_labels(labels, pr_url, token):
+def add_labels(labels: list, pr_url: str, token: str) -> None:
     logger.info("Adding labels to Pull Request: %s" % pr_url)
     logger.info("Adding labels: %s" % labels)
 
