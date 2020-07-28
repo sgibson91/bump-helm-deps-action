@@ -1,5 +1,4 @@
 import logging
-
 from .helper_functions import run_cmd
 
 logger = logging.getLogger()
@@ -24,7 +23,6 @@ def login(identity: bool = False) -> None:
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean-up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully logged into Azure")
@@ -65,7 +63,6 @@ def get_token(token_name: str, keyvault: str, identity: bool = False) -> str:
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean-up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully pulled secret")

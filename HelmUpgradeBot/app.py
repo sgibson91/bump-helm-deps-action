@@ -49,10 +49,7 @@ def check_versions(
     charts.remove(chart_name)
 
     condition = [
-        (
-            chart_info[chart]
-            != chart_info[chart_name][chart]
-        )
+        (chart_info[chart] != chart_info[chart_name][chart])
         for chart in charts
     ]
     charts_to_update = list(compress(charts, condition))

@@ -1,6 +1,5 @@
 import time
 import logging
-
 from subprocess import check_call
 from .helper_functions import (
     delete_request,
@@ -38,7 +37,6 @@ def add_commit_push(
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully added file: %s" % filename)
@@ -52,7 +50,6 @@ def add_commit_push(
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean_up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully committed file: %s" % filename)
@@ -70,7 +67,6 @@ def add_commit_push(
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean-up functions here
         raise RuntimeError(result["err_msg"])
 
     logging.info("Successfully pushed changes to branch: %s" % target_branch)
@@ -105,7 +101,9 @@ def check_fork_exists(repo_name: str, token: str) -> bool:
         bool: True if a fork exists, False if not
     """
     header = {"Authorization": f"token {token}"}
-    resp = get_request("https://api.github.com/users/HelmUpgradeBot/repos", headers=header)
+    resp = get_request(
+        "https://api.github.com/users/HelmUpgradeBot/repos", headers=header
+    )
 
     fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
 
@@ -123,7 +121,7 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
     header = {"Authorization": f"token {token}"}
     resp = get_request(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches",
-        headers=header
+        headers=header,
     )
 
     if target_branch in [x["name"] for x in resp.json()]:
@@ -133,7 +131,6 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            # Add clean-up functions here
             raise RuntimeError(resp["err_msg"])
 
         logger.info("Successfully deleted remote branch")
@@ -143,7 +140,6 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            # Add clean-up functions here
             raise RuntimeError(resp["err_msg"])
 
         logger.info("Successfully deleted local branch")
@@ -179,7 +175,6 @@ def checkout_branch(
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            # Add clean-up functions here
             raise RuntimeError(result["err_msg"])
 
         logger.info("Successfully pulled main branch")
@@ -190,7 +185,6 @@ def checkout_branch(
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean-up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully checked out branch")
@@ -213,7 +207,6 @@ def clone_fork(repo_name: str) -> None:
 
     if result["returncode"] != 0:
         logger.error(result["err_msg"])
-        # Add clean-up functions here
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully cloned fork")

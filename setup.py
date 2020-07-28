@@ -5,9 +5,7 @@ from setuptools import find_packages, setup
 
 # Package meta-data.
 AUTHOR = "Sarah Gibson"
-DESCRIPTION = (
-    "A Python bot for updating the dependencies of the Hub23 Helm Chart"  # noqa: E501
-)
+DESCRIPTION = "A Python bot for updating the dependencies of the Hub23 Helm Chart"  # noqa: E501
 EMAIL = "drsarahlgibson@gmail.com"
 LICENSE = "MIT"
 LICENSE_TROVE = "License :: OSI Approved :: MIT License"

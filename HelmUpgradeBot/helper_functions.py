@@ -16,7 +16,6 @@ def delete_request(url: str, headers: dict = None) -> None:
     resp = requests.delete(url, headers=headers)
 
     if not resp:
-        # Add in clean up functions here
         logger.error(resp.text)
         raise RuntimeError(resp.text)
 
@@ -32,7 +31,6 @@ def get_request(url: str, headers: dict = None, text: bool = False):
     resp = requests.get(url, headers=headers)
 
     if not resp:
-        # Add in clean up functions here
         logger.error(resp.text)
         raise RuntimeError(resp.text)
 
@@ -55,7 +53,6 @@ def post_request(url: str, headers: dict = None, json: dict = None) -> None:
     resp = requests.post(url, headers=headers, json=json)
 
     if not resp:
-        # Add in clean up functions here
         logger.error(resp.text)
         raise RuntimeError(resp.text)
 
