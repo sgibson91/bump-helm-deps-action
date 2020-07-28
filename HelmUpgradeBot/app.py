@@ -1,3 +1,5 @@
+import os
+import shutil
 import logging
 
 from itertools import compress
@@ -44,3 +46,15 @@ def check_versions(
         )
 
     return charts_to_update
+
+
+def clean_up(repo_name: str) -> None:
+    cwd = os.getcwd()
+    this_dir = cwd.split("/")[-1]
+    if this_dir == repo_name:
+        os.chdir(os.pardir)
+
+    if os.path.exists(repo_name):
+        logger.info("Deleting local repository: %s" % repo_name)
+        shutil.rmtree(repo_name)
+        logger.info("Deleted local repository: %s" % repo_name)
