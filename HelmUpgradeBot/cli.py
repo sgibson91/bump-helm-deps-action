@@ -3,76 +3,79 @@ import sys
 import argparse
 from .HelmUpgradeBot import HelmUpgradeBot
 
-# Create argument parser
-DESCRIPTION = "Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub repository"
-parser = argparse.ArgumentParser(description=DESCRIPTION)
 
-# Define positional arguments
-parser.add_argument("repo_owner", type=str, help="The GitHub repository owner")
-parser.add_argument("repo_name", type=str, help="The deployment repo name")
-parser.add_argument(
-    "deployment", type=str, help="The name of the deployed BinderHub"
-)
-parser.add_argument(
-    "chart_name", type=str, help="The name of the local helm chart"
-)
+def parse_args(args):
+    # Create argument parser
+    DESCRIPTION = "Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub repository"
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
 
-# Define optional arguments that take parameters
-parser.add_argument(
-    "-k",
-    "--keyvault",
-    type=str,
-    help="Name of the Azure Key Vault storing secrets for the BinderHub",
-)
-parser.add_argument(
-    "-n",
-    "--token-name",
-    type=str,
-    help="Name of the bot's access token as stored in the Azure Key Vault",
-)
-parser.add_argument(
-    "-t",
-    "--target-branch",
-    type=str,
-    default="helm_chart_bump",
-    help="The git branch to commit to. Default: helm_chart_bump.",
-)
-parser.add_argument(
-    "-b",
-    "--base-branch",
-    type=str,
-    default="main",
-    help="The base branch to open the Pull Request against. Default: main.",
-)
-parser.add_argument(
-    "-l",
-    "--labels",
-    nargs="+",
-    default=None,
-    help="List of labels to assign to the Pull Request",
-)
+    # Define positional arguments
+    parser.add_argument(
+        "repo_owner", type=str, help="The GitHub repository owner"
+    )
+    parser.add_argument("repo_name", type=str, help="The deployment repo name")
+    parser.add_argument(
+        "deployment", type=str, help="The name of the deployed BinderHub"
+    )
+    parser.add_argument(
+        "chart_name", type=str, help="The name of the local helm chart"
+    )
 
-# Define optional boolean flags
-parser.add_argument(
-    "--identity",
-    action="store_true",
-    help="Login to Azure using a Managed System Identity",
-)
-parser.add_argument(
-    "--dry-run", action="store_true", help="Perform a dry-run helm upgrade"
-)
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    help="Print output to the console. Default is to write to a log file.",
-)
+    # Define optional arguments that take parameters
+    parser.add_argument(
+        "-k",
+        "--keyvault",
+        type=str,
+        help="Name of the Azure Key Vault storing secrets for the BinderHub",
+    )
+    parser.add_argument(
+        "-n",
+        "--token-name",
+        type=str,
+        help="Name of the bot's access token as stored in the Azure Key Vault",
+    )
+    parser.add_argument(
+        "-t",
+        "--target-branch",
+        type=str,
+        default="helm_chart_bump",
+        help="The git branch to commit to. Default: helm_chart_bump.",
+    )
+    parser.add_argument(
+        "-b",
+        "--base-branch",
+        type=str,
+        default="main",
+        help="The base branch to open the Pull Request against. Default: main.",
+    )
+    parser.add_argument(
+        "-l",
+        "--labels",
+        nargs="+",
+        default=None,
+        help="List of labels to assign to the Pull Request",
+    )
+
+    # Define optional boolean flags
+    parser.add_argument(
+        "--identity",
+        action="store_true",
+        help="Login to Azure using a Managed System Identity",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Perform a dry-run helm upgrade"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print output to the console. Default is to write to a log file.",
+    )
+
+    return parser.parse_args()
 
 
-def main():
-    """Main Function"""
-    args = parser.parse_args(sys.argv[1:])
-
+def check_parser(args):
     keyvault_cond = args.keyvault is None
     token_cond = args.token_name is None
 
@@ -94,6 +97,12 @@ def main():
             setattr(args, "token", api_token)
     else:
         setattr(args, "token", None)
+
+
+def main():
+    """Main Function"""
+    args = parse_args(sys.argv[1:])
+    check_parser(args)
 
     obj = HelmUpgradeBot(vars(args))
     obj.check_versions()
