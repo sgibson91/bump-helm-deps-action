@@ -15,9 +15,6 @@ def parse_args(args):
     )
     parser.add_argument("repo_name", type=str, help="The deployment repo name")
     parser.add_argument(
-        "deployment", type=str, help="The name of the deployed BinderHub"
-    )
-    parser.add_argument(
         "chart_name", type=str, help="The name of the local helm chart"
     )
 
