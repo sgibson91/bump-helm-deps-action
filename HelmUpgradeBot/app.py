@@ -50,14 +50,14 @@ def check_versions(
 
     condition = [
         (
-            chart_info[chart]["version"]
-            != chart_info[chart_name][chart]["version"]
+            chart_info[chart]
+            != chart_info[chart_name][chart]
         )
         for chart in charts
     ]
     charts_to_update = list(compress(charts, condition))
 
-    if condition.any() and (not dry_run):
+    if any(condition) and (not dry_run):
         logger.info(
             "Helm upgrade required for the following charts: %s"
             % charts_to_update
@@ -94,7 +94,7 @@ def clean_up(repo_name: str) -> None:
 
 
 def get_chart_versions(
-    chart_name: str, repo_owner: str, repo_name: str
+    chart_name: str, repo_owner: str, repo_name: str, token: str
 ) -> dict:
     """Get the versions of dependent charts
 
@@ -102,12 +102,14 @@ def get_chart_versions(
         chart_name (str): The main chart to check
         repo_owner (str): The repository/chart owner
         repo_name (str): The name of the repository hosting the chart
+        token (str): A GitHub API token
 
     Returns:
         dict: A dictionary containing the chart dependencies and their
               up-to-date versions
     """
     chart_info = {}
+    chart_info[chart_name] = {}
     chart_urls = {
         chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
         "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
@@ -116,17 +118,16 @@ def get_chart_versions(
 
     for (chart, chart_url) in chart_urls.items():
         if "requirements.yaml" in chart_url:
-            filename = os.path.join(HERE, chart_name, "requirements.yaml")
             chart_info = pull_version_from_requirements_file(
-                chart_info, chart, filename
+                chart_info, chart, chart_url, token
             )
         elif "Chart.yaml" in chart_url:
             chart_info = pull_version_from_chart_file(
-                chart_info, chart, chart_url
+                chart_info, chart, chart_url, token
             )
         elif "/gh-pages/" in chart_url:
             chart_info = pull_version_from_github_pages(
-                chart_info, chart, chart_url
+                chart_info, chart, chart_url, token
             )
         else:
             msg = (
@@ -140,7 +141,7 @@ def get_chart_versions(
 
 
 def update_local_file(
-    chart_name: str, charts_to_update: list, chart_info: dict
+    chart_name: str, charts_to_update: list, chart_info: dict, repo_name: str
 ) -> None:
     """Update the local helm chart
 
@@ -149,17 +150,18 @@ def update_local_file(
         charts_to_update (list): A list of the dependencies that need updating
         chart_info (dict): A dictionary of the dependent charts and their
                            up-to-date versions
+        repo_name (str): The name of the repository that hosts the helm chart
     """
     logger.info("Updating local helm chart: %s" % chart_name)
 
-    filename = os.path.join(HERE, chart_name, "requirements.yaml")
+    filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
     with open(filename, "r") as stream:
         chart_yaml = yaml.safe_load(stream)
 
     for chart in charts_to_update:
         for dep in chart_yaml["dependencies"]:
             if dep["name"] == chart:
-                dep["version"] = chart_info[chart]["version"]
+                dep["version"] = chart_info[chart]
 
     with open(filename, "w") as stream:
         yaml.safe_dump(chart_yaml, stream)
@@ -194,17 +196,17 @@ def upgrade_chart(
         token (str): A GitHub API token
         labels (list): A list of labels to add the the Pull Request
     """
-    filename = os.path.join(HERE, chart_name, "requirements.yaml")
+    filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
 
-    fork_exists = check_fork_exists(repo_name)
+    fork_exists = check_fork_exists(repo_name, token)
 
-    if fork_exists:
+    if not fork_exists:
         make_fork(repo_name, repo_api, token)
     clone_fork(repo_name)
 
     os.chdir(repo_name)
-    checkout_branch(repo_owner, repo_name, target_branch)
-    update_local_file(chart_name, charts_to_update, chart_info)
+    checkout_branch(repo_owner, repo_name, target_branch, token)
+    update_local_file(chart_name, charts_to_update, chart_info, repo_name)
     add_commit_push(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
     )
@@ -249,10 +251,10 @@ def run(
 
     _ = remove_fork(repo_name, token)
 
-    chart_info = get_chart_versions(chart_name, repo_owner, repo_name)
+    chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
-    if (len(charts_to_update) > 0) and dry_run:
+    if (len(charts_to_update) > 0) and (not dry_run):
         upgrade_chart(
             chart_name,
             chart_info,
