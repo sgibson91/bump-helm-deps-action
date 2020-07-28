@@ -75,10 +75,10 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 To run the bot, execute the following:
 
 ```bash
-usage: HelmUpgradeBot [-h] [-k KEYVAULT] [-n TOKEN_NAME] [-t TARGET_BRANCH]
-                      [-b BASE_BRANCH] [-l LABELS [LABELS ...]] [--identity]
-                      [--dry-run] [-v]
-                      repo_owner repo_name deployment chart_name
+usage: helm-bot [-h] [-k KEYVAULT] [-n TOKEN_NAME] [-t TARGET_BRANCH]
+                [-b BASE_BRANCH] [-l LABELS [LABELS ...]] [--identity]
+                [--dry-run] [-v]
+                repo_owner repo_name chart_name
 
 Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub
 repository
@@ -86,7 +86,6 @@ repository
 positional arguments:
   repo_owner            The GitHub repository owner
   repo_name             The deployment repo name
-  deployment            The name of the deployed BinderHub
   chart_name            The name of the local helm chart
 
 optional arguments:
@@ -95,7 +94,7 @@ optional arguments:
                         Name of the Azure Key Vault storing secrets for the
                         BinderHub
   -n TOKEN_NAME, --token-name TOKEN_NAME
-                        Name of the bots access token as stored in the Azure
+                        Name of the bot's access token as stored in the Azure
                         Key Vault
   -t TARGET_BRANCH, --target-branch TARGET_BRANCH
                         The git branch to commit to. Default: helm_chart_bump.
