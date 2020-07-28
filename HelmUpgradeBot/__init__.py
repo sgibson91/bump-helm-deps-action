@@ -1,5 +1,7 @@
 __version__ = "0.0.1"
 
+from .app import run
+
 from .azure import login, get_token
 
 from .github import (
