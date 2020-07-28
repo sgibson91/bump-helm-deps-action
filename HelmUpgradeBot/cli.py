@@ -1,7 +1,26 @@
 import os
 import sys
+import logging
 import argparse
 from .app import run
+
+
+def logging_setup(verbose=False):
+    # Setup log config
+    if verbose:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="[%(asctime)s %(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    else:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            filename="HelmUpgradeBot.log",
+            filemode="a",
+            format="[%(asctime)s %(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
 
 def parse_args(args):
@@ -100,6 +119,8 @@ def main():
     """Main Function"""
     args = parse_args(sys.argv[1:])
     check_parser(args)
+
+    logging_setup(verbose=args.verbose)
 
     run(
         chart_name=args.chart_name,
