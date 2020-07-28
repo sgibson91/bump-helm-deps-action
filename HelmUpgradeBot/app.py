@@ -5,6 +5,8 @@ import logging
 
 from itertools import compress
 
+from .azure import get_token
+
 from .helper_functions import run_cmd
 
 from .github import (
@@ -14,6 +16,8 @@ from .github import (
     clone_fork,
     create_pr,
     make_fork,
+    remove_fork,
+    set_git_config,
 )
 
 HERE = os.getcwd()
@@ -195,3 +199,59 @@ def upgrade_chart(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
     )
     create_pr(repo_api, base_branch, target_branch, token, labels)
+
+
+def run(
+    chart_name: str,
+    repo_owner: str,
+    repo_name: str,
+    base_branch: str,
+    target_branch: str,
+    labels: list,
+    token: str,
+    token_name: str,
+    keyvault: str,
+    dry_run: bool = False,
+    identity: bool = False,
+) -> None:
+    """Run the HelmUpgradeBot app
+
+    Args:
+        chart_name (str): The name of the chart to be updated
+        repo_owner (str): The owner of the repository/chart (user or org)
+        repo_name (str): The repository that hosts the chart
+        base_branch (str): The base branch for Pull Requests
+        target_branch (str): The target branch for Pull Requests
+        labels (list): A list of labels to add to the Pull Request
+        token (str): A GitHub API token
+        token_name (str): The name of the stored token
+        keyvault (str): An Azure keyvault the token is stored in
+        dry_run (bool, optional): Don't open a Pull Request. Defaults to False.
+        identity (bool, optional): Login to Azure with Managed System Identity. Defaults to False.
+    """
+    repo_api = f"https://api.github.com/repos/{repo_owner}/{repo_name}/"
+
+    if token is None:
+        token = get_token(token_name, keyvault, identity=identity)
+
+    if identity:
+        set_git_config()
+
+    _ = remove_fork(repo_name, token)
+
+    chart_info = get_chart_versions(chart_name, repo_owner, repo_name)
+    charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
+
+    if (len(charts_to_update) > 0) and dry_run:
+        upgrade_chart(
+            chart_name,
+            chart_info,
+            charts_to_update,
+            repo_owner,
+            repo_name,
+            repo_api,
+            base_branch,
+            target_branch,
+            token,
+            labels,
+        )
