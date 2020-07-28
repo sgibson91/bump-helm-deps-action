@@ -1,4 +1,5 @@
 import os
+import yaml
 import shutil
 import logging
 
@@ -10,6 +11,8 @@ from .helper_functions import (
     post_request,
     run_cmd,
 )
+
+HERE = os.getcwd()
 
 logger = logging.getLogger()
 
@@ -91,5 +94,21 @@ def get_chart_versions(
     return chart_info
 
 
-def update_local_file():
-    pass
+def update_local_file(
+    chart_name: str, charts_to_update: list, chart_info: dict
+) -> None:
+    logger.info("Updating local helm chart: %s" % chart_name)
+
+    filename = os.path.join(HERE, chart_name, "requirements.yaml")
+    with open(filename, "r") as stream:
+        chart_yaml = yaml.safe_load(stream)
+
+    for chart in charts_to_update:
+        for dep in chart_yaml["dependencies"]:
+            if dep["name"] == chart:
+                dep["version"] = chart_info[chart]["version"]
+
+    with open(filename, "w") as stream:
+        yaml.safe_dump(chart_yaml, stream)
+
+    logger.info("Updated file: %s" % filename)
