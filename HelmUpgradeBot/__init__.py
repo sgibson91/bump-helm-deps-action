@@ -23,3 +23,9 @@ from .helper_functions import (
     post_request,
     run_cmd,
 )
+
+from .pull_version_info import (
+    pull_version_from_requirements_file,
+    pull_version_from_chart_file,
+    pull_version_from_github_pages,
+)
