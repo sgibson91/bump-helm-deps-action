@@ -130,3 +130,32 @@ def clone_fork(repo_name: str) -> None:
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully cloned fork")
+
+
+def create_pr(
+    repo_api: str,
+    base_branch: str,
+    target_branch: str,
+    token: str,
+    labels: str = None,
+) -> None:
+    logger.info("Creating Pull Request")
+
+    pr = {
+        "title": "Logging Helm Chart version upgrade",
+        "body": "This PR is updating the local Helm Chart to the most recent Chart dependency versions.",
+        "base": base_branch,
+        "head": f"HelmUpgradeBot:{target_branch}",
+    }
+
+    resp = post_request(
+        repo_api + "pulls",
+        headers={"Authorization": f"token {token}"},
+        json=pr,
+    )
+
+    logger.info("Pull Request created")
+
+    if labels is not None:
+        output = resp.json()
+        add_labels(labels, output["issue_url"], token)
