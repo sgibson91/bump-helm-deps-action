@@ -1,6 +1,6 @@
 import logging
 
-from .helper_functions import run_cmd
+from .helper_functions import post_request, run_cmd
 
 logger = logging.getLogger()
 
@@ -57,3 +57,14 @@ def add_commit_push(
         raise RuntimeError(result["err_msg"])
 
     logging.info("Successfully pushed changes to branch: %s" % target_branch)
+
+
+def add_labels(labels, pr_url, token):
+    logger.info("Adding labels to Pull Request: %s" % pr_url)
+    logger.info("Adding labels: %s" % labels)
+
+    post_request(
+        pr_url,
+        headers={"Authorization": f"token {token}"},
+        json={"labels": labels},
+    )
