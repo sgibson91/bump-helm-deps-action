@@ -68,7 +68,7 @@ setup(
     include_package_data=True,
     license=LICENSE,
     ext_modules=[],
-    entry_points={"console_scripts": ["helm-bot = HelmUpgradeBot.cli:main"]},
+    entry_points={"console_scripts": ["helm-bot = helm-bot.cli:main"]},
     classifiers=[
         # Trove classifiers
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
