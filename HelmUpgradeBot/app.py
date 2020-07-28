@@ -5,12 +5,7 @@ import logging
 
 from itertools import compress
 
-from .helper_functions import (
-    delete_request,
-    get_request,
-    post_request,
-    run_cmd,
-)
+from .helper_functions import run_cmd
 
 HERE = os.getcwd()
 
