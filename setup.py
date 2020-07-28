@@ -9,7 +9,7 @@ DESCRIPTION = "A Python bot for updating the dependencies of the Hub23 Helm Char
 EMAIL = "drsarahlgibson@gmail.com"
 LICENSE = "MIT"
 LICENSE_TROVE = "License :: OSI Approved :: MIT License"
-NAME = "HelmUpgradeBot"
+NAME = "helm-bot"
 REQUIRES_PYTHON = ">=3.7.0"
 URL = "https://github.com/HelmUpgradeBot/hub23-deploy-upgrades"
 VERSION = None
