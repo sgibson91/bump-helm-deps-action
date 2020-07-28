@@ -6,6 +6,12 @@ logger = logging.getLogger()
 
 
 def login(identity: bool = False) -> None:
+    """Login to Azure
+
+    Args:
+        identity (bool, optional): Login with Managed System Identity.
+                                   Defaults to False.
+    """
     login_cmd = ["az", "login"]
 
     if identity:
@@ -24,8 +30,19 @@ def login(identity: bool = False) -> None:
     logger.info("Successfully logged into Azure")
 
 
-def get_token(token_name: str, keyvault: str) -> str:
-    # login()
+def get_token(token_name: str, keyvault: str, identity: bool = False) -> str:
+    """Get GitHub API token from Azure Key Vault
+
+    Args:
+        token_name (str): The name the token is stored as
+        keyvault (str): The keyvault the token is stored within
+        identity (bool, optional): Access with a Managed System Identity.
+                                   Defaults to False.
+
+    Returns:
+        str: The token value
+    """
+    login(identity)
 
     logger.info("Retrieving scret: %s" % token_name)
 
