@@ -15,6 +15,17 @@ logger = logging.getLogger()
 def check_versions(
     chart_name: str, chart_info: dict, dry_run: bool = False
 ) -> list:
+    """Check if chart dependencies are up-to-date
+
+    Args:
+        chart_name (str): The chart to check the dependencies of
+        chart_info (dict): Dictionary containing chart version info
+        dry_run (bool, optional): For a dry-run, don't edit files.
+                                  Defaults to False.
+
+    Returns:
+        list: A list of chart dependencies that need updating
+    """
     charts = list(chart_info.keys())
     charts.remove(chart_name)
 
@@ -47,6 +58,11 @@ def check_versions(
 
 
 def clean_up(repo_name: str) -> None:
+    """Clean up the locally cloned repository
+
+    Args:
+        repo_name (str): The repository name
+    """
     cwd = os.getcwd()
     this_dir = cwd.split("/")[-1]
     if this_dir == repo_name:
@@ -61,6 +77,17 @@ def clean_up(repo_name: str) -> None:
 def get_chart_versions(
     chart_name: str, repo_owner: str, repo_name: str
 ) -> dict:
+    """Get the versions of dependent charts
+
+    Args:
+        chart_name (str): The main chart to check
+        repo_owner (str): The repository/chart owner
+        repo_name (str): The name of the repository hosting the chart
+
+    Returns:
+        dict: A dictionary containing the chart dependencies and their
+              up-to-date versions
+    """
     chart_info = {}
     chart_urls = {
         chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
@@ -92,6 +119,14 @@ def get_chart_versions(
 def update_local_file(
     chart_name: str, charts_to_update: list, chart_info: dict
 ) -> None:
+    """Update the local helm chart
+
+    Args:
+        chart_name (str): The name of the helm chart
+        charts_to_update (list): A list of the dependencies that need updating
+        chart_info (dict): A dictionary of the dependent charts and their
+                           up-to-date versions
+    """
     logger.info("Updating local helm chart: %s" % chart_name)
 
     filename = os.path.join(HERE, chart_name, "requirements.yaml")
