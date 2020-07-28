@@ -20,6 +20,16 @@ def add_commit_push(
     target_branch: str,
     token: str,
 ) -> None:
+    """Perform add, commit, push commands on an edited file
+
+    Args:
+        filename (str): The file that has been edited
+        charts_to_update (list): A list of charts the need to be updated
+        chart_info (dict): A list of chart dependencies and their up-to-date versions
+        repo_name (str): The name of the repository to push the changes to
+        target_branch (str): The name of the branch to push the changes to
+        token (str): A GitHub API token
+    """
     # Add the edited file
     logger.info("Adding file: %s" % filename)
 
@@ -67,6 +77,13 @@ def add_commit_push(
 
 
 def add_labels(labels: list, pr_url: str, token: str) -> None:
+    """Adds labels to a Pull Request on GitHub
+
+    Args:
+        labels (list): A list of labels to add to the Pull Request
+        pr_url (str): The URL of the open Pull Request
+        token (str): A GitHub API token
+    """
     logger.info("Adding labels to Pull Request: %s" % pr_url)
     logger.info("Adding labels: %s" % labels)
 
@@ -78,6 +95,14 @@ def add_labels(labels: list, pr_url: str, token: str) -> None:
 
 
 def check_fork_exists(repo_name: str) -> bool:
+    """Check if HelmUpgradeBot has a fork of a GitHub repository
+
+    Args:
+        repo_name (str): The name of the repository to check for
+
+    Returns:
+        bool: True if a fork exists, False if not
+    """
     resp = get_request("https://api.github.com/users/HelmUpgradeBot/repos")
 
     fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
@@ -86,6 +111,12 @@ def check_fork_exists(repo_name: str) -> bool:
 
 
 def delete_old_branch(repo_name: str, target_branch: str) -> None:
+    """Delete a branch of a GitHub repository
+
+    Args:
+        repo_name (str): The name of the repository
+        target_branch (str): The name of the branch to be deleted
+    """
     resp = get_request(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}"
     )
@@ -119,6 +150,13 @@ def delete_old_branch(repo_name: str, target_branch: str) -> None:
 def checkout_branch(
     repo_owner: str, repo_name: str, target_branch: str
 ) -> None:
+    """Checkout a branch of a GitHub repository
+
+    Args:
+        repo_owner (str): The owner of the repository (user or org)
+        repo_name (str): The name of the repository
+        target_branch (str): The branch to checkout
+    """
     fork_exists = check_fork_exists(repo_name)
 
     if fork_exists:
@@ -153,6 +191,11 @@ def checkout_branch(
 
 
 def clone_fork(repo_name: str) -> None:
+    """Clone a fork of a GitHub repository
+
+    Args:
+        repo_name (str): The repository to clone
+    """
     logger.info("Cloning fork: %s" % repo_name)
 
     clone_cmd = [
@@ -177,6 +220,16 @@ def create_pr(
     token: str,
     labels: str = None,
 ) -> None:
+    """Create a Pull Request to the original repository
+
+    Args:
+        repo_api (str): The API URL of the host repository
+        base_branch (str): The name of the base branch for the PR
+        target_branch (str): The name of the target branch for the PR
+        token (str): A GitHub API token
+        labels (str, optional): A list of labels to add to the PR.
+                                Defaults to None.
+    """
     logger.info("Creating Pull Request")
 
     pr = {
@@ -200,6 +253,13 @@ def create_pr(
 
 
 def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
+    """Create a fork of a GitHub repository
+
+    Args:
+        repo_name (str): The name of the repository
+        repo_api (str): The API URL of the original repository
+        token (str): A GitHub API token
+    """
     logger.info("Forking repo: %s" % repo_name)
 
     post_request(
@@ -212,6 +272,15 @@ def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
 
 
 def remove_fork(repo_name: str, token: str) -> bool:
+    """Delete a fork of a GitHub repository
+
+    Args:
+        repo_name (str): The name of the repository
+        token (str): A GitHub API token
+
+    Returns:
+        bool: False since fork no longer exists
+    """
     fork_exists = check_fork_exists(repo_name)
 
     if fork_exists:
@@ -231,7 +300,8 @@ def remove_fork(repo_name: str, token: str) -> bool:
     return False
 
 
-def set_github_config() -> None:
+def set_git_config() -> None:
+    """Setup git config"""
     logger.info("Setting up GitHub configuration for HelmUpgradeBot")
 
     check_call(["git", "config", "--global", "user.name", "HelmUpgradeBot"])
