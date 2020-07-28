@@ -1,5 +1,7 @@
 __version__ = "0.0.1"
 
+from .azure import login, get_token
+
 from .github import (
     add_commit_push,
     add_labels,
