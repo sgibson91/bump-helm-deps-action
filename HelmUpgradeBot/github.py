@@ -78,7 +78,9 @@ def check_fork_exists(repo_name: str) -> bool:
     return fork_exists
 
 
-def checkout_branch(repo_owner: str, repo_name: str, target_branch: str):
+def checkout_branch(
+    repo_owner: str, repo_name: str, target_branch: str
+) -> None:
     fork_exists = check_fork_exists(repo_name)
 
     if fork_exists:
@@ -110,3 +112,21 @@ def checkout_branch(repo_owner: str, repo_name: str, target_branch: str):
         raise RuntimeError(result["err_msg"])
 
     logger.info("Successfully checked out branch")
+
+
+def clone_fork(repo_name: str) -> None:
+    logger.info("Cloning fork: %s" % repo_name)
+
+    clone_cmd = [
+        "git",
+        "clone",
+        f"https://github.com/HelmUpgradeBot/{repo_name}.git",
+    ]
+    result = run_cmd(clone_cmd)
+
+    if result["returncode"] != 0:
+        logger.error(result["err_msg"])
+        # Add clean-up functions here
+        raise RuntimeError(result["err_msg"])
+
+    logger.info("Successfully cloned fork")
