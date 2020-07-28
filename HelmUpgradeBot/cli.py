@@ -1,7 +1,7 @@
 import os
 import sys
 import argparse
-from .HelmUpgradeBot import HelmUpgradeBot
+from .app import run
 
 
 def parse_args(args):
@@ -104,8 +104,19 @@ def main():
     args = parse_args(sys.argv[1:])
     check_parser(args)
 
-    obj = HelmUpgradeBot(vars(args))
-    obj.check_versions()
+    run(
+        chart_name=args.chart_name,
+        repo_owner=args.repo_owner,
+        repo_name=args.repo_name,
+        base_branch=args.base_branch,
+        target_branch=args.target_branch,
+        labels=args.labels,
+        token=args.token,
+        token_name=args.token_name,
+        keyvault=args.keyvault,
+        dry_run=args.dry_run,
+        identity=args.identity,
+    )
 
 
 if __name__ == "__main__":
