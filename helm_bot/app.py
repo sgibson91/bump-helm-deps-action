@@ -59,7 +59,7 @@ def check_versions(
             "Helm upgrade required for the following charts: %s"
             % charts_to_update
         )
-    elif condition.any() and dry_run:
+    elif any(condition) and dry_run:
         logger.info(
             "Helm upgrade required for the following charts: %s. PR won't be opened due to --dry-run flag being set."
             % charts_to_update
