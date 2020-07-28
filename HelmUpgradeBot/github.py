@@ -1,6 +1,7 @@
 import time
 import logging
 
+from subprocess import check_call
 from .helper_functions import (
     delete_request,
     get_request,
@@ -228,3 +229,18 @@ def remove_fork(repo_name: str, token: str) -> bool:
         logger.info("HelmUpgradeBot does not have a fork of: %s" % repo_name)
 
     return False
+
+
+def set_github_config() -> None:
+    logger.info("Setting up GitHub configuration for HelmUpgradeBot")
+
+    check_call(["git", "config", "--global", "user.name", "HelmUpgradeBot"])
+    check_call(
+        [
+            "git",
+            "config",
+            "--global",
+            "user.email",
+            "helmupgradebot.github@gmail.com",
+        ]
+    )
