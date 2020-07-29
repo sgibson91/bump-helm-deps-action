@@ -75,8 +75,8 @@ def run_cmd(cmd: list) -> dict:
 
     result = {
         "returncode": proc.returncode,
-        "output": msgs[0].decode(encoding=("utf-8")),
-        "err_msg": msgs[1].decode(encoding=("utf-8")),
+        "output": msgs[0].decode(encoding=("utf-8")).strip("\n"),
+        "err_msg": msgs[1].decode(encoding=("utf-8")).strip("\n"),
     }
 
     return result
