@@ -245,13 +245,13 @@ def create_pr(
         repo_api + "pulls",
         headers={"Authorization": f"token {token}"},
         json=pr,
+        return_json=True
     )
 
     logger.info("Pull Request created")
 
     if labels is not None:
-        output = resp.json()
-        add_labels(labels, output["issue_url"], token)
+        add_labels(labels, resp["issue_url"], token)
 
 
 def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
