@@ -102,10 +102,12 @@ def check_fork_exists(repo_name: str, token: str) -> bool:
     """
     header = {"Authorization": f"token {token}"}
     resp = get_request(
-        "https://api.github.com/users/HelmUpgradeBot/repos", headers=header
+        "https://api.github.com/users/HelmUpgradeBot/repos",
+        headers=header,
+        json=True,
     )
 
-    fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
+    fork_exists = bool([x for x in resp if x["name"] == repo_name])
 
     return fork_exists
 
@@ -122,9 +124,10 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
     resp = get_request(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches",
         headers=header,
+        json=True,
     )
 
-    if target_branch in [x["name"] for x in resp.json()]:
+    if target_branch in [x["name"] for x in resp]:
         logger.info("Deleting branch: %s" % target_branch)
         delete_cmd = ["git", "push", "--delete", "origin", target_branch]
         result = run_cmd(delete_cmd)
