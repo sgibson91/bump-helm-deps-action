@@ -1,8 +1,14 @@
 import pytest
 import logging
+import responses
 from unittest.mock import patch, PropertyMock
 from testfixtures import log_capture
-from helm_bot.github import add_commit_push, add_labels, check_fork_exists
+from helm_bot.github import (
+    add_commit_push,
+    add_labels,
+    check_fork_exists,
+    delete_old_branch,
+)
 
 
 @log_capture()
@@ -37,7 +43,7 @@ def test_add_commit_push(capture):
 
         assert mock_run_cmd.call_count == 3
 
-    capture.check_present()
+        capture.check_present()
 
 
 @log_capture()
@@ -67,7 +73,7 @@ def test_add_commit_push_error(capture):
             token,
         )
 
-    capture.check_present()
+        capture.check_present()
 
 
 @log_capture()
@@ -85,7 +91,7 @@ def test_add_labels(capture):
 
         assert mocked_func.call_count == 1
 
-    capture.check_present()
+        capture.check_present()
 
 
 @patch(
@@ -109,3 +115,49 @@ def test_check_fork_exists(mock_args):
         headers={"Authorization": "token this_is_a_token"},
         json=True,
     )
+
+
+@responses.activate
+@log_capture()
+def test_delete_old_branch_does_not_exist(capture):
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Branch does not exist: %s" % target_branch)
+
+    with patch(
+        "helm_bot.github.get_request",
+        return_value=[{"name": "branch-1"}, {"name": "branch-2"}],
+    ) as mocked_func:
+        delete_old_branch(repo_name, target_branch, token)
+
+        assert mocked_func.call_count == 1
+
+        capture.check_present()
+
+
+@responses.activate
+@log_capture()
+def test_delete_old_branch_does_exist(capture):
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Deleting branch: %s" % target_branch)
+    logger.info("Successfully deleted remote branch")
+    logger.info("Successfully deleted local branch")
+
+    with patch(
+        "helm_bot.github.get_request",
+        return_value=[{"name": "branch-1"}, {"name": target_branch}],
+    ) as mock_get, patch(
+        "helm_bot.github.run_cmd", return_value={"returncode": 0}
+    ) as mock_run:
+        delete_old_branch(repo_name, target_branch, token)
+
+        assert mock_get.call_count == 1
+        assert mock_run.call_count == 2
+        capture.check_present()
