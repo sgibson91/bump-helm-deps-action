@@ -9,6 +9,7 @@ from helm_bot.github import (
     check_fork_exists,
     delete_old_branch,
     checkout_branch,
+    clone_fork,
 )
 
 
@@ -219,4 +220,38 @@ def test_checkout_branch_does_not_exist(capture):
         assert mock1.call_count == 1
         assert mock2.call_count == 1
 
+        capture.check_present()
+
+
+@log_capture()
+def test_clone_fork(capture):
+    repo_name = "test_repo"
+
+    logger = logging.getLogger()
+    logger.info("Cloning fork: %s" % repo_name)
+    logger.info("Successfully cloned fork")
+
+    with patch(
+        "helm_bot.github.run_cmd", return_value={"returncode": 0}
+    ) as mock_run:
+        clone_fork(repo_name)
+
+        assert mock_run.call_count == 1
+        capture.check_present()
+
+
+@log_capture()
+def test_clone_fork_exception(capture):
+    repo_name = "test_repo"
+
+    logger = logging.getLogger()
+    logger.info("Cloning fork: %s" % repo_name)
+    logger.error("Could not run command")
+
+    with patch(
+        "helm_bot.github.run_cmd", return_value={"returncode": 1, "err_msg": "Could not run command"}
+    ) as mock_run, pytest.raises(RuntimeError):
+        clone_fork(repo_name)
+
+        assert mock_run.call_count == 1
         capture.check_present()
