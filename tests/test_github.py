@@ -90,7 +90,7 @@ def test_add_labels(capture):
 
 @patch(
     "helm_bot.github.get_request",
-    return_value='[{"name": "test_repo1"}, {"name": "test_repo2"}]',
+    return_value=[{"name": "test_repo1"}, {"name": "test_repo2"}],
 )
 def test_check_fork_exists(mock_args):
     repo_name1 = "test_repo1"
@@ -107,5 +107,5 @@ def test_check_fork_exists(mock_args):
     mock_args.assert_called_with(
         "https://api.github.com/users/HelmUpgradeBot/repos",
         headers={"Authorization": "token this_is_a_token"},
-        text=True,
+        json=True,
     )
