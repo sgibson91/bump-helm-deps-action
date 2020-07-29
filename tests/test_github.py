@@ -53,7 +53,7 @@ def test_add_commit_push(capture):
 
 
 @log_capture()
-def test_add_commit_push_error(capture):
+def test_add_commit_push_exception(capture):
     filename = "filename.txt"
     charts_to_update = ["chart-1", "chart-2"]
     chart_info = {"chart-1": "1.2.3", "chart-2": "4.5.6"}
@@ -63,13 +63,12 @@ def test_add_commit_push_error(capture):
 
     logger = logging.getLogger()
     logger.info("Adding file: %s" % filename)
-    logger.error("Could not add file: %s" % filename)
-    logger.info("Committing file: %s" % filename)
-    logger.error("Could not commit file: %s" % filename)
-    logger.info("Pushing commits to branch: %s" % target_branch)
-    logger.error("Could not push to branch: %s" % target_branch)
+    logger.error("Could not run command")
 
-    with pytest.raises(RuntimeError):
+    with patch(
+        "helm_bot.github.run_cmd",
+        return_value={"returncode": 1, "err_msg": "Could not run command"},
+    ) as mock_run, pytest.raises(RuntimeError):
         add_commit_push(
             filename,
             charts_to_update,
@@ -79,6 +78,7 @@ def test_add_commit_push_error(capture):
             token,
         )
 
+        assert mock_run.call_count >= 1
         capture.check_present()
 
 
@@ -156,16 +156,47 @@ def test_delete_old_branch_does_exist(capture):
     logger.info("Successfully deleted remote branch")
     logger.info("Successfully deleted local branch")
 
-    with patch(
+    mock_get = patch(
         "helm_bot.github.get_request",
         return_value=[{"name": "branch-1"}, {"name": target_branch}],
-    ) as mock_get, patch(
-        "helm_bot.github.run_cmd", return_value={"returncode": 0}
-    ) as mock_run:
+    )
+    mock_run = patch("helm_bot.github.run_cmd", return_value={"returncode": 0})
+
+    with mock_get as mock1, mock_run as mock2:
         delete_old_branch(repo_name, target_branch, token)
 
-        assert mock_get.call_count == 1
-        assert mock_run.call_count == 2
+        assert mock1.call_count == 1
+        assert mock2.call_count == 2
+
+        capture.check_present()
+
+
+@responses.activate
+@log_capture()
+def test_delete_old_branch_does_exist_exception(capture):
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Deleting branch: %s" % target_branch)
+    logger.error("Could not run command")
+
+    mock_get = patch(
+        "helm_bot.github.get_request",
+        return_value=[{"name": "branch-1"}, {"name": target_branch}],
+    )
+    mock_run = patch(
+        "helm_bot.github.run_cmd",
+        return_value={"returncode": 1, "err_msg": "Could not run command"},
+    )
+
+    with mock_get as mock1, mock_run as mock2, pytest.raises(RuntimeError):
+        delete_old_branch(repo_name, target_branch, token)
+
+        assert mock1.call_count == 1
+        assert mock2.call_count == 2
+
         capture.check_present()
 
 
@@ -201,6 +232,38 @@ def test_checkout_branch_exists(capture):
 
 
 @log_capture()
+def test_checkout_branch_exists_exception(capture):
+    repo_owner = "test_owner"
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
+    logger.error("Could not run command")
+
+    mock_check_fork = patch(
+        "helm_bot.github.check_fork_exists", return_value=True
+    )
+    mock_delete_branch = patch("helm_bot.github.delete_old_branch")
+    mock_run_cmd = patch(
+        "helm_bot.github.run_cmd",
+        return_value={"returncode": 1, "err_msg": "Could not run command"},
+    )
+
+    with mock_check_fork as mock1, mock_delete_branch as mock2, mock_run_cmd as mock3, pytest.raises(
+        RuntimeError
+    ):
+        checkout_branch(repo_owner, repo_name, target_branch, token)
+
+        assert mock1.call_count == 1
+        assert mock2.call_count == 1
+        assert mock3.call_count >= 1
+
+        capture.check_present()
+
+
+@log_capture()
 def test_checkout_branch_does_not_exist(capture):
     repo_owner = "test_owner"
     repo_name = "test_repo"
@@ -219,6 +282,36 @@ def test_checkout_branch_does_not_exist(capture):
     )
 
     with mock_check_fork as mock1, mock_run_cmd as mock2:
+        checkout_branch(repo_owner, repo_name, target_branch, token)
+
+        assert mock1.call_count == 1
+        assert mock2.call_count == 1
+
+        capture.check_present()
+
+
+@log_capture()
+def test_checkout_branch_does_not_exist_exception(capture):
+    repo_owner = "test_owner"
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Checking out branch: %s" % target_branch)
+    logger.error("Could not run command")
+
+    mock_check_fork = patch(
+        "helm_bot.github.check_fork_exists", return_value=False
+    )
+    mock_run_cmd = patch(
+        "helm_bot.github.run_cmd",
+        return_value={"returncode": 1, "err_msg": "Could not run command"},
+    )
+
+    with mock_check_fork as mock1, mock_run_cmd as mock2, pytest.raises(
+        RuntimeError
+    ):
         checkout_branch(repo_owner, repo_name, target_branch, token)
 
         assert mock1.call_count == 1
