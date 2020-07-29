@@ -13,6 +13,7 @@ from helm_bot.github import (
     create_pr,
     make_fork,
     remove_fork,
+    set_git_config,
 )
 
 
@@ -372,5 +373,18 @@ def test_remove_fork_exists(capture):
         assert mock1.call_count == 1
         assert mock2.call_count == 1
         assert mock3.call_count == 1
+
+        capture.check_present()
+
+
+@log_capture()
+def test_set_git_config(capture):
+    logger = logging.getLogger()
+    logger.info("Setting up GitHub configuration for HelmUpgradeBot")
+
+    with patch("helm_bot.github.check_call") as mock_check_call:
+        set_git_config()
+
+        assert mock_check_call.call_count == 2
 
         capture.check_present()
