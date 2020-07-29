@@ -10,6 +10,7 @@ from helm_bot.github import (
     delete_old_branch,
     checkout_branch,
     clone_fork,
+    create_pr,
 )
 
 
@@ -255,4 +256,50 @@ def test_clone_fork_exception(capture):
         clone_fork(repo_name)
 
         assert mock_run.call_count == 1
+        capture.check_present()
+
+
+@log_capture()
+def test_create_pr_no_labels(capture):
+    repo_api = "http://jsonplaceholder.typicode.com/"
+    base_branch = "base"
+    target_branch = "target"
+    token = "this_is_a_token"
+    labels = None
+
+    logger = logging.getLogger()
+    logger.info("Creating Pull Request")
+    logger.info("Pull Request created")
+
+    with patch("helm_bot.github.post_request", return_value={}) as mock_post:
+        create_pr(repo_api, base_branch, target_branch, token, labels)
+
+        assert mock_post.call_count == 1
+        assert mock_post.return_value == {}
+
+        capture.check_present()
+
+
+@log_capture()
+def test_create_pr_with_labels(capture):
+    repo_api = "http://jsonplaceholder.typicode.com/"
+    base_branch = "base"
+    target_branch = "target"
+    token = "this_is_a_token"
+    labels = ["label1", "label2"]
+
+    logger = logging.getLogger()
+    logger.info("Creating Pull Request")
+    logger.info("Pull Request created")
+
+    mock_post = patch("helm_bot.github.post_request", return_value={"issue_url": "http://jsonplaceholder.typicode.com/pr/1"})
+    mock_labels = patch("helm_bot.github.add_labels", return_value=None)
+
+    with mock_post as mock1, mock_labels as mock2:
+        create_pr(repo_api, base_branch, target_branch, token, labels)
+
+        assert mock1.call_count == 1
+        assert mock1.return_value == {"issue_url": "http://jsonplaceholder.typicode.com/pr/1"}
+        assert mock2.call_count == 1
+
         capture.check_present()
