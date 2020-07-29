@@ -11,6 +11,7 @@ from helm_bot.github import (
     checkout_branch,
     clone_fork,
     create_pr,
+    make_fork,
 )
 
 
@@ -306,5 +307,24 @@ def test_create_pr_with_labels(capture):
             "issue_url": "http://jsonplaceholder.typicode.com/pr/1"
         }
         assert mock2.call_count == 1
+
+        capture.check_present()
+
+
+@log_capture()
+def test_make_fork(capture):
+    repo_name = "test_repo"
+    repo_api = "http://jsonplaceholder.typicode.com/forks"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Forking repo: %s" % repo_name)
+    logger.info("Created fork")
+
+    with patch("helm_bot.github.post_request") as mock_post:
+        out = make_fork(repo_name, repo_api, token)
+
+        assert out
+        assert mock_post.call_count == 1
 
         capture.check_present()
