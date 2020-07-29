@@ -9,12 +9,13 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 - [:mag: Overview](#mag-overview)
 - [🤔 Assumptions HelmUpgradeBot Makes](#-assumptions-helmupgradebot-makes)
-- [:pushpin: Requirements](#pushpin-installation-and-requirements)
+- [:pushpin: Installation and Requirements](#pushpin-installation-and-requirements)
   - [:cloud: Install Azure CLI](#cloud-install-azure-cli)
 - [:children_crossing: Usage](#children_crossing-usage)
   - [:lock: User Permissions](#lock-user-permissions)
   - [:clock2: CRON Expression](#clock2-cron-expression)
   - [:clapper: GitHub Action](#clapper-github-action)
+- [:white_check_mark: Running Tests](#white_check_mark-running-tests)
 - [:leftwards_arrow_with_hook: Pre-commit Hook](#leftwards_arrow_with_hook-pre-commit-hook)
 - [:gift: Acknowledgements](#gift-acknowledgements)
 - [:sparkles: Contributing](#sparkles-contributing)
@@ -133,7 +134,24 @@ To run this script at 10am daily, use the following cron expression:
 ### :clapper: GitHub Action
 
 Rather than pay for a Virtual Machine to run the bot, it could be run in a [GitHub Action workflow](.github/workflows/run-bot.yml) instead.
-The default secret `GITHUB_TOKEN` should have enough permissions for everything provided all repositories are public.
+<!-- The default secret `GITHUB_TOKEN` should have enough permissions for everything provided all repositories are public. -->
+
+## :white_check_mark: Running Tests
+
+After following the [installation instructions](#pushpin-installation-and-requirements), the test suite can be run as follows:
+
+```bash
+python -m pytest -vvv
+```
+
+`coverage.py` can also be used to generate a coverage report of the test suite:
+
+```bash
+python -m coverage run -m pytest -vvv
+coverage report
+```
+
+An interactive HTML report can be generated with the command `coverage html` and accessed by opening `htmlcov/index.html` in your browser.
 
 ## :leftwards_arrow_with_hook: Pre-commit Hook
 
