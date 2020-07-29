@@ -2,7 +2,7 @@ import pytest
 import logging
 import responses
 from testfixtures import log_capture
-from helm_bot.helper_functions import delete_request, get_request
+from helm_bot.helper_functions import delete_request, get_request, post_request
 
 
 @responses.activate
@@ -89,6 +89,48 @@ def test_get_request_exception(capture):
 
     with pytest.raises(RuntimeError):
         get_request(test_url)
+
+    assert len(responses.calls) == 1
+    assert responses.calls[0].request.url == test_url
+    capture.check_present()
+
+
+@responses.activate
+def test_post_request():
+    test_url = "http://jsonplaceholder.typicode.com/"
+    test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
+    json = {"Payload": "Send this with the request"}
+
+    responses.add(
+        responses.POST, test_url, json={"Request": "Sent"}, status=200
+    )
+
+    post_request(test_url, headers=test_header, json=json)
+
+    assert len(responses.calls) == 1
+    assert responses.calls[0].request.url == test_url
+    assert responses.calls[0].response.text == '{"Request": "Sent"}'
+
+
+@responses.activate
+@log_capture()
+def test_post_request_exception(capture):
+    test_url = "http://josnplaceholder.typicode.com/"
+    test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
+    json = {"Payload": "Send this with the request"}
+
+    logger = logging.getLogger()
+    logger.error("Could not reach provided URL")
+
+    responses.add(
+        responses.POST,
+        test_url,
+        body="Could not reach provided URL",
+        status=500,
+    )
+
+    with pytest.raises(RuntimeError):
+        post_request(test_url, headers=test_header, json=json)
 
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == test_url
