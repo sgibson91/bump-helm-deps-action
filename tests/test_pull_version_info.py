@@ -1,5 +1,4 @@
 import responses
-from unittest.mock import patch
 from helm_bot.pull_version_info import (
     pull_version_from_chart_file,
     pull_version_from_github_pages,
