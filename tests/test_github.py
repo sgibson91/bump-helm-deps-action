@@ -292,14 +292,19 @@ def test_create_pr_with_labels(capture):
     logger.info("Creating Pull Request")
     logger.info("Pull Request created")
 
-    mock_post = patch("helm_bot.github.post_request", return_value={"issue_url": "http://jsonplaceholder.typicode.com/pr/1"})
+    mock_post = patch(
+        "helm_bot.github.post_request",
+        return_value={"issue_url": "http://jsonplaceholder.typicode.com/pr/1"},
+    )
     mock_labels = patch("helm_bot.github.add_labels", return_value=None)
 
     with mock_post as mock1, mock_labels as mock2:
         create_pr(repo_api, base_branch, target_branch, token, labels)
 
         assert mock1.call_count == 1
-        assert mock1.return_value == {"issue_url": "http://jsonplaceholder.typicode.com/pr/1"}
+        assert mock1.return_value == {
+            "issue_url": "http://jsonplaceholder.typicode.com/pr/1"
+        }
         assert mock2.call_count == 1
 
         capture.check_present()

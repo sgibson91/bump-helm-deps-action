@@ -245,7 +245,7 @@ def create_pr(
         repo_api + "pulls",
         headers={"Authorization": f"token {token}"},
         json=pr,
-        return_json=True
+        return_json=True,
     )
 
     logger.info("Pull Request created")
