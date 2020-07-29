@@ -1,0 +1,6 @@
+[run]
+omit =
+    # omit all tests
+    tests/*
+    # omit this single file
+    helm_bot/__init__.py
