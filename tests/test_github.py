@@ -12,6 +12,7 @@ from helm_bot.github import (
     clone_fork,
     create_pr,
     make_fork,
+    remove_fork,
 )
 
 
@@ -326,5 +327,50 @@ def test_make_fork(capture):
 
         assert out
         assert mock_post.call_count == 1
+
+        capture.check_present()
+
+
+@log_capture()
+def test_remove_fork_does_not_exist(capture):
+    repo_name = "test_repo"
+    token = "This_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("HelmUpgradeBot does not have a fork of: %s" % repo_name)
+
+    with patch(
+        "helm_bot.github.check_fork_exists", return_value=False
+    ) as mock_check:
+        out = remove_fork(repo_name, token)
+
+        assert not out
+        assert mock_check.call_count == 1
+        assert not mock_check.return_value
+
+        capture.check_present()
+
+
+@log_capture()
+def test_remove_fork_exists(capture):
+    repo_name = "test_repo"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("HelmUpgradeBot has a fork of: %s" % repo_name)
+    logger.info("Deleted fork")
+
+    mock_check = patch("helm_bot.github.check_fork_exists", return_value=True)
+    mock_delete = patch("helm_bot.github.delete_request")
+    mock_sleep = patch("helm_bot.github.time.sleep")
+
+    with mock_check as mock1, mock_delete as mock2, mock_sleep as mock3:
+        out = remove_fork(repo_name, token)
+
+        assert not out
+        assert mock1.return_value
+        assert mock1.call_count == 1
+        assert mock2.call_count == 1
+        assert mock3.call_count == 1
 
         capture.check_present()
