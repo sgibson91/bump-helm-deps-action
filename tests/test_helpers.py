@@ -2,7 +2,12 @@ import pytest
 import logging
 import responses
 from testfixtures import log_capture
-from helm_bot.helper_functions import delete_request, get_request, post_request
+from helm_bot.helper_functions import (
+    delete_request,
+    get_request,
+    post_request,
+    run_cmd,
+)
 
 
 @responses.activate
@@ -135,3 +140,19 @@ def test_post_request_exception(capture):
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == test_url
     capture.check_present()
+
+
+def test_run_cmd():
+    test_cmd = ["echo", "hello"]
+    result = run_cmd(test_cmd)
+
+    assert result["returncode"] == 0
+    assert result["output"] == "hello"
+    assert result["err_msg"] == ""
+
+
+def test_run_cmd_exception():
+    test_cmd = ["ehco", "hello"]
+
+    with pytest.raises(FileNotFoundError):
+        run_cmd(test_cmd)
