@@ -1,13 +1,14 @@
 import pytest
 import logging
 import responses
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch
 from testfixtures import log_capture
 from helm_bot.github import (
     add_commit_push,
     add_labels,
     check_fork_exists,
     delete_old_branch,
+    checkout_branch,
 )
 
 
@@ -160,4 +161,62 @@ def test_delete_old_branch_does_exist(capture):
 
         assert mock_get.call_count == 1
         assert mock_run.call_count == 2
+        capture.check_present()
+
+
+@log_capture()
+def test_checkout_branch_exists(capture):
+    repo_owner = "test_owner"
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
+    logger.info("Successfully pulled main branch")
+    logging.info("Checking out branch: %s" % target_branch)
+    logger.info("Successfully checked out branch")
+
+    mock_check_fork = patch(
+        "helm_bot.github.check_fork_exists", return_value=True
+    )
+    mock_delete_branch = patch("helm_bot.github.delete_old_branch")
+    mock_run_cmd = patch(
+        "helm_bot.github.run_cmd", return_value={"returncode": 0}
+    )
+
+    with mock_check_fork as mock1, mock_delete_branch as mock2, mock_run_cmd as mock3:
+        checkout_branch(repo_owner, repo_name, target_branch, token)
+
+        assert mock1.call_count == 1
+        assert mock2.call_count == 1
+        assert mock3.call_count == 2
+
+        capture.check_present()
+
+
+@log_capture()
+def test_checkout_branch_does_not_exist(capture):
+    repo_owner = "test_owner"
+    repo_name = "test_repo"
+    target_branch = "test_branch"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logging.info("Checking out branch: %s" % target_branch)
+    logger.info("Successfully checked out branch")
+
+    mock_check_fork = patch(
+        "helm_bot.github.check_fork_exists", return_value=False
+    )
+    mock_run_cmd = patch(
+        "helm_bot.github.run_cmd", return_value={"returncode": 0}
+    )
+
+    with mock_check_fork as mock1, mock_run_cmd as mock2:
+        checkout_branch(repo_owner, repo_name, target_branch, token)
+
+        assert mock1.call_count == 1
+        assert mock2.call_count == 1
+
         capture.check_present()
