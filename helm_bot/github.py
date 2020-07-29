@@ -134,7 +134,7 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            raise RuntimeError(resp["err_msg"])
+            raise RuntimeError(result["err_msg"])
 
         logger.info("Successfully deleted remote branch")
 
@@ -143,7 +143,7 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            raise RuntimeError(resp["err_msg"])
+            raise RuntimeError(result["err_msg"])
 
         logger.info("Successfully deleted local branch")
 
