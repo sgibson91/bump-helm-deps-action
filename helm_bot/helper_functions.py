@@ -20,7 +20,9 @@ def delete_request(url: str, headers: dict = None) -> None:
         raise RuntimeError(resp.text)
 
 
-def get_request(url: str, headers: dict = None, json: bool = False, text: bool = False):
+def get_request(
+    url: str, headers: dict = None, json: bool = False, text: bool = False
+):
     """Send a GET request to an HTTP API endpoint
 
     Args:

@@ -1,6 +1,7 @@
 import pytest
 import logging
 import responses
+from unittest.mock import patch
 from testfixtures import log_capture
 from helm_bot.helper_functions import (
     delete_request,
@@ -64,6 +65,20 @@ def test_get_request():
 
 
 @responses.activate
+def test_get_request_json():
+    test_url = "http://jsonplaceholder.typicode.com/"
+    test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
+
+    responses.add(responses.GET, test_url, json={"Response": "OK"}, status=200)
+
+    resp = get_request(test_url, headers=test_header, json=True)
+
+    assert len(responses.calls) == 1
+    assert responses.calls[0].request.url == test_url
+    assert resp == {"Response": "OK"}
+
+
+@responses.activate
 def test_get_request_text():
     test_url = "http://jsonplaceholder.typicode.com/"
     test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
@@ -77,9 +92,17 @@ def test_get_request_text():
     assert resp == '{"Response": "OK"}'
 
 
+def test_get_request_kwargs_exception():
+    test_url = "http://jsonplaceholder.typicode.com"
+    test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
+
+    with pytest.raises(ValueError):
+        get_request(test_url, headers=test_header, json=True, text=True)
+
+
 @responses.activate
 @log_capture()
-def test_get_request_exception(capture):
+def test_get_request_url_exception(capture):
     test_url = "http://josnplaceholder.typicode.com/"
 
     logger = logging.getLogger()
