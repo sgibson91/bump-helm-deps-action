@@ -20,7 +20,7 @@ def delete_request(url: str, headers: dict = None) -> None:
         raise RuntimeError(resp.text)
 
 
-def get_request(url: str, headers: dict = None, text: bool = False):
+def get_request(url: str, headers: dict = None, json: bool = False, text: bool = False):
     """Send a GET request to an HTTP API endpoint
 
     Args:
@@ -28,13 +28,18 @@ def get_request(url: str, headers: dict = None, text: bool = False):
         headers (dict): A dictionary of headers to send with the request
         text (bool, optional): Returns the text payload. Defaults to False.
     """
+    if json and text:
+        raise ValueError("json and text kwargs cannot both be true")
+
     resp = requests.get(url, headers=headers)
 
     if not resp:
         logger.error(resp.text)
         raise RuntimeError(resp.text)
 
-    if text:
+    if json:
+        return resp.json()
+    elif text:
         return resp.text
     else:
         return resp
