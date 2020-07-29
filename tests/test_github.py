@@ -1,8 +1,9 @@
+import json
 import pytest
 import logging
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 from testfixtures import log_capture
-from helm_bot.github import add_commit_push, add_labels
+from helm_bot.github import add_commit_push, add_labels, check_fork_exists
 
 
 @log_capture()
@@ -86,3 +87,26 @@ def test_add_labels(capture):
         assert mocked_func.call_count == 1
 
     capture.check_present()
+
+
+@patch(
+    "helm_bot.github.get_request",
+    return_value='[{"name": "test_repo1"}, {"name": "test_repo2"}]',
+)
+def test_check_fork_exists(mock_args):
+    repo_name1 = "test_repo1"
+    repo_name2 = "some_other_repo"
+    token = "this_is_a_token"
+
+    fork_exists1 = check_fork_exists(repo_name1, token)
+    fork_exists2 = check_fork_exists(repo_name2, token)
+
+    assert fork_exists1
+    assert not fork_exists2
+
+    assert mock_args.call_count == 2
+    mock_args.assert_called_with(
+        "https://api.github.com/users/HelmUpgradeBot/repos",
+        headers={"Authorization": "token this_is_a_token"},
+        text=True,
+    )
