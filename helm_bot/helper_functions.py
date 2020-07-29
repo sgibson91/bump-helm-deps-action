@@ -28,6 +28,7 @@ def get_request(
     Args:
         url (str): The URL to send the request to
         headers (dict): A dictionary of headers to send with the request
+        json (bool, optional): Returns the json payload. Defaults to False.
         text (bool, optional): Returns the text payload. Defaults to False.
     """
     if json and text:
@@ -47,7 +48,7 @@ def get_request(
         return resp
 
 
-def post_request(url: str, headers: dict = None, json: dict = None) -> None:
+def post_request(url: str, headers: dict = None, json: dict = None, return_json: bool = True) -> None:
     """Send a POST request to an HTTP API endpoint
 
     Args:
@@ -56,12 +57,17 @@ def post_request(url: str, headers: dict = None, json: dict = None) -> None:
                                   request. Defaults to None.
         json (dict, optional): A dictionary containing JSON payload to send with
                                the request. Defaults to None.
+        return_json (bool, optional): Return the JSON payload response.
+                                      Defaults to False.
     """
     resp = requests.post(url, headers=headers, json=json)
 
     if not resp:
         logger.error(resp.text)
         raise RuntimeError(resp.text)
+
+    if return_json:
+        return resp.json()
 
 
 def run_cmd(cmd: list) -> dict:
