@@ -2,7 +2,7 @@ import pytest
 import logging
 from unittest.mock import patch
 from testfixtures import log_capture
-from helm_bot.github import add_commit_push
+from helm_bot.github import add_commit_push, add_labels
 
 
 @log_capture()
@@ -66,5 +66,23 @@ def test_add_commit_push_error(capture):
             target_branch,
             token,
         )
+
+    capture.check_present()
+
+
+@log_capture()
+def test_add_labels(capture):
+    labels = ["label1", "label2"]
+    pr_url = "http://jsonplaceholder.typicode.com/issues/1"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Add labels to Pull Request: %s" % pr_url)
+    logger.info("Adding labels: %s" % labels)
+
+    with patch("helm_bot.github.post_request") as mocked_func:
+        add_labels(labels, pr_url, token)
+
+        assert mocked_func.call_count == 1
 
     capture.check_present()
