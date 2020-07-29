@@ -249,7 +249,8 @@ def test_clone_fork_exception(capture):
     logger.error("Could not run command")
 
     with patch(
-        "helm_bot.github.run_cmd", return_value={"returncode": 1, "err_msg": "Could not run command"}
+        "helm_bot.github.run_cmd",
+        return_value={"returncode": 1, "err_msg": "Could not run command"},
     ) as mock_run, pytest.raises(RuntimeError):
         clone_fork(repo_name)
 
