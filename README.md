@@ -5,6 +5,12 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 ![GitHub](https://img.shields.io/github/license/HelmUpgradeBot/hub23-deploy-upgrades) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted)
 
+| Test | Status |
+| :--- | :--- |
+| CI | [![CI](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/CI/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ACI) |
+| Black | [![Black](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Black/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ABlack) |
+| Flake8 | [![Flake8](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Flake8/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3AFlake8) |
+
 **Table of Contents:**
 
 - [:mag: Overview](#mag-overview)
