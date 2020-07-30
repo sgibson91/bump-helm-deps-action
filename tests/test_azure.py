@@ -7,6 +7,8 @@ from helm_bot.azure import login, get_token
 
 @log_capture()
 def test_login_basic(capture):
+    expected_call = call(["az", "login"])
+
     logger = logging.getLogger()
     logger.info("Login to Azure")
     logger.info("Successfully logged into Azure")
@@ -17,6 +19,7 @@ def test_login_basic(capture):
         login()
 
         assert mock_run.call_count == 1
+        assert mock_run.call_args == expected_call
         assert mock_run.return_value["returncode"] == 0
 
         capture.check_present()
@@ -24,6 +27,8 @@ def test_login_basic(capture):
 
 @log_capture()
 def test_login_basic_exception(capture):
+    expected_call = call(["az", "login"])
+
     logger = logging.getLogger()
     logger.info("Login to Azure")
     logger.error("Could not run command")
@@ -35,6 +40,7 @@ def test_login_basic_exception(capture):
         login()
 
         assert mock_run.call_count == 1
+        assert mock_run.call_args == expected_call
         assert mock_run.return_value["returncode"] == 1
         assert mock_run.return_value["err_msg"] == "Could not run command"
 
@@ -44,6 +50,7 @@ def test_login_basic_exception(capture):
 @log_capture()
 def test_login_identity(capture):
     expected_call = call(["az", "login", "--identity"])
+
     logger = logging.getLogger()
     logger.info("Login to Azure with a Managed System Identity")
     logger.info("Successfully logged into Azure")

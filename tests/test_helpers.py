@@ -27,18 +27,11 @@ def test_delete_request():
 
 
 @responses.activate
-@log_capture()
-def test_delete_request_exception(capture):
+def test_delete_request_exception():
     test_url = "http://josnplaceholder.typicode.com/"
 
-    logger = logging.getLogger()
-    logger.error("Could not reach provided URL")
-
     responses.add(
-        responses.DELETE,
-        test_url,
-        body="Could not reach provided URL",
-        status=500,
+        responses.DELETE, test_url, status=500,
     )
 
     with pytest.raises(RuntimeError):
@@ -46,7 +39,6 @@ def test_delete_request_exception(capture):
 
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == test_url
-    capture.check_present()
 
 
 @responses.activate
@@ -101,18 +93,11 @@ def test_get_request_kwargs_exception():
 
 
 @responses.activate
-@log_capture()
-def test_get_request_url_exception(capture):
+def test_get_request_url_exception():
     test_url = "http://josnplaceholder.typicode.com/"
 
-    logger = logging.getLogger()
-    logger.error("Could not reach provided URL")
-
     responses.add(
-        responses.GET,
-        test_url,
-        body="Could not reach provided URL",
-        status=500,
+        responses.GET, test_url, status=500,
     )
 
     with pytest.raises(RuntimeError):
@@ -120,7 +105,6 @@ def test_get_request_url_exception(capture):
 
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == test_url
-    capture.check_present()
 
 
 @responses.activate
@@ -141,14 +125,10 @@ def test_post_request():
 
 
 @responses.activate
-@log_capture()
-def test_post_request_exception(capture):
+def test_post_request_exception():
     test_url = "http://josnplaceholder.typicode.com/"
     test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
     json = {"Payload": "Send this with the request"}
-
-    logger = logging.getLogger()
-    logger.error("Could not reach provided URL")
 
     responses.add(
         responses.POST,
@@ -162,7 +142,6 @@ def test_post_request_exception(capture):
 
     assert len(responses.calls) == 1
     assert responses.calls[0].request.url == test_url
-    capture.check_present()
 
 
 def test_run_cmd():

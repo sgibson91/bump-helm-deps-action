@@ -18,6 +18,7 @@ def test_parser_required(mock_args):
     assert parser.repo_owner == "test_owner"
     assert parser.repo_name == "test_repo"
     assert parser.chart_name == "test_chart"
+    assert mock_args.call_count == 1
 
 
 @patch(
@@ -49,6 +50,7 @@ def test_parser_boolean_opts(mock_args):
     assert parser.identity
     assert parser.dry_run
     assert parser.verbose
+    assert mock_args.call_count == 1
 
 
 @patch(
@@ -92,6 +94,7 @@ def test_parser_opts(mock_args):
     assert parser.target_branch == "test_target"
     assert parser.base_branch == "test_base"
     assert parser.labels == ["label1", "label2"]
+    assert mock_args.call_count == 1
 
 
 def test_check_parser():
