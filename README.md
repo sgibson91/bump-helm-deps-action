@@ -118,7 +118,13 @@ API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart
 
 ### :lock: User Permissions
 
-The user (or machine) running this script will need _at least_:
+#### GitHub API
+
+When [creating the GitHub API token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token), it will need to be assigned the [`public_repo` and `delete_repo` scopes](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes).
+
+#### Virtual Machine
+
+The user (or machine) running this script will need _at least_ the following permissions for interacting with Azure resources.
 
 - `Contributor` role permissions to the Kubernetes cluster to be upgraded, and
 - Permission to get secrets from the Azure Key Vault (`Get` and `List`).
@@ -134,7 +140,7 @@ To run this script at 10am daily, use the following cron expression:
 ### :clapper: GitHub Action
 
 Rather than pay for a Virtual Machine to run the bot, it could be run in a [GitHub Action workflow](.github/workflows/run-bot.yml) instead.
-<!-- The default secret `GITHUB_TOKEN` should have enough permissions for everything provided all repositories are public. -->
+The GitHub API token should be [added to the repository as a secret](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `ACCESS_TOKEN`.
 
 ## :white_check_mark: Running Tests
 
