@@ -8,6 +8,7 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 | Test | Status |
 | :--- | :--- |
 | CI | [![CI](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/CI/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ACI) |
+| Coverage | ![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/HelmUpgradeBot/hub23-deploy-upgrades/main/badge_metadata.json) |
 | Black | [![Black](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Black/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ABlack) |
 | Flake8 | [![Flake8](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Flake8/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3AFlake8) |
 
