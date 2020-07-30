@@ -75,7 +75,7 @@ jobs:
       - name: Add and commit the edited metadata file
         uses: EndBug/add-and-commit@v4
         with:
-          add: 'bade_metadata.json'
+          add: 'badge_metadata.json'
           author_name: CI User
           author_email: ci-user@github.local
           message: 'Update coverage badge metadata'
