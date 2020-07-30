@@ -49,4 +49,5 @@ jobs:
             alan-turing-institute \
             hub23-deploy \
             hub23-chart \
-            --verbose
+            --verbose \
+            --labels dependencies
