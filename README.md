@@ -5,16 +5,23 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 ![GitHub](https://img.shields.io/github/license/HelmUpgradeBot/hub23-deploy-upgrades) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted)
 
+| Test | Status |
+| :--- | :--- |
+| CI | [![CI](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/CI/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ACI) |
+| Black | [![Black](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Black/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ABlack) |
+| Flake8 | [![Flake8](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Flake8/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3AFlake8) |
+
 **Table of Contents:**
 
 - [:mag: Overview](#mag-overview)
 - [🤔 Assumptions HelmUpgradeBot Makes](#-assumptions-helmupgradebot-makes)
-- [:pushpin: Requirements](#pushpin-installation-and-requirements)
+- [:pushpin: Installation and Requirements](#pushpin-installation-and-requirements)
   - [:cloud: Install Azure CLI](#cloud-install-azure-cli)
 - [:children_crossing: Usage](#children_crossing-usage)
   - [:lock: User Permissions](#lock-user-permissions)
   - [:clock2: CRON Expression](#clock2-cron-expression)
   - [:clapper: GitHub Action](#clapper-github-action)
+- [:white_check_mark: Running Tests](#white_check_mark-running-tests)
 - [:leftwards_arrow_with_hook: Pre-commit Hook](#leftwards_arrow_with_hook-pre-commit-hook)
 - [:gift: Acknowledgements](#gift-acknowledgements)
 - [:sparkles: Contributing](#sparkles-contributing)
@@ -117,7 +124,13 @@ API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart
 
 ### :lock: User Permissions
 
-The user (or machine) running this script will need _at least_:
+#### GitHub API
+
+When [creating the GitHub API token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token), it will need to be assigned the [`public_repo` and `delete_repo` scopes](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes).
+
+#### Virtual Machine
+
+The user (or machine) running this script will need _at least_ the following permissions for interacting with Azure resources.
 
 - `Contributor` role permissions to the Kubernetes cluster to be upgraded, and
 - Permission to get secrets from the Azure Key Vault (`Get` and `List`).
@@ -133,7 +146,24 @@ To run this script at 10am daily, use the following cron expression:
 ### :clapper: GitHub Action
 
 Rather than pay for a Virtual Machine to run the bot, it could be run in a [GitHub Action workflow](.github/workflows/run-bot.yml) instead.
-The default secret `GITHUB_TOKEN` should have enough permissions for everything provided all repositories are public.
+The GitHub API token should be [added to the repository as a secret](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `ACCESS_TOKEN`.
+
+## :white_check_mark: Running Tests
+
+After following the [installation instructions](#pushpin-installation-and-requirements), the test suite can be run as follows:
+
+```bash
+python -m pytest -vvv
+```
+
+`coverage.py` can also be used to generate a coverage report of the test suite:
+
+```bash
+python -m coverage run -m pytest -vvv
+coverage report
+```
+
+An interactive HTML report can be generated with the command `coverage html` and accessed by opening `htmlcov/index.html` in your browser.
 
 ## :leftwards_arrow_with_hook: Pre-commit Hook
 

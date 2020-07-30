@@ -1,3 +1,6 @@
-pandas
+coverage
+pytest
 pyyaml
 requests
+responses
+testfixtures

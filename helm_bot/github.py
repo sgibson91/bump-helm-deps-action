@@ -102,10 +102,12 @@ def check_fork_exists(repo_name: str, token: str) -> bool:
     """
     header = {"Authorization": f"token {token}"}
     resp = get_request(
-        "https://api.github.com/users/HelmUpgradeBot/repos", headers=header
+        "https://api.github.com/users/HelmUpgradeBot/repos",
+        headers=header,
+        json=True,
     )
 
-    fork_exists = bool([x for x in resp.json() if x["name"] == repo_name])
+    fork_exists = bool([x for x in resp if x["name"] == repo_name])
 
     return fork_exists
 
@@ -122,16 +124,17 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
     resp = get_request(
         f"https://api.github.com/repos/HelmUpgradeBot/{repo_name}/branches",
         headers=header,
+        json=True,
     )
 
-    if target_branch in [x["name"] for x in resp.json()]:
+    if target_branch in [x["name"] for x in resp]:
         logger.info("Deleting branch: %s" % target_branch)
         delete_cmd = ["git", "push", "--delete", "origin", target_branch]
         result = run_cmd(delete_cmd)
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            raise RuntimeError(resp["err_msg"])
+            raise RuntimeError(result["err_msg"])
 
         logger.info("Successfully deleted remote branch")
 
@@ -140,7 +143,7 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
         if result["returncode"] != 0:
             logger.error(result["err_msg"])
-            raise RuntimeError(resp["err_msg"])
+            raise RuntimeError(result["err_msg"])
 
         logger.info("Successfully deleted local branch")
 
@@ -242,13 +245,13 @@ def create_pr(
         repo_api + "pulls",
         headers={"Authorization": f"token {token}"},
         json=pr,
+        return_json=True,
     )
 
     logger.info("Pull Request created")
 
     if labels is not None:
-        output = resp.json()
-        add_labels(labels, output["issue_url"], token)
+        add_labels(labels, resp["issue_url"], token)
 
 
 def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
