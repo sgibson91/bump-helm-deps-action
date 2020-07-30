@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 HERE = os.getcwd()
 
 
-def get_current_percent():
-    filepath = os.path.join(HERE, "badge_metadata.json")
+def get_current_percent(filename):
+    filepath = os.path.join(HERE, filename)
 
     with open(filepath, "r") as stream:
         body = json.load(stream)
@@ -26,8 +26,8 @@ def get_new_percent():
     return int(span.text.strip("%"))
 
 
-def update_json(percent):
-    filepath = os.path.join(HERE, "coverage_badge.json")
+def update_json(percent, filename):
+    filepath = os.path.join(HERE, filename)
 
     with open(filepath, "r") as stream:
         body = json.load(stream)
@@ -46,7 +46,9 @@ def update_json(percent):
 
 
 def main():
-    current = get_current_percent()
+    filename = "badge_metadata.json"
+
+    current = get_current_percent(filename)
     new = get_new_percent()
 
     if current == new:
@@ -61,7 +63,7 @@ def main():
             print(f"Coverage has decreased by {diff}%")
 
         print("Updating coverage badge")
-        update_json(new)
+        update_json(new, filename)
 
 
 if __name__ == "__main__":
