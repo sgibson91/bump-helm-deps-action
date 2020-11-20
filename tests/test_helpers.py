@@ -16,9 +16,7 @@ def test_delete_request():
     test_url = "http://jsonplaceholder.typicode.com/"
     test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
 
-    responses.add(
-        responses.DELETE, test_url,
-    )
+    responses.add(responses.DELETE, test_url)
 
     delete_request(test_url, headers=test_header)
 
@@ -30,9 +28,7 @@ def test_delete_request():
 def test_delete_request_exception():
     test_url = "http://josnplaceholder.typicode.com/"
 
-    responses.add(
-        responses.DELETE, test_url, status=500,
-    )
+    responses.add(responses.DELETE, test_url, status=500)
 
     with pytest.raises(RuntimeError):
         delete_request(test_url)
@@ -96,9 +92,7 @@ def test_get_request_kwargs_exception():
 def test_get_request_url_exception():
     test_url = "http://josnplaceholder.typicode.com/"
 
-    responses.add(
-        responses.GET, test_url, status=500,
-    )
+    responses.add(responses.GET, test_url, status=500)
 
     with pytest.raises(RuntimeError):
         get_request(test_url)
