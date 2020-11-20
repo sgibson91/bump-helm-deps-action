@@ -546,7 +546,7 @@ def test_make_fork(capture):
         assert out
         assert mock_post.call_count == 1
         mock_post.assert_called_with(
-            repo_api + "forks", headers={"Authorization": f"token {token}"},
+            repo_api + "forks", headers={"Authorization": f"token {token}"}
         )
 
         capture.check_present()

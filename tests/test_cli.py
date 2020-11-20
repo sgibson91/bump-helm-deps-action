@@ -7,9 +7,7 @@ from helm_bot.cli import parse_args, check_parser
 @patch(
     "argparse.ArgumentParser.parse_args",
     return_value=argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     ),
 )
 def test_parser_required(mock_args):

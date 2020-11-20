@@ -5,7 +5,9 @@ from setuptools import find_packages, setup
 
 # Package meta-data.
 AUTHOR = "Sarah Gibson"
-DESCRIPTION = "A Python bot for updating the dependencies of the Hub23 Helm Chart"  # noqa: E501
+DESCRIPTION = (
+    "A Python bot for updating the dependencies of the Hub23 Helm Chart"
+)  # noqa: E501
 EMAIL = "drsarahlgibson@gmail.com"
 LICENSE = "MIT"
 LICENSE_TROVE = "License :: OSI Approved :: MIT License"
@@ -15,10 +17,7 @@ URL = "https://github.com/HelmUpgradeBot/hub23-deploy-upgrades"
 VERSION = None
 
 # What packages are required for this module to be executed?
-REQUIRED = [
-    "pyyaml",
-    "requests",
-]
+REQUIRED = ["pyyaml", "requests"]
 
 # What packages are optional?
 EXTRAS = {}
