@@ -14,6 +14,7 @@ from .github import (
     checkout_branch,
     clone_fork,
     create_pr,
+    find_existing_pr,
     make_fork,
     remove_fork,
     set_git_config,
