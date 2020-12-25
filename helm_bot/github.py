@@ -152,7 +152,7 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
 
 def checkout_branch(
-    repo_owner: str, repo_name: str, target_branch: str, token: str
+    repo_owner: str, repo_name: str, target_branch: str, token: str, pr_exists: bool,
 ) -> None:
     """Checkout a branch of a GitHub repository
 
@@ -161,10 +161,12 @@ def checkout_branch(
         repo_name (str): The name of the repository
         target_branch (str): The branch to checkout
         token (str): A GitHub API token
+        pr_exists (bool): True if HelmUpgradeBot has a previously opened Pull
+                          Request. Otherwise False.
     """
     fork_exists = check_fork_exists(repo_name, token)
 
-    if fork_exists:
+    if fork_exists and not pr_exists:
         delete_old_branch(repo_name, target_branch, token)
 
         logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
@@ -183,7 +185,12 @@ def checkout_branch(
         logger.info("Successfully pulled main branch")
 
     logging.info("Checking out branch: %s" % target_branch)
-    chkt_cmd = ["git", "checkout", "-b", target_branch]
+
+    if pr_exists:
+        chkt_cmd = ["git", "checkout", target_branch]
+    else:
+        chkt_cmd = ["git", "checkout", "-b", target_branch]
+
     result = run_cmd(chkt_cmd)
 
     if result["returncode"] != 0:
