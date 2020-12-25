@@ -175,7 +175,7 @@ def upgrade_chart(
     target_branch: str,
     token: str,
     labels: list,
-    pr_exists: bool
+    pr_exists: bool,
 ) -> None:
     """Upgrade the dependencies in the helm chart
 

@@ -152,7 +152,11 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
 
 def checkout_branch(
-    repo_owner: str, repo_name: str, target_branch: str, token: str, pr_exists: bool,
+    repo_owner: str,
+    repo_name: str,
+    target_branch: str,
+    token: str,
+    pr_exists: bool,
 ) -> None:
     """Checkout a branch of a GitHub repository
 
@@ -275,16 +279,10 @@ def find_existing_pr(repo_api: str, target_branch: str, token: str):
     logger.info("Finding Pull Requests opened by HelmUpgradeBot")
 
     header = {"Authorization": f"token {token}"}
-    params = {
-        "state": "open",
-        "head": f"HelmUpgradeBot:{target_branch}"
-    }
+    params = {"state": "open", "head": f"HelmUpgradeBot:{target_branch}"}
 
     resp = get_request(
-        repo_api + "pulls",
-        headers=header,
-        params=params,
-        json=True
+        repo_api + "pulls", headers=header, params=params, json=True
     )
 
     if len(resp) >= 1:

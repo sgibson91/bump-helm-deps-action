@@ -21,7 +21,11 @@ def delete_request(url: str, headers: dict = None) -> None:
 
 
 def get_request(
-    url: str, headers: dict = None, params: dict = None, json: bool = False, text: bool = False
+    url: str,
+    headers: dict = None,
+    params: dict = None,
+    json: bool = False,
+    text: bool = False,
 ):
     """Send a GET request to an HTTP API endpoint
 
