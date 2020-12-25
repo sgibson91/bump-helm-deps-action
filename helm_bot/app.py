@@ -243,12 +243,20 @@ def run(
     if identity:
         set_git_config()
 
-    _ = remove_fork(repo_name, token)
-
     chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
     if (len(charts_to_update) > 0) and (not dry_run):
+        # Check if Pull Request exists
+        pr_exists = find_existing_pr(repo_api, target_branch, token)
+
+        # Check if a fork exists
+        fork_exists = check_fork_exists(repo_name, token)
+
+        if (not fork_exists) and (not pr_exists):
+            make_fork(repo_name, repo_api, token)
+
+        # Upgrade the chart
         upgrade_chart(
             chart_name,
             chart_info,
@@ -260,4 +268,5 @@ def run(
             target_branch,
             token,
             labels,
+            pr_exists,
         )
