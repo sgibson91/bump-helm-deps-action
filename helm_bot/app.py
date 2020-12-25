@@ -175,6 +175,7 @@ def upgrade_chart(
     target_branch: str,
     token: str,
     labels: list,
+    pr_exists: bool
 ) -> None:
     """Upgrade the dependencies in the helm chart
 
@@ -190,17 +191,15 @@ def upgrade_chart(
         target_branch (str): The target branch for opening the Pull Request
         token (str): A GitHub API token
         labels (list): A list of labels to add the the Pull Request
+        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
+                          Request. Otherwise False.
     """
     filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
 
-    fork_exists = check_fork_exists(repo_name, token)
-
-    if not fork_exists:
-        make_fork(repo_name, repo_api, token)
     clone_fork(repo_name)
 
     os.chdir(repo_name)
-    checkout_branch(repo_owner, repo_name, target_branch, token)
+    checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
     update_local_file(chart_name, charts_to_update, chart_info, repo_name)
     add_commit_push(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
