@@ -7,8 +7,6 @@ from itertools import compress
 
 from .azure import get_token
 
-from .helper_functions import run_cmd
-
 from .pull_version_info import (
     pull_version_from_requirements_file,
     pull_version_from_chart_file,
