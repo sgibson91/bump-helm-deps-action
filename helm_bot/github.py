@@ -272,6 +272,8 @@ def find_existing_pr(repo_api: str, target_branch: str, token: str):
     Returns:
         bool: True if HelmUpgradeBot already has an open PR. False otherwise.
     """
+    logger.info("Finding Pull Requests opened by HelmUpgradeBot")
+
     header = {"Authorization": f"token {token}"}
     params = {
         "state": "open",
@@ -286,8 +288,16 @@ def find_existing_pr(repo_api: str, target_branch: str, token: str):
     )
 
     if len(resp) >= 1:
+        logger.info(
+            "At least one Pull Request by HelmUpgradeBot open. "
+            "Will push new commits to that PR."
+        )
         return True
     else:
+        logger.info(
+            "No Pull Requests by HelmUpgradeBot found. "
+            "A new PR will be opened."
+        )
         return False
 
 
