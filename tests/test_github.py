@@ -254,6 +254,7 @@ def test_checkout_branch_exists(capture):
     repo_name = "test_repo"
     target_branch = "test_branch"
     token = "this_is_a_token"
+    pr_exists = False
 
     logger = logging.getLogger()
     logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
@@ -282,7 +283,7 @@ def test_checkout_branch_exists(capture):
     )
 
     with mock_check_fork as mock1, mock_delete_branch as mock2, mock_run_cmd as mock3:
-        checkout_branch(repo_owner, repo_name, target_branch, token)
+        checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
         assert mock2.call_count == 1
@@ -300,6 +301,7 @@ def test_checkout_branch_exists_exception(capture):
     repo_name = "test_repo"
     target_branch = "test_branch"
     token = "this_is_a_token"
+    pr_exists = False
 
     logger = logging.getLogger()
     logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
@@ -326,7 +328,7 @@ def test_checkout_branch_exists_exception(capture):
     with mock_check_fork as mock1, mock_delete_branch as mock2, mock_run_cmd as mock3, pytest.raises(
         RuntimeError
     ):
-        checkout_branch(repo_owner, repo_name, target_branch, token)
+        checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
         assert mock2.call_count == 1
@@ -344,6 +346,7 @@ def test_checkout_branch_does_not_exist(capture):
     repo_name = "test_repo"
     target_branch = "test_branch"
     token = "this_is_a_token"
+    pr_exists = False
 
     logger = logging.getLogger()
     logging.info("Checking out branch: %s" % target_branch)
@@ -359,7 +362,7 @@ def test_checkout_branch_does_not_exist(capture):
     )
 
     with mock_check_fork as mock1, mock_run_cmd as mock2:
-        checkout_branch(repo_owner, repo_name, target_branch, token)
+        checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
         assert mock2.call_count == 1
@@ -375,6 +378,7 @@ def test_checkout_branch_does_not_exist_exception(capture):
     repo_name = "test_repo"
     target_branch = "test_branch"
     token = "this_is_a_token"
+    pr_exists = False
 
     logger = logging.getLogger()
     logger.info("Checking out branch: %s" % target_branch)
@@ -391,7 +395,7 @@ def test_checkout_branch_does_not_exist_exception(capture):
     with mock_check_fork as mock1, mock_run_cmd as mock2, pytest.raises(
         RuntimeError
     ):
-        checkout_branch(repo_owner, repo_name, target_branch, token)
+        checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
         assert mock2.call_count == 1
