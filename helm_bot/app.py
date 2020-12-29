@@ -7,8 +7,6 @@ from itertools import compress
 
 from .azure import get_token
 
-from .helper_functions import run_cmd
-
 from .pull_version_info import (
     pull_version_from_requirements_file,
     pull_version_from_chart_file,
@@ -21,8 +19,8 @@ from .github import (
     checkout_branch,
     clone_fork,
     create_pr,
+    find_existing_pr,
     make_fork,
-    remove_fork,
     set_git_config,
 )
 
@@ -177,6 +175,7 @@ def upgrade_chart(
     target_branch: str,
     token: str,
     labels: list,
+    pr_exists: bool,
 ) -> None:
     """Upgrade the dependencies in the helm chart
 
@@ -192,17 +191,15 @@ def upgrade_chart(
         target_branch (str): The target branch for opening the Pull Request
         token (str): A GitHub API token
         labels (list): A list of labels to add the the Pull Request
+        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
+                          Request. Otherwise False.
     """
     filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
 
-    fork_exists = check_fork_exists(repo_name, token)
-
-    if not fork_exists:
-        make_fork(repo_name, repo_api, token)
     clone_fork(repo_name)
 
     os.chdir(repo_name)
-    checkout_branch(repo_owner, repo_name, target_branch, token)
+    checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
     update_local_file(chart_name, charts_to_update, chart_info, repo_name)
     add_commit_push(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
@@ -246,12 +243,20 @@ def run(
     if identity:
         set_git_config()
 
-    _ = remove_fork(repo_name, token)
-
     chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
     if (len(charts_to_update) > 0) and (not dry_run):
+        # Check if Pull Request exists
+        pr_exists = find_existing_pr(repo_api, target_branch, token)
+
+        # Check if a fork exists
+        fork_exists = check_fork_exists(repo_name, token)
+
+        if (not fork_exists) and (not pr_exists):
+            make_fork(repo_name, repo_api, token)
+
+        # Upgrade the chart
         upgrade_chart(
             chart_name,
             chart_info,
@@ -263,4 +268,5 @@ def run(
             target_branch,
             token,
             labels,
+            pr_exists,
         )

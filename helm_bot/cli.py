@@ -4,7 +4,8 @@ import atexit
 import logging
 import argparse
 from .app import run, clean_up
-from .github import remove_fork
+
+# from .github import remove_fork
 
 
 def logging_setup(verbose=False):
@@ -122,7 +123,7 @@ def main():
     args = parse_args(sys.argv[1:])
     check_parser(args)
 
-    atexit.register(remove_fork, repo_name=args.repo_name, token=args.token)
+    # atexit.register(remove_fork, repo_name=args.repo_name, token=args.token)
     atexit.register(clean_up, repo_name=args.repo_name)
 
     logging_setup(verbose=args.verbose)

@@ -21,20 +21,25 @@ def delete_request(url: str, headers: dict = None) -> None:
 
 
 def get_request(
-    url: str, headers: dict = None, json: bool = False, text: bool = False
+    url: str,
+    headers: dict = None,
+    params: dict = None,
+    json: bool = False,
+    text: bool = False,
 ):
     """Send a GET request to an HTTP API endpoint
 
     Args:
         url (str): The URL to send the request to
         headers (dict): A dictionary of headers to send with the request
+        params (dict): A dictionary of parameters to send with the request
         json (bool, optional): Returns the json payload. Defaults to False.
         text (bool, optional): Returns the text payload. Defaults to False.
     """
     if json and text:
         raise ValueError("json and text kwargs cannot both be true")
 
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, params=params)
 
     if not resp:
         logger.error(resp.text)

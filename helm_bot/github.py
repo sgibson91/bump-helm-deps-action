@@ -152,7 +152,11 @@ def delete_old_branch(repo_name: str, target_branch: str, token: str) -> None:
 
 
 def checkout_branch(
-    repo_owner: str, repo_name: str, target_branch: str, token: str
+    repo_owner: str,
+    repo_name: str,
+    target_branch: str,
+    token: str,
+    pr_exists: bool,
 ) -> None:
     """Checkout a branch of a GitHub repository
 
@@ -161,10 +165,12 @@ def checkout_branch(
         repo_name (str): The name of the repository
         target_branch (str): The branch to checkout
         token (str): A GitHub API token
+        pr_exists (bool): True if HelmUpgradeBot has a previously opened Pull
+                          Request. Otherwise False.
     """
     fork_exists = check_fork_exists(repo_name, token)
 
-    if fork_exists:
+    if fork_exists and not pr_exists:
         delete_old_branch(repo_name, target_branch, token)
 
         logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
@@ -183,7 +189,12 @@ def checkout_branch(
         logger.info("Successfully pulled main branch")
 
     logging.info("Checking out branch: %s" % target_branch)
-    chkt_cmd = ["git", "checkout", "-b", target_branch]
+
+    if pr_exists:
+        chkt_cmd = ["git", "checkout", target_branch]
+    else:
+        chkt_cmd = ["git", "checkout", "-b", target_branch]
+
     result = run_cmd(chkt_cmd)
 
     if result["returncode"] != 0:
@@ -252,6 +263,40 @@ def create_pr(
 
     if labels is not None:
         add_labels(labels, resp["issue_url"], token)
+
+
+def find_existing_pr(repo_api: str, target_branch: str, token: str):
+    """Check if the bot has an already open Pull Request
+
+    Args:
+        repo_api (str): The GitHub API URL to send queries to
+        target_branch (str): The name of the PR source branch to search for
+        token (str): A GitHub PAT to authorise queries with
+
+    Returns:
+        bool: True if HelmUpgradeBot already has an open PR. False otherwise.
+    """
+    logger.info("Finding Pull Requests opened by HelmUpgradeBot")
+
+    header = {"Authorization": f"token {token}"}
+    params = {"state": "open", "head": f"HelmUpgradeBot:{target_branch}"}
+
+    resp = get_request(
+        repo_api + "pulls", headers=header, params=params, json=True
+    )
+
+    if len(resp) >= 1:
+        logger.info(
+            "At least one Pull Request by HelmUpgradeBot open. "
+            "Will push new commits to that PR."
+        )
+        return True
+    else:
+        logger.info(
+            "No Pull Requests by HelmUpgradeBot found. "
+            "A new PR will be opened."
+        )
+        return False
 
 
 def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
