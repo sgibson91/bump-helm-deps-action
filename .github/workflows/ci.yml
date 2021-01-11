@@ -58,10 +58,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
 
-      - name: Setup Python 3.7
+      - name: Setup Python 3.8
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Install dependencies
         run: |
@@ -101,10 +101,10 @@ jobs:
           name: htmlcov
           path: htmlcov
 
-      - name: Setup Python 3.7
+      - name: Setup Python 3.8
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - name: Install dependencies
         run:
