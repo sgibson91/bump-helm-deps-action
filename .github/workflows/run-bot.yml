@@ -50,4 +50,5 @@ jobs:
             hub23-deploy \
             hub23-chart \
             --verbose \
-            --labels dependencies
+            --labels dependencies \
+            --identity
