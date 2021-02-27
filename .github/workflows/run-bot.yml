@@ -1,6 +1,12 @@
 name: Run HelmUpgradeBot
 
 on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry-run'
+        required: false
+        default: false
   schedule:
     - cron: "0 10 * * *"
   pull_request:
@@ -33,7 +39,7 @@ jobs:
           git config --global user.name "HelmUpgradeBot"
 
       - name: Dry-Run HelmUpgradeBot
-        if: github.event.pull_request
+        if: github.event.pull_request || github.event.inputs.dry_run == false
         run: |
           API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
             alan-turing-institute \
@@ -43,7 +49,7 @@ jobs:
             --verbose
 
       - name: Run HelmUpgradeBot
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || github.event.inputs.dry_run
         run: |
           API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
             alan-turing-institute \
