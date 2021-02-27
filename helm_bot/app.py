@@ -1,5 +1,7 @@
 import os
 import yaml
+import string
+import random
 import shutil
 import logging
 
@@ -247,7 +249,13 @@ def run(
 
     if (len(charts_to_update) > 0) and (not dry_run):
         # Check if Pull Request exists
-        pr_exists = find_existing_pr(repo_api, target_branch, token)
+        pr_exists, branch_name = find_existing_pr(repo_api, token)
+
+        if branch_name is None:
+            random_id = "".join(random.sample(string.ascii_letters, 4))
+            target_branch = target_branch + "-" + random_id
+        else:
+            target_branch = branch_name
 
         # Check if a fork exists
         fork_exists = check_fork_exists(repo_name, token)
