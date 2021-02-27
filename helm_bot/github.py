@@ -1,6 +1,8 @@
 import time
 import logging
+import jmespath
 from subprocess import check_call
+
 from .helper_functions import (
     delete_request,
     get_request,
@@ -265,38 +267,61 @@ def create_pr(
         add_labels(labels, resp["issue_url"], token)
 
 
-def find_existing_pr(repo_api: str, target_branch: str, token: str):
+def find_existing_pr(repo_api: str, token: str):
     """Check if the bot has an already open Pull Request
 
     Args:
         repo_api (str): The GitHub API URL to send queries to
-        target_branch (str): The name of the PR source branch to search for
         token (str): A GitHub PAT to authorise queries with
 
     Returns:
         bool: True if HelmUpgradeBot already has an open PR. False otherwise.
+        target_branch: The name of the branch to send commits to
     """
     logger.info("Finding Pull Requests opened by HelmUpgradeBot")
 
     header = {"Authorization": f"token {token}"}
-    params = {"state": "open", "head": f"HelmUpgradeBot:{target_branch}"}
+    params = {"state": "open", "sort": "created", "direction": "desc"}
 
     resp = get_request(
         repo_api + "pulls", headers=header, params=params, json=True
     )
 
-    if len(resp) >= 1:
+    # Expression to match the head ref
+    head_label_exp = jmespath.compile("[*].head.label")
+    matching_labels = head_label_exp.search(resp)
+
+    # Create list of labels of matching PRs
+    matching_prs = [
+        label for label in matching_labels if "HelmUpgradeBot" in label
+    ]
+
+    if len(matching_prs) >= 1:
         logger.info(
-            "At least one Pull Request by HelmUpgradeBot open. "
+            "More than one Pull Request by HelmUpgradeBot open. "
+            "Will push new commits to the most recent PR."
+        )
+
+        ref = matching_prs[0].split(":")[-1]
+
+        return True, ref
+
+    elif len(matching_prs) == 1:
+        logger.info(
+            "One Pull Request by HelmUpgradeBot open. "
             "Will push new commits to that PR."
         )
-        return True
+
+        ref = matching_prs[0].split(":")[-1]
+
+        return True, ref
+
     else:
         logger.info(
             "No Pull Requests by HelmUpgradeBot found. "
             "A new PR will be opened."
         )
-        return False
+        return False, None
 
 
 def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
