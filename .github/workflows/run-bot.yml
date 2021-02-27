@@ -1,11 +1,23 @@
 name: Run HelmUpgradeBot
 
 on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry-run. Takes "true" or "false".'
+        required: false
+        default: 'false'
   schedule:
     - cron: "0 10 * * *"
   pull_request:
     branches:
       - main
+
+env:
+  GIT_COMMITER_EMAIL: helmupgradebot.github@gmail.com
+  GIT_COMMITTER_NAME: HelmUpgradeBot
+  GIT_AUTHOR_EMAIL: helmupgradebot.github@gmail.com
+  GIT_AUTHOR_NAME: HelmUpgradeBot
 
 jobs:
   helmupgrade:
@@ -27,13 +39,8 @@ jobs:
         run: |
           python -m pip install -e .
 
-      - name: Configure git credentials
-        run: |
-          git config --global user.email "helmupgradebot.github@gmail.com"
-          git config --global user.name "HelmUpgradeBot"
-
       - name: Dry-Run HelmUpgradeBot
-        if: github.event.pull_request
+        if: github.event.pull_request || github.event.inputs.dry_run == 'false'
         run: |
           API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
             alan-turing-institute \
@@ -43,12 +50,11 @@ jobs:
             --verbose
 
       - name: Run HelmUpgradeBot
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || github.event.inputs.dry_run == 'true'
         run: |
           API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
             alan-turing-institute \
             hub23-deploy \
             hub23-chart \
             --verbose \
-            --labels dependencies \
-            --identity
+            --labels dependencies
