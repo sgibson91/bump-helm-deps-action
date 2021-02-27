@@ -3,7 +3,7 @@ import yaml
 import shutil
 import logging
 
-from itertools import compress
+from itertools import compress, product
 
 from .azure import get_token
 
@@ -153,10 +153,9 @@ def update_local_file(
     with open(filename, "r") as stream:
         chart_yaml = yaml.safe_load(stream)
 
-    for chart in charts_to_update:
-        for dep in chart_yaml["dependencies"]:
-            if dep["name"] == chart:
-                dep["version"] = chart_info[chart]
+    for chart, dep in product(charts_to_update, chart_yaml["dependencies"]):
+        if dep["name"] == chart:
+            dep["version"] = chart_info[chart]
 
     with open(filename, "w") as stream:
         yaml.safe_dump(chart_yaml, stream)
