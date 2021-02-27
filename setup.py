@@ -17,7 +17,7 @@ URL = "https://github.com/HelmUpgradeBot/hub23-deploy-upgrades"
 VERSION = None
 
 # What packages are required for this module to be executed?
-REQUIRED = ["pyyaml", "requests"]
+REQUIRED = ["jmespath", "pyyaml", "requests"]
 
 # What packages are optional?
 EXTRAS = {}

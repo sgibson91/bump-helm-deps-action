@@ -277,20 +277,18 @@ def test_checkout_branch_exists(capture):
     mock_check_fork = patch(
         "helm_bot.github.check_fork_exists", return_value=True
     )
-    mock_delete_branch = patch("helm_bot.github.delete_old_branch")
+    # mock_delete_branch = patch("helm_bot.github.delete_old_branch") <-- DEPRECATED
     mock_run_cmd = patch(
         "helm_bot.github.run_cmd", return_value={"returncode": 0}
     )
 
-    with mock_check_fork as mock1, mock_delete_branch as mock2, mock_run_cmd as mock3:
+    with mock_check_fork as mock1, mock_run_cmd as mock2:
         checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
-        assert mock2.call_count == 1
-        assert mock3.call_count == 2
+        assert mock2.call_count == 2
         mock1.assert_called_with(repo_name, token)
-        mock2.assert_called_with(repo_name, target_branch, token)
-        assert mock3.call_args_list == expected_calls
+        assert mock2.call_args_list == expected_calls
 
         capture.check_present()
 

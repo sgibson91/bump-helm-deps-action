@@ -1,9 +1,11 @@
 import os
 import yaml
+import string
+import random
 import shutil
 import logging
 
-from itertools import compress
+from itertools import compress, product
 
 from .azure import get_token
 
@@ -153,10 +155,9 @@ def update_local_file(
     with open(filename, "r") as stream:
         chart_yaml = yaml.safe_load(stream)
 
-    for chart in charts_to_update:
-        for dep in chart_yaml["dependencies"]:
-            if dep["name"] == chart:
-                dep["version"] = chart_info[chart]
+    for chart, dep in product(charts_to_update, chart_yaml["dependencies"]):
+        if dep["name"] == chart:
+            dep["version"] = chart_info[chart]
 
     with open(filename, "w") as stream:
         yaml.safe_dump(chart_yaml, stream)
@@ -248,7 +249,13 @@ def run(
 
     if (len(charts_to_update) > 0) and (not dry_run):
         # Check if Pull Request exists
-        pr_exists = find_existing_pr(repo_api, target_branch, token)
+        pr_exists, branch_name = find_existing_pr(repo_api, token)
+
+        if branch_name is None:
+            random_id = "".join(random.sample(string.ascii_letters, 4))
+            target_branch = target_branch + "-" + random_id
+        else:
+            target_branch = branch_name
 
         # Check if a fork exists
         fork_exists = check_fork_exists(repo_name, token)
