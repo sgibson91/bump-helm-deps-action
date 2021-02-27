@@ -173,7 +173,7 @@ def checkout_branch(
     fork_exists = check_fork_exists(repo_name, token)
 
     if fork_exists and not pr_exists:
-        delete_old_branch(repo_name, target_branch, token)
+        # delete_old_branch(repo_name, target_branch, token) <-- DEPRECATED
 
         logger.info("Pulling main branch of: %s/%s" % (repo_owner, repo_name))
         pull_cmd = [
