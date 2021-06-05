@@ -37,7 +37,7 @@ Please report any unacceptable behaviour to [Dr Sarah Gibson](mailto:drsarahlgib
 
 This repository (<https://github.com/HelmUpgradeBot/hub23-deploy-upgrades>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of the [Hub23 deployment](https://github.com/alan-turing-institute/hub23-deploy) can be updated, and opens a Pull Request with the new versions if so.
 
-This project is mostly a Python wrapper around [HTTP requests](https://www.codecademy.com/articles/http-requests) to the [GitHub REST API](https://developer.github.com/v3/), with some YAML/JSON handling and a dash of the [Azure command line interface](https://docs.microsoft.com/en-us/cli/azure/?view=azure-cli-latest) thrown in.
+This project is mostly a Python wrapper around [HTTP requests](https://www.codecademy.com/articles/http-requests) to the [GitHub REST API](https://developer.github.com/v3/), with some YAML/JSON handling.
 
 ## :gift: How can I contribute?
 

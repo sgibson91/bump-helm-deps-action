@@ -2,8 +2,6 @@ __version__ = "0.0.1"
 
 from .app import run
 
-from .azure import login, get_token
-
 from .cli import parse_args, check_parser
 
 from .github import (

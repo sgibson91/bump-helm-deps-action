@@ -25,27 +25,18 @@ def test_parser_required(mock_args):
         repo_owner="test_owner",
         repo_name="test_repo",
         chart_name="test_chart",
-        identity=True,
         dry_run=True,
         verbose=True,
     ),
 )
 def test_parser_boolean_opts(mock_args):
     parser = parse_args(
-        [
-            "test_owner",
-            "test_repo",
-            "test_chart",
-            "--identity",
-            "--dry-run",
-            "--verbose",
-        ]
+        ["test_owner", "test_repo", "test_chart", "--dry-run", "--verbose"]
     )
 
     assert parser.repo_owner == "test_owner"
     assert parser.repo_name == "test_repo"
     assert parser.chart_name == "test_chart"
-    assert parser.identity
     assert parser.dry_run
     assert parser.verbose
     assert mock_args.call_count == 1
@@ -57,8 +48,6 @@ def test_parser_boolean_opts(mock_args):
         repo_owner="test_owner",
         repo_name="test_repo",
         chart_name="test_chart",
-        keyvault="test_vault",
-        token_name="test_token_name",
         target_branch="test_target",
         base_branch="test_base",
         labels=["label1", "label2"],
@@ -70,10 +59,6 @@ def test_parser_opts(mock_args):
             "test_owner",
             "test_repo",
             "test_chart",
-            "-k",
-            "test_vault",
-            "-n",
-            "test_token_name",
             "-t",
             "test_target",
             "-b",
@@ -87,8 +72,6 @@ def test_parser_opts(mock_args):
     assert parser.repo_owner == "test_owner"
     assert parser.repo_name == "test_repo"
     assert parser.chart_name == "test_chart"
-    assert parser.keyvault == "test_vault"
-    assert parser.token_name == "test_token_name"
     assert parser.target_branch == "test_target"
     assert parser.base_branch == "test_base"
     assert parser.labels == ["label1", "label2"]
@@ -97,25 +80,13 @@ def test_parser_opts(mock_args):
 
 def test_check_parser():
     args1 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
-        keyvault="test_vault",
-        token_name=None,
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
     args2 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
-        keyvault=None,
-        token_name="test_token",
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
     args3 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
-        keyvault=None,
-        token_name=None,
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
 
     with pytest.raises(ValueError):
