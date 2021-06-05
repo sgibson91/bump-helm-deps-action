@@ -23,7 +23,6 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
   - [:clock2: CRON Expression](#clock2-cron-expression)
   - [:clapper: GitHub Action](#clapper-github-action)
 - [:white_check_mark: Running Tests](#white_check_mark-running-tests)
-- [:leftwards_arrow_with_hook: Pre-commit Hook](#leftwards_arrow_with_hook-pre-commit-hook)
 - [:gift: Acknowledgements](#gift-acknowledgements)
 - [:sparkles: Contributing](#sparkles-contributing)
 
@@ -165,16 +164,6 @@ coverage report
 ```
 
 An interactive HTML report can be generated with the command `coverage html` and accessed by opening `htmlcov/index.html` in your browser.
-
-## :leftwards_arrow_with_hook: Pre-commit Hook
-
-For developing this bot, there is a pre-commit hook that will format the Python code using [black](https://github.com/psf/black) and [flake8](http://flake8.pycqa.org/en/latest/).
-To install the hook, run the following:
-
-```bash
-pip install -r dev-requirements.txt
-pre-commit install
-```
 
 ## :gift: Acknowledgements
 
