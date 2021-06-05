@@ -31,13 +31,7 @@ def test_parser_required(mock_args):
 )
 def test_parser_boolean_opts(mock_args):
     parser = parse_args(
-        [
-            "test_owner",
-            "test_repo",
-            "test_chart",
-            "--dry-run",
-            "--verbose",
-        ]
+        ["test_owner", "test_repo", "test_chart", "--dry-run", "--verbose"]
     )
 
     assert parser.repo_owner == "test_owner"
@@ -86,19 +80,13 @@ def test_parser_opts(mock_args):
 
 def test_check_parser():
     args1 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
     args2 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
     args3 = argparse.Namespace(
-        repo_owner="test_owner",
-        repo_name="test_repo",
-        chart_name="test_chart",
+        repo_owner="test_owner", repo_name="test_repo", chart_name="test_chart"
     )
 
     with pytest.raises(ValueError):
