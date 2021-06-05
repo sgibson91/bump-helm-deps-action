@@ -7,8 +7,6 @@ import logging
 
 from itertools import compress, product
 
-from .azure import get_token
-
 from .pull_version_info import (
     pull_version_from_requirements_file,
     pull_version_from_chart_file,
@@ -216,10 +214,7 @@ def run(
     target_branch: str,
     labels: list,
     token: str,
-    token_name: str,
-    keyvault: str,
     dry_run: bool = False,
-    identity: bool = False,
 ) -> None:
     """Run the HelmUpgradeBot app
 
@@ -231,18 +226,11 @@ def run(
         target_branch (str): The target branch for Pull Requests
         labels (list): A list of labels to add to the Pull Request
         token (str): A GitHub API token
-        token_name (str): The name of the stored token
-        keyvault (str): An Azure keyvault the token is stored in
         dry_run (bool, optional): Don't open a Pull Request. Defaults to False.
-        identity (bool, optional): Login to Azure with Managed System Identity. Defaults to False.
     """
     repo_api = f"https://api.github.com/repos/{repo_owner}/{repo_name}/"
 
-    if token is None:
-        token = get_token(token_name, keyvault, identity=identity)
-
-    if identity:
-        set_git_config()
+    set_git_config()
 
     chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)

@@ -17,7 +17,6 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 - [:mag: Overview](#mag-overview)
 - [🤔 Assumptions HelmUpgradeBot Makes](#-assumptions-helmupgradebot-makes)
 - [:pushpin: Installation and Requirements](#pushpin-installation-and-requirements)
-  - [:cloud: Install Azure CLI](#cloud-install-azure-cli)
 - [:children_crossing: Usage](#children_crossing-usage)
   - [:lock: User Permissions](#lock-user-permissions)
   - [:clock2: CRON Expression](#clock2-cron-expression)
@@ -32,9 +31,6 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 This is an overview of the steps the bot executes.
 
-- If a GitHub Personal Access Token (PAT) is not provided as an environment variable, log into Azure and pull one from an Azure Key Vault
-  - The login will either be interactively if run locally or via a [Managed System Identity](https://docs.microsoft.com/en-gb/azure/active-directory/managed-identities-azure-resources/overview) if run from a server.
-    The server will require [`GET` permissions to the secrets](https://docs.microsoft.com/en-us/azure/key-vault/secrets/about-secrets#secret-access-control) stored in the Azure Key Vault.
 - Read Hub23's Helm chart requirements file and find the versions of the dependencies
 - Scrape the Helm chart source indexes and find the most recent version release for each dependency
 - If there is a newer chart version available, then:
@@ -51,8 +47,7 @@ A moderator should check and merge the Pull Request as appropriate.
 
 Here is a list detailing the assumptions that the bot makes.
 
-1. You have a GitHub PAT
-   1. It is stored in an Azure Key Vault or provided by the `API_TOKEN` environment variable
+1. You have a GitHub PAT provided by the `API_TOKEN` environment variable
 2. The configuration for your BinderHub deployment is in a pulic GitHub repository.
 3. Your deployment repository contains a local Helm chart with a `requirements.yaml` file.
 
@@ -67,23 +62,12 @@ cd hub23-deploy-upgrades
 python setup.py install
 ```
 
-You will also need to install the [Microsoft Azure command line interface](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest).
-
-### :cloud: Install the Azure CLI
-
-To install the Azure command line interface, run the following:
-
-```bash
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-```
-
 ## :children_crossing: Usage
 
 To run the bot, execute the following:
 
 ```bash
-usage: helm-bot [-h] [-k KEYVAULT] [-n TOKEN_NAME] [-t TARGET_BRANCH]
-                [-b BASE_BRANCH] [-l LABELS [LABELS ...]] [--identity]
+usage: helm-bot [-h] [-t TARGET_BRANCH] [-b BASE_BRANCH] [-l LABELS [LABELS ...]]
                 [--dry-run] [-v]
                 repo_owner repo_name chart_name
 
@@ -97,12 +81,6 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -k KEYVAULT, --keyvault KEYVAULT
-                        Name of the Azure Key Vault storing secrets for the
-                        BinderHub
-  -n TOKEN_NAME, --token-name TOKEN_NAME
-                        Name of the bot's access token as stored in the Azure
-                        Key Vault
   -t TARGET_BRANCH, --target-branch TARGET_BRANCH
                         The git branch to commit to. Default: helm_chart_bump.
   -b BASE_BRANCH, --base-branch BASE_BRANCH
@@ -110,13 +88,12 @@ optional arguments:
                         Default: main.
   -l LABELS [LABELS ...], --labels LABELS [LABELS ...]
                         List of labels to assign to the Pull Request
-  --identity            Login to Azure using a Managed System Identity
   --dry-run             Perform a dry-run helm upgrade
   -v, --verbose         Print output to the console. Default is to write to a
                         log file.
 ```
 
-Alternatively, the GitHub PAT can be provided directly using the `API_TOKEN` environment variable, like so:
+The GitHub PAT can be provided directly using the `API_TOKEN` environment variable, like so:
 
 ```bash
 API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart_name [--flags]
@@ -127,13 +104,6 @@ API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart
 #### GitHub API
 
 When [creating the GitHub API token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token), it will need to be assigned the [`public_repo` and `delete_repo` scopes](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes).
-
-#### Virtual Machine
-
-The user (or machine) running this script will need _at least_ the following permissions for interacting with Azure resources.
-
-- `Contributor` role permissions to the Kubernetes cluster to be upgraded, and
-- Permission to get secrets from the Azure Key Vault (`Get` and `List`).
 
 ### :clock2: CRON expression
 
