@@ -21,6 +21,7 @@ from .github import (
     create_pr,
     find_existing_pr,
     make_fork,
+    remove_fork,
     set_git_config,
 )
 
@@ -108,7 +109,7 @@ def get_chart_versions(
     chart_urls = {
         chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
         "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
-        "ingress-nginx": "https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/charts/ingress-nginx/Chart.yaml",
+        # "ingress-nginx": "https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/charts/ingress-nginx/Chart.yaml",
     }
 
     for (chart, chart_url) in chart_urls.items():
@@ -265,3 +266,22 @@ def run(
             labels,
             pr_exists,
         )
+
+    elif (len(charts_to_update) == 0) and (not dry_run):
+        # Delete local copy of repo
+        clean_up("hub23-deploy")
+
+        # Check if Pull Request exists
+        pr_exists, _ = find_existing_pr(repo_api, token)
+
+        if pr_exists:
+            # A PR exists so exit cleanly
+            import sys
+            sys.exit()
+
+        # Check if a fork exists
+        fork_exists = check_fork_exists(repo_name, token)
+
+        if fork_exists and not pr_exists:
+            # A fork exists but there's no open PR, so remove fork
+            remove_fork("hub23-deploy", token)
