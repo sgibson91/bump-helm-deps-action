@@ -7,8 +7,8 @@ on:
         description: 'Perform a dry-run. Takes "true" or "false".'
         required: false
         default: 'false'
-#   schedule:
-#     - cron: "0 10 * * *"
+  schedule:
+    - cron: "0 10 * * *"
   pull_request:
     branches:
       - main
