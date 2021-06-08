@@ -7,13 +7,14 @@ on:
         description: 'Perform a dry-run. Takes "true" or "false".'
         required: false
         default: 'false'
-#   schedule:
-#     - cron: "0 10 * * *"
+  schedule:
+    - cron: "0 10 * * *"
   pull_request:
     branches:
       - main
 
 env:
+  API_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   GIT_COMMITER_EMAIL: helmupgradebot.github@gmail.com
   GIT_COMMITTER_NAME: HelmUpgradeBot
   GIT_AUTHOR_EMAIL: helmupgradebot.github@gmail.com
@@ -42,7 +43,7 @@ jobs:
       - name: Dry-Run HelmUpgradeBot
         if: github.event.pull_request || github.event.inputs.dry_run == 'false'
         run: |
-          API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
+          helm-bot \
             alan-turing-institute \
             hub23-deploy \
             hub23-chart \
@@ -52,9 +53,8 @@ jobs:
       - name: Run HelmUpgradeBot
         if: github.event_name == 'schedule' || github.event.inputs.dry_run == 'true'
         run: |
-          API_TOKEN="${{ secrets.ACCESS_TOKEN }}" helm-bot \
+          helm-bot \
             alan-turing-institute \
             hub23-deploy \
             hub23-chart \
-            --verbose \
-            --labels dependencies
+            --verbose
