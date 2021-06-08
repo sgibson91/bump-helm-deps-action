@@ -277,6 +277,7 @@ def run(
         if pr_exists:
             # A PR exists so exit cleanly
             import sys
+
             sys.exit()
 
         # Check if a fork exists
