@@ -92,6 +92,27 @@ def add_labels(labels: list, pr_url: str, token: str) -> None:
     )
 
 
+def assign_reviewers(reviewers: list, pr_url: str, token: str) -> None:
+    """Assign reviewers to an open Pull Request
+
+    Args:
+        reviewers (list): A list of GitHub users to request a review for the
+            Pull Request from
+        pr_url (str): The /pulls URL endpoint of the open Pull Request
+        token (str): A GitHub API token
+    """
+    logger.info("Assigning reviewers to Pull Request: %s" % pr_url)
+    logger.info("Assigning reviewers: %s" % reviewers)
+
+    url = pr_url + "/requested_reviewers"
+
+    post_request(
+        url,
+        headers={"Authorization": f"token {token}"},
+        json={"reviewers": reviewers},
+    )
+
+
 def check_fork_exists(repo_name: str, token: str) -> bool:
     """Check if HelmUpgradeBot has a fork of a GitHub repository
 
@@ -233,7 +254,8 @@ def create_pr(
     base_branch: str,
     target_branch: str,
     token: str,
-    labels: str = None,
+    labels: list = [],
+    reviewers: list = [],
 ) -> None:
     """Create a Pull Request to the original repository
 
@@ -242,8 +264,10 @@ def create_pr(
         base_branch (str): The name of the base branch for the PR
         target_branch (str): The name of the target branch for the PR
         token (str): A GitHub API token
-        labels (str, optional): A list of labels to add to the PR.
-                                Defaults to None.
+        labels (list, optional): A list of labels to add to the PR.
+            Defaults to an empty list.
+        reviewers (list, optional): A list of GitHub users to request a review
+            for the open Pull Request from. Defaults to an empty list.
     """
     logger.info("Creating Pull Request")
 
@@ -263,8 +287,11 @@ def create_pr(
 
     logger.info("Pull Request created")
 
-    if labels is not None:
+    if len(labels) > 0:
         add_labels(labels, resp["issue_url"], token)
+
+    if len(reviewers) > 0:
+        assign_reviewers(reviewers, resp["url"], token)
 
 
 def find_existing_pr(repo_api: str, token: str):

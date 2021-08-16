@@ -6,6 +6,7 @@ from testfixtures import log_capture
 from helm_bot.github import (
     add_commit_push,
     add_labels,
+    assign_reviewers,
     check_fork_exists,
     delete_old_branch,
     checkout_branch,
@@ -119,6 +120,29 @@ def test_add_labels(capture):
             pr_url,
             headers={"Authorization": f"token {token}"},
             json={"labels": labels},
+        )
+
+        capture.check_present()
+
+
+@log_capture()
+def test_assign_reviewers(capture):
+    reviewers = ["reviewer1", "reviewer2"]
+    url = "http://jsonplaceholder.typicode.com/pulls/1"
+    token = "this_is_a_token"
+
+    logger = logging.getLogger()
+    logger.info("Add reviewers to Pull Request: %s" % url)
+    logger.info("Adding reviewers: %s" % reviewers)
+
+    with patch("helm_bot.github.post_request") as mocked_func:
+        assign_reviewers(reviewers, url, token)
+
+        assert mocked_func.call_count == 1
+        mocked_func.assert_called_with(
+            url + "/requested_reviewers",
+            headers={"Authorization": f"token {token}"},
+            json={"reviewers": reviewers},
         )
 
         capture.check_present()
@@ -453,12 +477,13 @@ def test_clone_fork_exception(capture):
 
 
 @log_capture()
-def test_create_pr_no_labels(capture):
+def test_create_pr_no_labels_no_reviewers(capture):
     repo_api = "http://jsonplaceholder.typicode.com/"
     base_branch = "base"
     target_branch = "target"
     token = "this_is_a_token"
-    labels = None
+    labels = []
+    reviewers = []
 
     expected_pr = {
         "title": "Logging Helm Chart version upgrade",
@@ -472,7 +497,9 @@ def test_create_pr_no_labels(capture):
     logger.info("Pull Request created")
 
     with patch("helm_bot.github.post_request", return_value={}) as mock_post:
-        create_pr(repo_api, base_branch, target_branch, token, labels)
+        create_pr(
+            repo_api, base_branch, target_branch, token, labels, reviewers
+        )
 
         assert mock_post.call_count == 1
         assert mock_post.return_value == {}
@@ -487,7 +514,7 @@ def test_create_pr_no_labels(capture):
 
 
 @log_capture()
-def test_create_pr_with_labels(capture):
+def test_create_pr_with_labels_no_reviewers(capture):
     repo_api = "http://jsonplaceholder.typicode.com/"
     base_branch = "base"
     target_branch = "target"
@@ -527,6 +554,116 @@ def test_create_pr_with_labels(capture):
         assert mock2.call_count == 1
         mock2.assert_called_with(
             labels, "http://jsonplaceholder.typicode.com/pr/1", token
+        )
+
+        capture.check_present()
+
+
+@log_capture()
+def test_create_pr_with_reviewers_no_labels(capture):
+    repo_api = "http://jsonplaceholder.typicode.com/"
+    base_branch = "base"
+    target_branch = "target"
+    token = "this_is_a_token"
+    reviewers = ["reviewer1", "reviewer2"]
+
+    expected_pr = {
+        "title": "Logging Helm Chart version upgrade",
+        "body": "This PR is updating the local Helm Chart to the most recent Chart dependency versions.",
+        "base": base_branch,
+        "head": f"HelmUpgradeBot:{target_branch}",
+    }
+
+    logger = logging.getLogger()
+    logger.info("Creating Pull Request")
+    logger.info("Pull Request created")
+
+    mock_post = patch(
+        "helm_bot.github.post_request",
+        return_value={"url": "http://jsonplaceholder.typicode.com/pulls/1"},
+    )
+    mock_reviewers = patch(
+        "helm_bot.github.assign_reviewers", return_value=None
+    )
+
+    with mock_post as mock1, mock_reviewers as mock2:
+        create_pr(
+            repo_api, base_branch, target_branch, token, reviewers=reviewers
+        )
+
+        assert mock1.call_count == 1
+        assert mock1.return_value == {
+            "url": "http://jsonplaceholder.typicode.com/pulls/1"
+        }
+        mock1.assert_called_with(
+            repo_api + "pulls",
+            headers={"Authorization": f"token {token}"},
+            json=expected_pr,
+            return_json=True,
+        )
+        assert mock2.call_count == 1
+        mock2.assert_called_with(
+            reviewers, "http://jsonplaceholder.typicode.com/pulls/1", token
+        )
+
+        capture.check_present()
+
+
+@log_capture()
+def test_create_pr_with_labels_and_reviewers(capture):
+    repo_api = "http://jsonplaceholder.typicode.com/"
+    base_branch = "base"
+    target_branch = "target"
+    token = "this_is_a_token"
+    labels = ["label1", "label2"]
+    reviewers = ["reviewer1", "reviewer2"]
+
+    expected_pr = {
+        "title": "Logging Helm Chart version upgrade",
+        "body": "This PR is updating the local Helm Chart to the most recent Chart dependency versions.",
+        "base": base_branch,
+        "head": f"HelmUpgradeBot:{target_branch}",
+    }
+
+    logger = logging.getLogger()
+    logger.info("Creating Pull Request")
+    logger.info("Pull Request created")
+
+    mock_post = patch(
+        "helm_bot.github.post_request",
+        return_value={
+            "issue_url": "http://jsonplaceholder.typicode.com/pr/1",
+            "url": "http://jsonplaceholder.typicode.com/pulls/1",
+        },
+    )
+    mock_labels = patch("helm_bot.github.add_labels", return_value=None)
+    mock_reviewers = patch(
+        "helm_bot.github.assign_reviewers", return_value=None
+    )
+
+    with mock_post as mock1, mock_labels as mock2, mock_reviewers as mock3:
+        create_pr(
+            repo_api, base_branch, target_branch, token, labels, reviewers
+        )
+
+        assert mock1.call_count == 1
+        assert mock1.return_value == {
+            "issue_url": "http://jsonplaceholder.typicode.com/pr/1",
+            "url": "http://jsonplaceholder.typicode.com/pulls/1",
+        }
+        mock1.assert_called_with(
+            repo_api + "pulls",
+            headers={"Authorization": f"token {token}"},
+            json=expected_pr,
+            return_json=True,
+        )
+        assert mock2.call_count == 1
+        mock2.assert_called_with(
+            labels, "http://jsonplaceholder.typicode.com/pr/1", token
+        )
+        assert mock3.call_count == 1
+        mock3.assert_called_with(
+            reviewers, "http://jsonplaceholder.typicode.com/pulls/1", token
         )
 
         capture.check_present()

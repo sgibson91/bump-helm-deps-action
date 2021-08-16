@@ -1,6 +1,4 @@
-import pytest
 import logging
-from unittest.mock import patch
 from testfixtures import log_capture
 from helm_bot.app import check_versions
 
