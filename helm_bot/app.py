@@ -211,7 +211,11 @@ def upgrade_chart(
     add_commit_push(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
     )
-    create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
+
+    if not pr_exists:
+        create_pr(
+            repo_api, base_branch, target_branch, token, labels, reviewers
+        )
 
 
 def run(
