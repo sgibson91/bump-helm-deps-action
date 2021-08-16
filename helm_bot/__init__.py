@@ -7,6 +7,7 @@ from .cli import parse_args, check_parser
 from .github import (
     add_commit_push,
     add_labels,
+    assign_reviewers,
     check_fork_exists,
     delete_old_branch,
     checkout_branch,
