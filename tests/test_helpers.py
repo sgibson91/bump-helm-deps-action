@@ -1,8 +1,5 @@
 import pytest
-import logging
 import responses
-from unittest.mock import patch
-from testfixtures import log_capture
 from helm_bot.helper_functions import (
     delete_request,
     get_request,
