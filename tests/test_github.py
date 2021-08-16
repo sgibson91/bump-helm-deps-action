@@ -497,7 +497,9 @@ def test_create_pr_no_labels_no_reviewers(capture):
     logger.info("Pull Request created")
 
     with patch("helm_bot.github.post_request", return_value={}) as mock_post:
-        create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
+        create_pr(
+            repo_api, base_branch, target_branch, token, labels, reviewers
+        )
 
         assert mock_post.call_count == 1
         assert mock_post.return_value == {}
@@ -580,10 +582,14 @@ def test_create_pr_with_reviewers_no_labels(capture):
         "helm_bot.github.post_request",
         return_value={"url": "http://jsonplaceholder.typicode.com/pulls/1"},
     )
-    mock_reviewers = patch("helm_bot.github.assign_reviewers", return_value=None)
+    mock_reviewers = patch(
+        "helm_bot.github.assign_reviewers", return_value=None
+    )
 
     with mock_post as mock1, mock_reviewers as mock2:
-        create_pr(repo_api, base_branch, target_branch, token, reviewers=reviewers)
+        create_pr(
+            repo_api, base_branch, target_branch, token, reviewers=reviewers
+        )
 
         assert mock1.call_count == 1
         assert mock1.return_value == {
@@ -631,10 +637,14 @@ def test_create_pr_with_labels_and_reviewers(capture):
         },
     )
     mock_labels = patch("helm_bot.github.add_labels", return_value=None)
-    mock_reviewers = patch("helm_bot.github.assign_reviewers", return_value=None)
+    mock_reviewers = patch(
+        "helm_bot.github.assign_reviewers", return_value=None
+    )
 
     with mock_post as mock1, mock_labels as mock2, mock_reviewers as mock3:
-        create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
+        create_pr(
+            repo_api, base_branch, target_branch, token, labels, reviewers
+        )
 
         assert mock1.call_count == 1
         assert mock1.return_value == {
