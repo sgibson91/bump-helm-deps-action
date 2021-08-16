@@ -57,4 +57,5 @@ jobs:
             alan-turing-institute \
             hub23-deploy \
             hub23-chart \
+            --reviewers callummole sgibson91 \
             --verbose
