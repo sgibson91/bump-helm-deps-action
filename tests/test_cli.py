@@ -51,6 +51,7 @@ def test_parser_boolean_opts(mock_args):
         target_branch="test_target",
         base_branch="test_base",
         labels=["label1", "label2"],
+        reviewers=["reviewer1", "reviewer2"],
     ),
 )
 def test_parser_opts(mock_args):
@@ -66,6 +67,9 @@ def test_parser_opts(mock_args):
             "-l",
             "label1",
             "label2",
+            "-r",
+            "reviewer1",
+            "reviewer2",
         ]
     )
 
@@ -75,6 +79,7 @@ def test_parser_opts(mock_args):
     assert parser.target_branch == "test_target"
     assert parser.base_branch == "test_base"
     assert parser.labels == ["label1", "label2"]
+    assert parser.reviewers == ["reviewer1", "reviewer2"]
     assert mock_args.call_count == 1
 
 
