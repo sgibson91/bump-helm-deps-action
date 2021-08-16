@@ -59,6 +59,13 @@ def parse_args(args):
         default=None,
         help="List of labels to assign to the Pull Request",
     )
+    parser.add_argument(
+        "-r",
+        "--reviewers",
+        nargs="+",
+        default=None,
+        help="List of GitHub handles to request reviews for the Pull Request from",
+    )
 
     # Define optional boolean flags
     parser.add_argument(
@@ -100,6 +107,7 @@ def main():
         base_branch=args.base_branch,
         target_branch=args.target_branch,
         labels=args.labels,
+        reviewers=args.reviewers,
         token=args.token,
         dry_run=args.dry_run,
     )
