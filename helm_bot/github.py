@@ -92,6 +92,27 @@ def add_labels(labels: list, pr_url: str, token: str) -> None:
     )
 
 
+def assign_reviewers(reviewers: list, pr_url: str, token: str) -> None:
+    """Assign reviewers to an open Pull Request
+
+    Args:
+        reviewers (list): A list of GitHub users to request a review for the
+            Pull Request from
+        pr_url (str): The /pulls URL endpoint of the open Pull Request
+        token (str): A GitHub API token
+    """
+    logger.info("Assigning reviewers to Pull Request: %s" % pr_url)
+    logger.info("Assigning reviewers: %s" % reviewers)
+
+    url = pr_url + "/requested_reviewers"
+
+    post_request(
+        url,
+        headers={"Authorization": f"token {token}"},
+        json={"reviewers": reviewers},
+    )
+
+
 def check_fork_exists(repo_name: str, token: str) -> bool:
     """Check if HelmUpgradeBot has a fork of a GitHub repository
 
