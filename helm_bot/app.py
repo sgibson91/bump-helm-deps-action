@@ -90,7 +90,11 @@ def clean_up(repo_name: str) -> None:
 
 
 def get_chart_versions(
-    chart_name: str, repo_owner: str, repo_name: str, token: str
+    chart_name: str,
+    repo_owner: str,
+    repo_name: str,
+    branch_name: str,
+    token: str,
 ) -> dict:
     """Get the versions of dependent charts
 
@@ -98,6 +102,8 @@ def get_chart_versions(
         chart_name (str): The main chart to check
         repo_owner (str): The repository/chart owner
         repo_name (str): The name of the repository hosting the chart
+        branch_name (str): The branch of `repo_name` to pull current chart
+            versions from
         token (str): A GitHub API token
 
     Returns:
@@ -107,7 +113,7 @@ def get_chart_versions(
     chart_info = {}
     chart_info[chart_name] = {}
     chart_urls = {
-        chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
+        chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/{branch_name}/{chart_name}/requirements.yaml",
         "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
         # "ingress-nginx": "https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/charts/ingress-nginx/Chart.yaml",
     }
@@ -233,14 +239,18 @@ def run(
 
     set_git_config()
 
-    chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
+    # Check if Pull Request exists
+    pr_exists, branch_name = find_existing_pr(repo_api, token)
+    if branch_name is None:
+        branch_name = "main"
+
+    chart_info = get_chart_versions(
+        chart_name, repo_owner, repo_name, branch_name, token
+    )
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
     if (len(charts_to_update) > 0) and (not dry_run):
-        # Check if Pull Request exists
-        pr_exists, branch_name = find_existing_pr(repo_api, token)
-
-        if branch_name is None:
+        if branch_name == "main":
             random_id = "".join(random.sample(string.ascii_letters, 4))
             target_branch = target_branch + "-" + random_id
         else:
@@ -270,9 +280,6 @@ def run(
     elif (len(charts_to_update) == 0) and (not dry_run):
         # Delete local copy of repo
         clean_up("hub23-deploy")
-
-        # Check if Pull Request exists
-        pr_exists, _ = find_existing_pr(repo_api, token)
 
         if pr_exists:
             # A PR exists so exit cleanly
