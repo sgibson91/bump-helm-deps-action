@@ -239,14 +239,18 @@ def run(
 
     set_git_config()
 
-    chart_info = get_chart_versions(chart_name, repo_owner, repo_name, token)
+    # Check if Pull Request exists
+    pr_exists, branch_name = find_existing_pr(repo_api, token)
+    if branch_name is None:
+        branch_name = "main"
+
+    chart_info = get_chart_versions(
+        chart_name, repo_owner, repo_name, branch_name, token
+    )
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
     if (len(charts_to_update) > 0) and (not dry_run):
-        # Check if Pull Request exists
-        pr_exists, branch_name = find_existing_pr(repo_api, token)
-
-        if branch_name is None:
+        if branch_name == "main":
             random_id = "".join(random.sample(string.ascii_letters, 4))
             target_branch = target_branch + "-" + random_id
         else:
@@ -276,9 +280,6 @@ def run(
     elif (len(charts_to_update) == 0) and (not dry_run):
         # Delete local copy of repo
         clean_up("hub23-deploy")
-
-        # Check if Pull Request exists
-        pr_exists, _ = find_existing_pr(repo_api, token)
 
         if pr_exists:
             # A PR exists so exit cleanly
