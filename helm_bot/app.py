@@ -181,6 +181,7 @@ def upgrade_chart(
     target_branch: str,
     token: str,
     labels: list,
+    reviewers: list,
     pr_exists: bool,
 ) -> None:
     """Upgrade the dependencies in the helm chart
@@ -210,7 +211,7 @@ def upgrade_chart(
     add_commit_push(
         filename, charts_to_update, chart_info, repo_name, target_branch, token
     )
-    create_pr(repo_api, base_branch, target_branch, token, labels)
+    create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
 
 
 def run(
@@ -220,6 +221,7 @@ def run(
     base_branch: str,
     target_branch: str,
     labels: list,
+    reviewers: list,
     token: str,
     dry_run: bool = False,
 ) -> None:
@@ -232,6 +234,7 @@ def run(
         base_branch (str): The base branch for Pull Requests
         target_branch (str): The target branch for Pull Requests
         labels (list): A list of labels to add to the Pull Request
+        reviewers (list):
         token (str): A GitHub API token
         dry_run (bool, optional): Don't open a Pull Request. Defaults to False.
     """
@@ -274,6 +277,7 @@ def run(
             target_branch,
             token,
             labels,
+            reviewers,
             pr_exists,
         )
 
