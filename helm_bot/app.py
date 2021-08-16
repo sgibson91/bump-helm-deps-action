@@ -90,7 +90,11 @@ def clean_up(repo_name: str) -> None:
 
 
 def get_chart_versions(
-    chart_name: str, repo_owner: str, repo_name: str, token: str
+    chart_name: str,
+    repo_owner: str,
+    repo_name: str,
+    branch_name: str,
+    token: str,
 ) -> dict:
     """Get the versions of dependent charts
 
@@ -98,6 +102,8 @@ def get_chart_versions(
         chart_name (str): The main chart to check
         repo_owner (str): The repository/chart owner
         repo_name (str): The name of the repository hosting the chart
+        branch_name (str): The branch of `repo_name` to pull current chart
+            versions from
         token (str): A GitHub API token
 
     Returns:
@@ -107,7 +113,7 @@ def get_chart_versions(
     chart_info = {}
     chart_info[chart_name] = {}
     chart_urls = {
-        chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/main/{chart_name}/requirements.yaml",
+        chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/{branch_name}/{chart_name}/requirements.yaml",
         "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
         # "ingress-nginx": "https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/charts/ingress-nginx/Chart.yaml",
     }
