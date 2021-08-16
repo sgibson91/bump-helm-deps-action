@@ -254,6 +254,7 @@ def create_pr(
     base_branch: str,
     target_branch: str,
     token: str,
+    labels: list = [],
     reviewers: list = [],
 ) -> None:
     """Create a Pull Request to the original repository
@@ -263,6 +264,8 @@ def create_pr(
         base_branch (str): The name of the base branch for the PR
         target_branch (str): The name of the target branch for the PR
         token (str): A GitHub API token
+        labels (list, optional): A list of labels to add to the PR.
+            Defaults to an empty list.
         reviewers (list, optional): A list of GitHub users to request a review
             for the open Pull Request from. Defaults to an empty list.
     """
@@ -284,7 +287,7 @@ def create_pr(
 
     logger.info("Pull Request created")
 
-    if labels is not None:
+    if len(labels) > 0:
         add_labels(labels, resp["issue_url"], token)
 
     if len(reviewers) > 0:
