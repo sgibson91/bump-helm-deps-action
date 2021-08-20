@@ -56,14 +56,14 @@ def parse_args(args):
         "-l",
         "--labels",
         nargs="+",
-        default=None,
+        default=[],
         help="List of labels to assign to the Pull Request",
     )
     parser.add_argument(
         "-r",
         "--reviewers",
         nargs="+",
-        default=None,
+        default=[],
         help="List of GitHub handles to request reviews for the Pull Request from",
     )
 
