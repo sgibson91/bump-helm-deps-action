@@ -95,6 +95,7 @@ def get_chart_versions(
     repo_name: str,
     branch_name: str,
     token: str,
+    pr_exists: bool = False,
 ) -> dict:
     """Get the versions of dependent charts
 
@@ -105,11 +106,17 @@ def get_chart_versions(
         branch_name (str): The branch of `repo_name` to pull current chart
             versions from
         token (str): A GitHub API token
+        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
+            Request. Default: False.
 
     Returns:
         dict: A dictionary containing the chart dependencies and their
               up-to-date versions
     """
+    if pr_exists:
+        repo_owner = "HelmUpgradeBot"
+        branch_name = "blob/" + branch_name
+
     chart_info = {}
     chart_info[chart_name] = {}
     chart_urls = {
@@ -252,7 +259,7 @@ def run(
         branch_name = "main"
 
     chart_info = get_chart_versions(
-        chart_name, repo_owner, repo_name, branch_name, token
+        chart_name, repo_owner, repo_name, branch_name, token, pr_exists
     )
     charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
 
