@@ -111,7 +111,7 @@ def get_chart_versions(
         repo_owner = "HelmUpgradeBot"
         branch_name = "blob/" + branch_name
 
-    chart_info = {}
+    chart_info: dict = {}
     chart_info[chart_name] = {}
     chart_urls = {
         chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/{branch_name}/{chart_name}/requirements.yaml",
