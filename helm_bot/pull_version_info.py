@@ -2,6 +2,9 @@ import yaml
 
 from .http_requests import get_request
 
+API_ROOT = "https://api.github.com"
+RAW_ROOT = "https://raw.githubusercontent.com"
+
 
 def pull_from_requirements_file(
     api_url: str,
@@ -90,7 +93,7 @@ def pull_from_github_pages(
 def get_chart_versions(
     api_url: str,
     header: dict,
-    chart_name: str,
+    chart_path: str,
     chart_urls: dict,
     branch_name: str,
 ) -> dict:
@@ -100,7 +103,8 @@ def get_chart_versions(
         api_url (str): The URL of the remotely hosted helm chart dependencies
         header (dict): A dictionary of headers to send with the request. Must
             contain an authorisation token.
-        chart_name (str): The name of the local helm chart
+        chart_path (str): The path to the file that contains the chart's
+            dependencies
         chart_urls (dict): A dictionary storing the location of the dependency
             charts and their versions
         branch_name (str): The branch to pull the info from
@@ -109,6 +113,10 @@ def get_chart_versions(
         chart_info (dict): A dictionary of the dependent charts and their most
             recent versions
     """
+    chart_name = chart_path.split("/")[-2]
+    chart_url = "/".join([api_url.replace(API_ROOT + "/repos", RAW_ROOT), branch_name, chart_path])
+    chart_urls[chart_name] = chart_url
+
     chart_info: dict = {}
     chart_info[chart_name] = {}
 

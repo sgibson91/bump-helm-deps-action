@@ -170,11 +170,11 @@ def run(
     # Get and compare the helm chart dependencies
     if branch_name is None:
         chart_info = get_chart_versions(
-            api_url, header, chart_name, chart_urls, base_branch
+            api_url, header, chart_path, chart_urls, base_branch
         )
     else:
         chart_info = get_chart_versions(
-            api_url, header, chart_name, chart_urls, branch_name
+            api_url, header, chart_path, chart_urls, branch_name
         )
 
     charts_to_update = compare_dependency_versions(chart_info, chart_name)
