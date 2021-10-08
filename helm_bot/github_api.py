@@ -146,7 +146,7 @@ def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]
     Args:
         api_url (str): The API URL of the GitHub repository to send requests to
         header (dict): A dictionary of headers to send with the GET request
-        
+
     Returns:
         pr_exists (bool): True if there is already an open Pull Request.
             False otherwise.
