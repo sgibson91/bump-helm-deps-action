@@ -1,3 +1,4 @@
 jmespath
+loguru
 pyyaml
 requests
