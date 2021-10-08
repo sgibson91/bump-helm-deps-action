@@ -18,6 +18,7 @@ Use your best judgement and feel free to propose changes to this document in a P
   - [:arrow_right: Pull Requests](#arrow_right-pull-requests)
 - [:art: Styleguides](#art-styleguides)
   - [:snake: Python Styleguide](#snake-python-styleguide)
+  - [:keyboard: Python Static Typing and Type Hints](#keyboard-python-static-typing-and-type-hints)
   - [:pencil: Markdown Styleguide](#pencil-markdown-styleguide)
 - [:notebook: Additional Notes](#notebook-additional-notes)
   - [:label: Issue and Pull Request Labels](#label-issue-and-pull-request-labels)
@@ -33,9 +34,7 @@ Please report any unacceptable behaviour to [Dr Sarah Gibson](mailto:drsarahlgib
 
 ### :robot: What is the project?
 
-[HelmUpgradeBot](https://github.com/HelmUpgradeBot) is a series of repositories that tackle and automate specific tasks designed to make the experience of maintaining a [JupyterHub](https://jupyterhub.readthedocs.io) or [BinderHub](https://binderhub.readthedocs.io) deployment easier.
-
-This repository (<https://github.com/HelmUpgradeBot/hub23-deploy-upgrades>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of the [Hub23 deployment](https://github.com/alan-turing-institute/hub23-deploy) can be updated, and opens a Pull Request with the new versions if so.
+This repository (<https://github.com/sgibson91/hub23-deploy-upgrades>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of local charts can be updated, and opens a Pull Request with the new versions if so.
 
 This project is mostly a Python wrapper around [HTTP requests](https://www.codecademy.com/articles/http-requests) to the [GitHub REST API](https://developer.github.com/v3/), with some YAML/JSON handling.
 
@@ -64,7 +63,7 @@ This repository has a [feature request template](.github/ISSUE_TEMPLATE/feature_
 ### :hatching_chick: Your First Contribution
 
 Unsure where to start contributing?
-Check out the [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) and [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted) labels to see where the project is looking for input.
+Check out the [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/good%20first%20issue) and [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/help%20wanted)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/help%20wanted) labels to see where the project is looking for input.
 
 ### :arrow_right: Pull Requests
 
@@ -91,12 +90,19 @@ Once you and the maintainers are happy, your contribution will be merged!
 
 ### :snake: Python Styleguide
 
-When writing Python scripts for this repository, it is recommended that contributors use [black](https://github.com/psf/black) and [flake8](https://flake8.pycqa.org/en/latest/) for formatting and linting styles.
+When writing Python scripts for this repository, it is recommended that contributors use [black](https://github.com/psf/black), [flake8](https://flake8.pycqa.org/en/latest/)  and [isort](https://pycqa.github.io/isort/) for formatting and linting styles, and sorting imports.
 The repository has [GitHub Actions](.github/workflows) to check files are conforming to this styleguide, though not doing so will not prevent your contribution from being merged.
 These tools are used as the maintainers believe this makes the code easier to read and keeps consistent formatting as more people contribute to the project.
 
 While flake8 commands can be [disabled](https://flake8.pycqa.org/en/latest/user/violations.html), we only recommend doing this for [specific lines](https://flake8.pycqa.org/en/latest/user/violations.html#in-line-ignoring-errors) in such cases where reformatting would produce "ugly code".
 The maintainers retain final say on what is "ugly code" on a case-by-case basis.
+
+### :keyboard: Python Static Typing and Type Hints
+
+When adding or updating a Python function, we recommend using [static typing and type hints](https://docs.python.org/3/library/typing.html) where appropriate.
+The maintainers encourage this practice since they believe it makes the code easier to read and understand, and explicitly defines what inputs and outputs a function may produce.
+
+While type hints do not affect the code at runtime, the project does implement GitHub Actions to run [`mypy`](https://mypy.readthedocs.io/en/stable/) to check the code conforms to the declared type hints.
 
 ### :pencil: Markdown Styleguide
 
@@ -117,8 +123,8 @@ Below is a table with the currently used labels in the repo.
 
 | Label | Description |
 | :--- | :--- |
-| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/bug)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/bug) | Something isn't working |
-| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/documentation)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/documentation) | Improvements or additions to the documentation |
-| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/enhancement)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/enhancement) | New feature or request |
-| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) | Good for newcomers |
-| [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted) | Extra attention is needed |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/bug)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/bug) | Something isn't working |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/documentation)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/documentation) | Improvements or additions to the documentation |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/enhancement)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/enhancement) | New feature or request |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/good%20first%20issue) | Good for newcomers |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/help%20wanted)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/help%20wanted) | Extra attention is needed |

@@ -1,21 +1,14 @@
-# HelmUpgradeBot for Hub23
+# Bump Helm Chart dependencies
 
-This is an automatable bot that will check the chart dependencies of the Hub23 Helm chart are up to date with their source.
-If a new version is available, the bot will open a Pull Request to the [`alan-turing-institute/hub23-deploy` repository](https://github.com/alan-turing-institute/hub23-deploy) inserting the new chart dependency versions into the Hub23 Helm Chart requirements file.
+This is an automatable bot that will check the chart dependencies of a Helm chart are up to date with their source.
+If a new version is available, the bot will open a Pull Request to the host repository inserting the new chart dependency versions into the helm chart file.
 
-![GitHub](https://img.shields.io/github/license/HelmUpgradeBot/hub23-deploy-upgrades) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/good%20first%20issue) [![GitHub labels](https://img.shields.io/github/labels/HelmUpgradeBot/hub23-deploy-upgrades/help%20wanted)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/labels/help%20wanted)
-
-| Test | Status |
-| :--- | :--- |
-| CI | [![CI](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/CI/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ACI) |
-| Coverage | ![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/HelmUpgradeBot/hub23-deploy-upgrades/main/badge_metadata.json) |
-| Black | [![Black](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Black/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3ABlack) |
-| Flake8 | [![Flake8](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/workflows/Flake8/badge.svg)](https://github.com/HelmUpgradeBot/hub23-deploy-upgrades/actions?query=workflow%3AFlake8) |
+[![CI tests](https://github.com/sgibson91/hub23-deploy-upgrades/actions/workflows/ci.yaml/badge.svg)](https://github.com/sgibson91/hub23-deploy-upgrades/actions/workflows/ci.yaml) ![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/sgibson91/hub23-deploy-upgrades/main/badge_metadata.json) ![GitHub](https://img.shields.io/github/license/sgibson91/hub23-deploy-upgrades) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md)
 
 **Table of Contents:**
 
 - [:mag: Overview](#mag-overview)
-- [🤔 Assumptions HelmUpgradeBot Makes](#-assumptions-helmupgradebot-makes)
+- [🤔 Assumptions `helm-bot` Makes](#-assumptions-helmbot-makes)
 - [:pushpin: Installation and Requirements](#pushpin-installation-and-requirements)
 - [:children_crossing: Usage](#children_crossing-usage)
   - [:lock: User Permissions](#lock-user-permissions)
@@ -31,25 +24,23 @@ If a new version is available, the bot will open a Pull Request to the [`alan-tu
 
 This is an overview of the steps the bot executes.
 
-- Read Hub23's Helm chart requirements file and find the versions of the dependencies
+- Read the celm chart requirements file and find the versions of the dependencies
 - Scrape the Helm chart source indexes and find the most recent version release for each dependency
 - If there is a newer chart version available, then:
-  - Fork and clone the [`alan-turing-institute/hub23-deploy`](https://github.com/alan-turing-institute/hub23-deploy) repository
-  - Checkout a new branch
-  - Add the new version(s) to the hub23-chart requirements file
-  - Stage, commit and push the file to the branch
-  - Open a Pull Request to the parent repository
-  - Assign labels to the Pull Request if required
+  - Create a new branch on the host repository
+  - Add the new version(s) to the helm chart requirements file
+  - Commit the file to the branch
+  - Open a Pull Request to the default branch
+  - Assign labels and reviewers to the Pull Request if required
 
 A moderator should check and merge the Pull Request as appropriate.
 
-## 🤔 Assumptions HelmUpgradeBot Makes
+## 🤔 Assumptions `helm-bot` Makes
 
 Here is a list detailing the assumptions that the bot makes.
 
-1. You have a GitHub PAT provided by the `API_TOKEN` environment variable
-2. The configuration for your BinderHub deployment is in a pulic GitHub repository.
-3. Your deployment repository contains a local Helm chart with a `requirements.yaml` file.
+1. You have a GitHub Personal Access Token provided by the `ACCESS_TOKEN` environment variable
+2. The configuration for your helm chart is in a pulic GitHub repository.
 
 ## :pushpin: Installation and Requirements
 
@@ -57,7 +48,7 @@ To install the bot, you will need to clone this repository and install the packa
 It requires Python version >=3.7.
 
 ```bash
-git clone https://github.com/HelmUpgradeBot/hub23-deploy-upgrades.git
+git clone https://github.com/sgibson91/hub23-deploy-upgrades.git
 cd hub23-deploy-upgrades
 python setup.py install
 ```
@@ -67,56 +58,43 @@ python setup.py install
 To run the bot, execute the following:
 
 ```bash
-usage: helm-bot [-h] [-t TARGET_BRANCH] [-b BASE_BRANCH] [-l LABELS [LABELS ...]]
-                [--dry-run] [-v]
-                repo_owner repo_name chart_name
+ACCESS_TOKEN="TOKEN" helm-bot [-h] [-t HEAD_BRANCH] [-b BASE_BRANCH] [-l LABELS [LABELS ...]] [-r REVIEWERS [REVIEWERS ...]] [--dry-run] repository chart_path chart_urls
 
-Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub
-repository
+Upgrade a local Helm Chart in a GitHub repository
 
 positional arguments:
-  repo_owner            The GitHub repository owner
-  repo_name             The deployment repo name
-  chart_name            The name of the local helm chart
+  repository            The GitHub repository where the Helm Chart is stored. In the form REPOSITORY_OWNER/REPOSITORY_NAME
+  chart_path            The path the file that stores the helm chart dependencies
+  chart_urls            A dictionary storing the location of the dependency charts and their versions
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t TARGET_BRANCH, --target-branch TARGET_BRANCH
-                        The git branch to commit to. Default: helm_chart_bump.
+  -t HEAD_BRANCH, --head-branch HEAD_BRANCH
+                        The git branch to commit to. Default: helm_dep_bump.
   -b BASE_BRANCH, --base-branch BASE_BRANCH
-                        The base branch to open the Pull Request against.
-                        Default: main.
+                        The base branch to open the Pull Request against. Default: main.
   -l LABELS [LABELS ...], --labels LABELS [LABELS ...]
                         List of labels to assign to the Pull Request
+  -r REVIEWERS [REVIEWERS ...], --reviewers REVIEWERS [REVIEWERS ...]
+                        List of GitHub users to request reviews for the Pull Request from
   --dry-run             Perform a dry-run helm upgrade
-  -v, --verbose         Print output to the console. Default is to write to a
-                        log file.
 ```
 
-The GitHub PAT can be provided directly using the `API_TOKEN` environment variable, like so:
-
-```bash
-API_TOKEN="your-token-here" HelmUpgradeBot repo_owner repo_name deployment chart_name [--flags]
-```
+Where `TOKEN` is your GitHub PAT.
 
 ### :lock: User Permissions
 
 #### GitHub API
 
-When [creating the GitHub API token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token), it will need to be assigned the [`public_repo` and `delete_repo` scopes](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes).
+When [creating the GitHub PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token), it will need to be assigned the [`public_repo` scope](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes).
 
 ### :clock2: CRON expression
 
 To run this script at 10am daily, use the following cron expression:
 
 ```bash
-0 10 * * * cd /path/to/hub23-deploy-upgrades && /path/to/python setup.py install && /path/to/HelmUpgradeBot [--flags]
+0 10 * * * cd /path/to/hub23-deploy-upgrades && /path/to/python setup.py install && /path/to/helm-bot [--flags]
 ```
-
-### :clapper: GitHub Action
-
-Rather than pay for a Virtual Machine to run the bot, it could be run in a [GitHub Action workflow](.github/workflows/run-bot.yml) instead.
-The GitHub API token should be [added to the repository as a secret](https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets#creating-encrypted-secrets-for-a-repository) named `ACCESS_TOKEN`.
 
 ## :white_check_mark: Running Tests
 

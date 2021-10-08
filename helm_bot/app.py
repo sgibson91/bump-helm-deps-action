@@ -1,310 +1,214 @@
+import base64
 import os
-import yaml
-import string
 import random
-import shutil
-import logging
-
+import string
 from itertools import compress, product
 
-from .pull_version_info import (
-    pull_version_from_requirements_file,
-    pull_version_from_chart_file,
-    pull_version_from_github_pages,
-)
+import yaml
+from loguru import logger
 
-from .github import (
-    add_commit_push,
-    check_fork_exists,
-    checkout_branch,
-    clone_fork,
+from .github_api import (
+    create_commit,
     create_pr,
+    create_ref,
     find_existing_pr,
-    make_fork,
-    remove_fork,
-    set_git_config,
+    get_contents,
+    get_ref,
 )
+from .http_requests import get_request
+from .pull_version_info import get_chart_versions
 
 HERE = os.getcwd()
 
-logger = logging.getLogger()
 
-
-def check_versions(
-    chart_name: str, chart_info: dict, dry_run: bool = False
-) -> list:
-    """Check if chart dependencies are up-to-date
+def edit_config(
+    download_url: str,
+    header: dict,
+    charts_to_update: list,
+    chart_info: dict,
+) -> str:
+    """Update the helm chart dependencies
 
     Args:
-        chart_name (str): The chart to check the dependencies of
-        chart_info (dict): Dictionary containing chart version info
-        dry_run (bool, optional): For a dry-run, don't edit files.
-                                  Defaults to False.
+        download_url (str): The URL where the chart config can be downloaded from
+        header (dict): A dictionary of headers to with any requests. Must
+            contain an authorisation token.
+        charts_to_update (list): A list of helm chart dependencies that can be
+            updated
+        chart_info (dict): A dictionary of the dependent charts and their most
+            recent versions
 
     Returns:
-        list: A list of chart dependencies that need updating
+        str: The updated helm chart config
     """
-    charts = list(chart_info.keys())
-    charts.remove(chart_name)
-
-    condition = [
-        (chart_info[chart] != chart_info[chart_name][chart])
-        for chart in charts
-    ]
-    charts_to_update = list(compress(charts, condition))
-
-    if any(condition) and (not dry_run):
-        logger.info(
-            "Helm upgrade required for the following charts: %s"
-            % charts_to_update
-        )
-    elif any(condition) and dry_run:
-        logger.info(
-            "Helm upgrade required for the following charts: %s. PR won't be opened due to --dry-run flag being set."
-            % charts_to_update
-        )
-    else:
-        logger.info(
-            "%s is up-to-date with all current chart dependency releases!"
-            % chart_name
-        )
-
-    return charts_to_update
-
-
-def clean_up(repo_name: str) -> None:
-    """Clean up the locally cloned repository
-
-    Args:
-        repo_name (str): The repository name
-    """
-    cwd = os.getcwd()
-    this_dir = cwd.split("/")[-1]
-    if this_dir == repo_name:
-        os.chdir(os.pardir)
-
-    if os.path.exists(repo_name):
-        logger.info("Deleting local repository: %s" % repo_name)
-        shutil.rmtree(repo_name)
-        logger.info("Deleted local repository: %s" % repo_name)
-
-
-def get_chart_versions(
-    chart_name: str,
-    repo_owner: str,
-    repo_name: str,
-    branch_name: str,
-    token: str,
-    pr_exists: bool = False,
-) -> dict:
-    """Get the versions of dependent charts
-
-    Args:
-        chart_name (str): The main chart to check
-        repo_owner (str): The repository/chart owner
-        repo_name (str): The name of the repository hosting the chart
-        branch_name (str): The branch of `repo_name` to pull current chart
-            versions from
-        token (str): A GitHub API token
-        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
-            Request. Default: False.
-
-    Returns:
-        dict: A dictionary containing the chart dependencies and their
-              up-to-date versions
-    """
-    if pr_exists:
-        repo_owner = "HelmUpgradeBot"
-        branch_name = "blob/" + branch_name
-
-    chart_info = {}
-    chart_info[chart_name] = {}
-    chart_urls = {
-        chart_name: f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/{branch_name}/{chart_name}/requirements.yaml",
-        "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
-        # "ingress-nginx": "https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/charts/ingress-nginx/Chart.yaml",
-    }
-
-    for (chart, chart_url) in chart_urls.items():
-        if "requirements.yaml" in chart_url:
-            chart_info = pull_version_from_requirements_file(
-                chart_info, chart, chart_url, token
-            )
-        elif "Chart.yaml" in chart_url:
-            chart_info = pull_version_from_chart_file(
-                chart_info, chart, chart_url, token
-            )
-        elif "/gh-pages/" in chart_url:
-            chart_info = pull_version_from_github_pages(
-                chart_info, chart, chart_url, token
-            )
-        else:
-            msg = (
-                "Scraping from the following URL type is currently not implemented\n\t%s"
-                % chart_url
-            )
-            logger.error(NotImplementedError(msg))
-            raise NotImplementedError(msg)
-
-    return chart_info
-
-
-def update_local_file(
-    chart_name: str, charts_to_update: list, chart_info: dict, repo_name: str
-) -> None:
-    """Update the local helm chart
-
-    Args:
-        chart_name (str): The name of the helm chart
-        charts_to_update (list): A list of the dependencies that need updating
-        chart_info (dict): A dictionary of the dependent charts and their
-                           up-to-date versions
-        repo_name (str): The name of the repository that hosts the helm chart
-    """
-    logger.info("Updating local helm chart: %s" % chart_name)
-
-    filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
-    with open(filename, "r") as stream:
-        chart_yaml = yaml.safe_load(stream)
+    resp = get_request(download_url, headers=header, output="text")
+    chart_yaml = yaml.safe_load(resp)
 
     for chart, dep in product(charts_to_update, chart_yaml["dependencies"]):
         if dep["name"] == chart:
             dep["version"] = chart_info[chart]
 
-    with open(filename, "w") as stream:
-        yaml.safe_dump(chart_yaml, stream)
+    encoded_chart_yaml = yaml.safe_dump(chart_yaml).encode("utf-8")
+    base64_bytes = base64.b64encode(encoded_chart_yaml)
+    chart_yaml = base64_bytes.decode("utf-8")
 
-    logger.info("Updated file: %s" % filename)
+    return chart_yaml
 
 
-def upgrade_chart(
-    chart_name: str,
-    chart_info: dict,
-    charts_to_update: list,
-    repo_owner: str,
-    repo_name: str,
-    repo_api: str,
+def upgrade_chart_deps(
+    api_url: str,
+    header: dict,
+    chart_path: str,
     base_branch: str,
-    target_branch: str,
-    token: str,
-    labels: list,
-    reviewers: list,
+    head_branch: str,
+    charts_to_update: list,
+    chart_info: dict,
     pr_exists: bool,
 ) -> None:
-    """Upgrade the dependencies in the helm chart
+    """Upgrade the dependencies in the helm chart to the most recent version
 
     Args:
-        chart_name (str): The name of the helm-chart
-        chart_info (dict): A dictionary of the dependencies and their versions
-        charts_to_update (list): The dependencies that need updating
-        repo_owner (str): The owner of the repository (user or org)
-        repo_name (str): The name of the repository hosting the helm chart
-        repo_api (str): The API URL of the original repository
-                        (not HelmUpgradeBot's fork)
-        base_branch (str): The base branch for opening the Pull Request
-        target_branch (str): The target branch for opening the Pull Request
-        token (str): A GitHub API token
-        labels (list): A list of labels to add the the Pull Request
-        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
-                          Request. Otherwise False.
+        api_url (str): The URL to send the request to
+        header (dict): A dictionary of headers to send with the request. Must
+            contain and authorisation token.
+        chart_path (str): The path to the file that contains the chart's
+            dependencies
+        base_branch (str): The name of the branch to open the Pull Request
+            against
+        head_branch (str): The name of the branch to open the Pull Request from
+        charts_to_update (list): A list of the helm chart dependencies that need
+            updating
+        chart_info (dict): A dictionary of the helm chartdependencies and their
+            versions
+        pr_exists (bool): If a Pull Request already exists, commit to it's head
+            branch instead of opening a new one
     """
-    filename = os.path.join(HERE, repo_name, chart_name, "requirements.yaml")
+    if not pr_exists:
+        # Get reference to HEAD of base_branch
+        resp = get_ref(api_url, header, base_branch)
 
-    clone_fork(repo_name)
+        # Create head_branch
+        create_ref(api_url, header, head_branch, resp["object"]["sha"])
 
-    os.chdir(repo_name)
-    checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
-    update_local_file(chart_name, charts_to_update, chart_info, repo_name)
-    add_commit_push(
-        filename, charts_to_update, chart_info, repo_name, target_branch, token
+        # Get the file download URL and blob sha
+        resp = get_contents(api_url, header, chart_path, base_branch)
+    else:
+        # Get the file download URL and blob sha
+        resp = get_contents(api_url, header, chart_path, head_branch)
+
+    chart_yaml_url = resp["download_url"]
+    blob_sha = resp["sha"]
+
+    chart_yaml = edit_config(chart_yaml_url, header, charts_to_update, chart_info)
+
+    # Create a commit
+    commit_msg = f"Bump charts {[chart for chart in charts_to_update]} to versions {[chart_info[chart]['version'] for chart in charts_to_update]}, respectively"
+    create_commit(
+        api_url, header, chart_path, head_branch, blob_sha, commit_msg, chart_yaml
     )
 
-    if not pr_exists:
-        create_pr(
-            repo_api, base_branch, target_branch, token, labels, reviewers
-        )
+
+def compare_dependency_versions(chart_info: dict, chart_name: str) -> list:
+    """Compare the currently deployed helm chart dependencies against the most
+    recently available and ascertain if a dependency can be updated
+
+    Args:
+        chart_info (dict): A dictionary of the helm chartdependencies and their
+            versions
+        chart_name (str): The name of the local helm chart
+
+    Returns:
+        charts_to_update (list): A list of the helm chart dependencies that need
+            updating
+    """
+    charts = list(chart_info.keys())
+    charts.remove(chart_name)
+
+    condition = [
+        (chart_info[chart] != chart_info[chart_name][chart]) for chart in charts
+    ]
+    return list(compress(charts, condition))
 
 
 def run(
-    chart_name: str,
-    repo_owner: str,
-    repo_name: str,
+    api_url: str,
+    header: dict,
+    chart_path: str,
+    chart_urls: dict,
     base_branch: str,
-    target_branch: str,
-    labels: list,
-    reviewers: list,
-    token: str,
+    head_branch: str,
+    labels: list = [],
+    reviewers: list = [],
     dry_run: bool = False,
 ) -> None:
-    """Run the HelmUpgradeBot app
+    """Run the action to check if the helm chart dependencies are up to date
 
     Args:
-        chart_name (str): The name of the chart to be updated
-        repo_owner (str): The owner of the repository/chart (user or org)
-        repo_name (str): The repository that hosts the chart
-        base_branch (str): The base branch for Pull Requests
-        target_branch (str): The target branch for Pull Requests
-        labels (list): A list of labels to add to the Pull Request
-        reviewers (list):
-        token (str): A GitHub API token
-        dry_run (bool, optional): Don't open a Pull Request. Defaults to False.
+        api_url (str): The URL to send the request to
+        header (dict): A dictionary of headers to send with the request. Must
+            contain and authorisation token.
+        chart_path (str): The path to the file that contains the chart's
+            dependencies
+        chart_urls (dict): A dictionary storing the location of the dependency
+            charts and their versions
+        base_branch (str): The name of the branch to open the Pull Request
+            against
+        head_branch (str): The name of the branch to open the Pull Request from
+        labels (list, optional): A list of labels to apply to the Pull Request.
+            Defaults to [].
+        reviewers (list, optional): A list of GitHub users to request reviews
+            from. Defaults to [].
+        dry_run (bool, optional): Perform a dry-run and do not open a Pull
+            Request. A list of the chart dependencies that can be updated will
+            be printed to the console. Defaults to False.
     """
-    repo_api = f"https://api.github.com/repos/{repo_owner}/{repo_name}/"
-
-    set_git_config()
+    chart_name = chart_path.split("/")[-2]
 
     # Check if Pull Request exists
-    pr_exists, branch_name = find_existing_pr(repo_api, token)
-    if branch_name is None:
-        branch_name = "main"
+    pr_exists, branch_name = find_existing_pr(api_url, header)
 
-    chart_info = get_chart_versions(
-        chart_name, repo_owner, repo_name, branch_name, token, pr_exists
-    )
-    charts_to_update = check_versions(chart_name, chart_info, dry_run=dry_run)
+    # Get and compare the helm chart dependencies
+    if branch_name is None:
+        chart_info = get_chart_versions(
+            api_url, header, chart_path, chart_urls, base_branch
+        )
+    else:
+        chart_info = get_chart_versions(
+            api_url, header, chart_path, chart_urls, branch_name
+        )
+
+    charts_to_update = compare_dependency_versions(chart_info, chart_name)
 
     if (len(charts_to_update) > 0) and (not dry_run):
-        if branch_name == "main":
+        logger.info(
+            "The following chart dependencies can be updated: {}", charts_to_update
+        )
+
+        if branch_name is None:
             random_id = "".join(random.sample(string.ascii_letters, 4))
-            target_branch = target_branch + "-" + random_id
+            head_branch = "-".join([head_branch, random_id])
         else:
-            target_branch = branch_name
+            head_branch = branch_name
 
-        # Check if a fork exists
-        fork_exists = check_fork_exists(repo_name, token)
-
-        if (not fork_exists) and (not pr_exists):
-            make_fork(repo_name, repo_api, token)
-
-        # Upgrade the chart
-        upgrade_chart(
-            chart_name,
-            chart_info,
-            charts_to_update,
-            repo_owner,
-            repo_name,
-            repo_api,
+        upgrade_chart_deps(
+            api_url,
+            header,
+            chart_path,
             base_branch,
-            target_branch,
-            token,
-            labels,
-            reviewers,
+            head_branch,
+            charts_to_update,
+            chart_info,
             pr_exists,
         )
 
-    elif (len(charts_to_update) == 0) and (not dry_run):
-        # Delete local copy of repo
-        clean_up("hub23-deploy")
+        if not pr_exists:
+            create_pr(api_url, header, base_branch, head_branch, labels, reviewers)
 
-        if pr_exists:
-            # A PR exists so exit cleanly
-            import sys
+    elif (len(charts_to_update) > 0) and dry_run:
+        logger.info(
+            "The following chart dependencies can be updated: {}. Pull Request will not be opened due to the --dry-run flag being set.",
+            charts_to_update,
+        )
 
-            sys.exit()
-
-        # Check if a fork exists
-        fork_exists = check_fork_exists(repo_name, token)
-
-        if fork_exists and not pr_exists:
-            # A fork exists but there's no open PR, so remove fork
-            remove_fork("hub23-deploy", token)
+    else:
+        logger.info("All chart dependencies are up-to-date!")

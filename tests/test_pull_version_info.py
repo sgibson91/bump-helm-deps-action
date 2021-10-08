@@ -1,25 +1,23 @@
 import responses
+
 from helm_bot.pull_version_info import (
-    pull_version_from_chart_file,
-    pull_version_from_github_pages,
-    pull_version_from_requirements_file,
+    pull_from_chart_file,
+    pull_from_github_pages,
+    pull_from_requirements_file,
 )
+
+test_url = "http://jsonplaceholder.typicode.com/"
+test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
 
 
 @responses.activate
-def test_pull_version_from_chart_file():
+def test_pull_from_chart_file():
     test_dict = {}
     test_dep = "dependency"
-    test_url = "http://jsonplaceholder.typicode.com/Chart.yaml"
-    test_token = "tHiS_iS_a_tOkEn"
 
-    responses.add(
-        responses.GET, test_url, json={"version": "1.2.3"}, status=200
-    )
+    responses.add(responses.GET, test_url, json={"version": "1.2.3"}, status=200)
 
-    test_dict = pull_version_from_chart_file(
-        test_dict, test_dep, test_url, test_token
-    )
+    test_dict = pull_from_chart_file(test_url, test_header, test_dict, test_dep)
 
     assert len(test_dict) == 1
     assert list(test_dict.items()) == [(test_dep, "1.2.3")]
@@ -30,11 +28,9 @@ def test_pull_version_from_chart_file():
 
 
 @responses.activate
-def test_pull_version_from_github_pages():
+def test_pull_from_github_pages():
     test_dict = {}
     test_dep = "dependency"
-    test_url = "http://jsonplaceholder.typicode.com/gh-pages/index.yaml"
-    test_token = "tHiS_iS_a_tOkEn"
 
     responses.add(
         responses.GET,
@@ -45,20 +41,18 @@ def test_pull_version_from_github_pages():
                     {
                         "created": "2020-07-26T15:33:00.0000000Z",
                         "version": "1.2.3",
-                    },  # noqa: E501
+                    },
                     {
                         "created": "2020-07-25T15:33:00.0000000Z",
                         "version": "1.2.2",
-                    },  # noqa: E501
+                    },
                 ]
             }
         },
         status=200,
     )
 
-    test_dict = pull_version_from_github_pages(
-        test_dict, test_dep, test_url, test_token
-    )
+    test_dict = pull_from_github_pages(test_url, test_header, test_dict, test_dep)
 
     assert len(test_dict) == 1
     assert list(test_dict.items()) == [(test_dep, "1.2.3")]
@@ -72,12 +66,10 @@ def test_pull_version_from_github_pages():
 
 
 @responses.activate
-def test_pull_version_from_requirements_file():
+def test_pull_from_requirements_file():
     test_dict = {}
     test_chart = "chart_name"
     test_dict[test_chart] = {}
-    test_url = "http://jsonplaceholder.typicode.com/requirements.yaml"
-    test_token = "tHiS_iS_a_tOkEn"
 
     responses.add(
         responses.GET,
@@ -91,8 +83,8 @@ def test_pull_version_from_requirements_file():
         status=200,
     )
 
-    test_dict = pull_version_from_requirements_file(
-        test_dict, test_chart, test_url, test_token
+    test_dict = pull_from_requirements_file(
+        test_url, test_header, test_dict, test_chart
     )
 
     assert len(test_dict) == 1
