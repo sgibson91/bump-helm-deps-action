@@ -1,5 +1,7 @@
 import logging
+
 from testfixtures import log_capture
+
 from helm_bot.app import check_versions
 
 
@@ -14,8 +16,7 @@ def test_check_versions_match(capture):
 
     logger = logging.getLogger()
     logger.info(
-        "%s is up-to-date with all current chart dependency releases!"
-        % chart_name
+        "%s is up-to-date with all current chart dependency releases!" % chart_name
     )
 
     charts_out = check_versions(chart_name, chart_info)
@@ -36,9 +37,7 @@ def test_check_versions_no_match(capture):
     expected_charts = ["chart1", "chart2"]
 
     logger = logging.getLogger()
-    logger.info(
-        "Helm upgrade required for the following charts: %s" % expected_charts
-    )
+    logger.info("Helm upgrade required for the following charts: %s" % expected_charts)
 
     charts_out = check_versions(chart_name, chart_info)
 

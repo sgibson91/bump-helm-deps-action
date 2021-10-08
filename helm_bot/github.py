@@ -1,14 +1,10 @@
-import time
 import logging
-import jmespath
+import time
 from subprocess import check_call
 
-from .helper_functions import (
-    delete_request,
-    get_request,
-    post_request,
-    run_cmd,
-)
+import jmespath
+
+from .helper_functions import delete_request, get_request, post_request, run_cmd
 
 logger = logging.getLogger()
 
@@ -310,18 +306,14 @@ def find_existing_pr(repo_api: str, token: str):
     header = {"Authorization": f"token {token}"}
     params = {"state": "open", "sort": "created", "direction": "desc"}
 
-    resp = get_request(
-        repo_api + "pulls", headers=header, params=params, json=True
-    )
+    resp = get_request(repo_api + "pulls", headers=header, params=params, json=True)
 
     # Expression to match the head ref
     head_label_exp = jmespath.compile("[*].head.label")
     matching_labels = head_label_exp.search(resp)
 
     # Create list of labels of matching PRs
-    matching_prs = [
-        label for label in matching_labels if "HelmUpgradeBot" in label
-    ]
+    matching_prs = [label for label in matching_labels if "HelmUpgradeBot" in label]
 
     if len(matching_prs) >= 1:
         logger.info(
@@ -345,8 +337,7 @@ def find_existing_pr(repo_api: str, token: str):
 
     else:
         logger.info(
-            "No Pull Requests by HelmUpgradeBot found. "
-            "A new PR will be opened."
+            "No Pull Requests by HelmUpgradeBot found. " "A new PR will be opened."
         )
         return False, None
 
@@ -361,9 +352,7 @@ def make_fork(repo_name: str, repo_api: str, token: str) -> bool:
     """
     logger.info("Forking repo: %s" % repo_name)
 
-    post_request(
-        repo_api + "forks", headers={"Authorization": f"token {token}"}
-    )
+    post_request(repo_api + "forks", headers={"Authorization": f"token {token}"})
 
     logger.info("Created fork")
 

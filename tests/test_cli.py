@@ -1,7 +1,9 @@
-import pytest
 import argparse
 from unittest.mock import patch
-from helm_bot.cli import parse_args, check_parser
+
+import pytest
+
+from helm_bot.cli import check_parser, parse_args
 
 
 @patch(

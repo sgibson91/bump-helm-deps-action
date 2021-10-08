@@ -1,17 +1,19 @@
-import pytest
 import logging
+from unittest.mock import call, patch
+
+import pytest
 import responses
-from unittest.mock import patch, call
 from testfixtures import log_capture
+
 from helm_bot.github import (
     add_commit_push,
     add_labels,
     assign_reviewers,
     check_fork_exists,
-    delete_old_branch,
     checkout_branch,
     clone_fork,
     create_pr,
+    delete_old_branch,
     make_fork,
     remove_fork,
     set_git_config,
@@ -298,13 +300,9 @@ def test_checkout_branch_exists(capture):
         call(["git", "checkout", "-b", target_branch]),
     ]
 
-    mock_check_fork = patch(
-        "helm_bot.github.check_fork_exists", return_value=True
-    )
+    mock_check_fork = patch("helm_bot.github.check_fork_exists", return_value=True)
     # mock_delete_branch = patch("helm_bot.github.delete_old_branch") <-- DEPRECATED
-    mock_run_cmd = patch(
-        "helm_bot.github.run_cmd", return_value={"returncode": 0}
-    )
+    mock_run_cmd = patch("helm_bot.github.run_cmd", return_value={"returncode": 0})
 
     with mock_check_fork as mock1, mock_run_cmd as mock2:
         checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
@@ -338,9 +336,7 @@ def test_checkout_branch_exists_exception(capture):
         ]
     )
 
-    mock_check_fork = patch(
-        "helm_bot.github.check_fork_exists", return_value=True
-    )
+    mock_check_fork = patch("helm_bot.github.check_fork_exists", return_value=True)
     mock_delete_branch = patch("helm_bot.github.delete_old_branch")
     mock_run_cmd = patch(
         "helm_bot.github.run_cmd",
@@ -376,12 +372,8 @@ def test_checkout_branch_does_not_exist(capture):
 
     expected_call = call(["git", "checkout", "-b", target_branch])
 
-    mock_check_fork = patch(
-        "helm_bot.github.check_fork_exists", return_value=False
-    )
-    mock_run_cmd = patch(
-        "helm_bot.github.run_cmd", return_value={"returncode": 0}
-    )
+    mock_check_fork = patch("helm_bot.github.check_fork_exists", return_value=False)
+    mock_run_cmd = patch("helm_bot.github.run_cmd", return_value={"returncode": 0})
 
     with mock_check_fork as mock1, mock_run_cmd as mock2:
         checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
@@ -406,17 +398,13 @@ def test_checkout_branch_does_not_exist_exception(capture):
     logger.info("Checking out branch: %s" % target_branch)
     logger.error("Could not run command")
 
-    mock_check_fork = patch(
-        "helm_bot.github.check_fork_exists", return_value=False
-    )
+    mock_check_fork = patch("helm_bot.github.check_fork_exists", return_value=False)
     mock_run_cmd = patch(
         "helm_bot.github.run_cmd",
         return_value={"returncode": 1, "err_msg": "Could not run command"},
     )
 
-    with mock_check_fork as mock1, mock_run_cmd as mock2, pytest.raises(
-        RuntimeError
-    ):
+    with mock_check_fork as mock1, mock_run_cmd as mock2, pytest.raises(RuntimeError):
         checkout_branch(repo_owner, repo_name, target_branch, token, pr_exists)
 
         assert mock1.call_count == 1
@@ -435,9 +423,7 @@ def test_clone_fork(capture):
     logger.info("Cloning fork: %s" % repo_name)
     logger.info("Successfully cloned fork")
 
-    with patch(
-        "helm_bot.github.run_cmd", return_value={"returncode": 0}
-    ) as mock_run:
+    with patch("helm_bot.github.run_cmd", return_value={"returncode": 0}) as mock_run:
         clone_fork(repo_name)
 
         assert mock_run.call_count == 1
@@ -497,9 +483,7 @@ def test_create_pr_no_labels_no_reviewers(capture):
     logger.info("Pull Request created")
 
     with patch("helm_bot.github.post_request", return_value={}) as mock_post:
-        create_pr(
-            repo_api, base_branch, target_branch, token, labels, reviewers
-        )
+        create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
 
         assert mock_post.call_count == 1
         assert mock_post.return_value == {}
@@ -582,14 +566,10 @@ def test_create_pr_with_reviewers_no_labels(capture):
         "helm_bot.github.post_request",
         return_value={"url": "http://jsonplaceholder.typicode.com/pulls/1"},
     )
-    mock_reviewers = patch(
-        "helm_bot.github.assign_reviewers", return_value=None
-    )
+    mock_reviewers = patch("helm_bot.github.assign_reviewers", return_value=None)
 
     with mock_post as mock1, mock_reviewers as mock2:
-        create_pr(
-            repo_api, base_branch, target_branch, token, reviewers=reviewers
-        )
+        create_pr(repo_api, base_branch, target_branch, token, reviewers=reviewers)
 
         assert mock1.call_count == 1
         assert mock1.return_value == {
@@ -637,14 +617,10 @@ def test_create_pr_with_labels_and_reviewers(capture):
         },
     )
     mock_labels = patch("helm_bot.github.add_labels", return_value=None)
-    mock_reviewers = patch(
-        "helm_bot.github.assign_reviewers", return_value=None
-    )
+    mock_reviewers = patch("helm_bot.github.assign_reviewers", return_value=None)
 
     with mock_post as mock1, mock_labels as mock2, mock_reviewers as mock3:
-        create_pr(
-            repo_api, base_branch, target_branch, token, labels, reviewers
-        )
+        create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
 
         assert mock1.call_count == 1
         assert mock1.return_value == {
@@ -699,9 +675,7 @@ def test_remove_fork_does_not_exist(capture):
     logger = logging.getLogger()
     logger.info("HelmUpgradeBot does not have a fork of: %s" % repo_name)
 
-    with patch(
-        "helm_bot.github.check_fork_exists", return_value=False
-    ) as mock_check:
+    with patch("helm_bot.github.check_fork_exists", return_value=False) as mock_check:
         out = remove_fork(repo_name, token)
 
         assert not out

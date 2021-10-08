@@ -1,7 +1,8 @@
+import argparse
+import logging
 import os
 import sys
-import logging
-import argparse
+
 from .app import run
 
 
@@ -29,13 +30,9 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description=DESCRIPTION)
 
     # Define positional arguments
-    parser.add_argument(
-        "repo_owner", type=str, help="The GitHub repository owner"
-    )
+    parser.add_argument("repo_owner", type=str, help="The GitHub repository owner")
     parser.add_argument("repo_name", type=str, help="The deployment repo name")
-    parser.add_argument(
-        "chart_name", type=str, help="The name of the local helm chart"
-    )
+    parser.add_argument("chart_name", type=str, help="The name of the local helm chart")
 
     # Define optional arguments that take parameters
     parser.add_argument(

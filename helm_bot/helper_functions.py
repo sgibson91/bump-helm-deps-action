@@ -1,6 +1,7 @@
 import logging
-import requests
 import subprocess
+
+import requests
 
 logger = logging.getLogger()
 
@@ -87,9 +88,7 @@ def run_cmd(cmd: list) -> dict:
         dict: The output of the command, including status code and error
               messages
     """
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     msgs = proc.communicate()
 

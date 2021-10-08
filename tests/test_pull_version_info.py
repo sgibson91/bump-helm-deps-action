@@ -1,4 +1,5 @@
 import responses
+
 from helm_bot.pull_version_info import (
     pull_version_from_chart_file,
     pull_version_from_github_pages,
@@ -13,13 +14,9 @@ def test_pull_version_from_chart_file():
     test_url = "http://jsonplaceholder.typicode.com/Chart.yaml"
     test_token = "tHiS_iS_a_tOkEn"
 
-    responses.add(
-        responses.GET, test_url, json={"version": "1.2.3"}, status=200
-    )
+    responses.add(responses.GET, test_url, json={"version": "1.2.3"}, status=200)
 
-    test_dict = pull_version_from_chart_file(
-        test_dict, test_dep, test_url, test_token
-    )
+    test_dict = pull_version_from_chart_file(test_dict, test_dep, test_url, test_token)
 
     assert len(test_dict) == 1
     assert list(test_dict.items()) == [(test_dep, "1.2.3")]

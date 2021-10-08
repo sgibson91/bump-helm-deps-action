@@ -1,17 +1,11 @@
+import logging
 import os
-import yaml
-import string
 import random
 import shutil
-import logging
-
+import string
 from itertools import compress, product
 
-from .pull_version_info import (
-    pull_version_from_requirements_file,
-    pull_version_from_chart_file,
-    pull_version_from_github_pages,
-)
+import yaml
 
 from .github import (
     add_commit_push,
@@ -24,15 +18,18 @@ from .github import (
     remove_fork,
     set_git_config,
 )
+from .pull_version_info import (
+    pull_version_from_chart_file,
+    pull_version_from_github_pages,
+    pull_version_from_requirements_file,
+)
 
 HERE = os.getcwd()
 
 logger = logging.getLogger()
 
 
-def check_versions(
-    chart_name: str, chart_info: dict, dry_run: bool = False
-) -> list:
+def check_versions(chart_name: str, chart_info: dict, dry_run: bool = False) -> list:
     """Check if chart dependencies are up-to-date
 
     Args:
@@ -48,15 +45,13 @@ def check_versions(
     charts.remove(chart_name)
 
     condition = [
-        (chart_info[chart] != chart_info[chart_name][chart])
-        for chart in charts
+        (chart_info[chart] != chart_info[chart_name][chart]) for chart in charts
     ]
     charts_to_update = list(compress(charts, condition))
 
     if any(condition) and (not dry_run):
         logger.info(
-            "Helm upgrade required for the following charts: %s"
-            % charts_to_update
+            "Helm upgrade required for the following charts: %s" % charts_to_update
         )
     elif any(condition) and dry_run:
         logger.info(
@@ -65,8 +60,7 @@ def check_versions(
         )
     else:
         logger.info(
-            "%s is up-to-date with all current chart dependency releases!"
-            % chart_name
+            "%s is up-to-date with all current chart dependency releases!" % chart_name
         )
 
     return charts_to_update
@@ -220,9 +214,7 @@ def upgrade_chart(
     )
 
     if not pr_exists:
-        create_pr(
-            repo_api, base_branch, target_branch, token, labels, reviewers
-        )
+        create_pr(repo_api, base_branch, target_branch, token, labels, reviewers)
 
 
 def run(
