@@ -18,7 +18,7 @@ jobs:
           - tool: black
             args: --check
           - tool: flake8
-            args: --ignore=E501
+            args: --ignore=E501,W503
           - tool: isort
             args: --check --diff
 
