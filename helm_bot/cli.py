@@ -1,46 +1,42 @@
 import argparse
-import logging
+import json
 import os
 import sys
 
 from .app import run
 
-
-def logging_setup(verbose=False):
-    # Setup log config
-    if verbose:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="[%(asctime)s %(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            filename="HelmUpgradeBot.log",
-            filemode="a",
-            format="[%(asctime)s %(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+API_ROOT = "https://api.github.com"
 
 
 def parse_args(args):
     # Create argument parser
-    DESCRIPTION = "Upgrade the Helm Chart of the Hub23 Helm Chart in the hub23-deploy GitHub repository"
+    DESCRIPTION = "Upgrade a local Helm Chart in a GitHub repository"
     parser = argparse.ArgumentParser(description=DESCRIPTION)
 
     # Define positional arguments
-    parser.add_argument("repo_owner", type=str, help="The GitHub repository owner")
-    parser.add_argument("repo_name", type=str, help="The deployment repo name")
-    parser.add_argument("chart_name", type=str, help="The name of the local helm chart")
+    parser.add_argument(
+        "repository",
+        type=str,
+        help="The GitHub repository where the Helm Chart is stored. In the form REPOSITORY_OWNER/REPOSITORY_NAME",
+    )
+    parser.add_argument(
+        "chart_path",
+        type=str,
+        help="The path the file that stores the helm chart dependencies",
+    )
+    parser.add_argument(
+        "chart_urls",
+        type=json.loads,
+        help="A dictionary storing the location of the dependency charts and their versions",
+    )
 
     # Define optional arguments that take parameters
     parser.add_argument(
         "-t",
-        "--target-branch",
+        "--head-branch",
         type=str,
-        default="helm_chart_bump",
-        help="The git branch to commit to. Default: helm_chart_bump.",
+        default="helm_dep_bump",
+        help="The git branch to commit to. Default: helm_dep_bump.",
     )
     parser.add_argument(
         "-b",
@@ -61,18 +57,12 @@ def parse_args(args):
         "--reviewers",
         nargs="+",
         default=[],
-        help="List of GitHub handles to request reviews for the Pull Request from",
+        help="List of GitHub users to request reviews for the Pull Request from",
     )
 
     # Define optional boolean flags
     parser.add_argument(
         "--dry-run", action="store_true", help="Perform a dry-run helm upgrade"
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Print output to the console. Default is to write to a log file.",
     )
 
     return parser.parse_args()
@@ -80,14 +70,14 @@ def parse_args(args):
 
 def check_parser(args):
     # Check environment variables
-    api_token = os.environ.get("API_TOKEN")
+    access_token = os.environ.get("ACCESS_TOKEN")
 
-    if api_token is None:
+    if access_token is None:
         raise ValueError(
-            "An API token must be provided. This can be done either with the API_TOKEN environment variable, or by providing keyvault and token names via the --keyvault [-k] and --token-name [-n] flags respectively."
+            "A GitHub access token must be provided. This can be done with the ACCESS_TOKEN environment variable."
         )
     else:
-        setattr(args, "token", api_token)
+        setattr(args, "token", access_token)
 
 
 def main():
@@ -95,17 +85,21 @@ def main():
     args = parse_args(sys.argv[1:])
     check_parser(args)
 
-    logging_setup(verbose=args.verbose)
+    repo_api = "/".join([API_ROOT, "repos", args.repository])
+    header = {
+        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"token {args.token}",
+    }
 
     run(
-        chart_name=args.chart_name,
-        repo_owner=args.repo_owner,
-        repo_name=args.repo_name,
+        api_url=repo_api,
+        header=header,
+        chart_path=args.chart_path,
+        chart_urls=args.chart_urls,
         base_branch=args.base_branch,
-        target_branch=args.target_branch,
+        head_branch=args.head_branch,
         labels=args.labels,
         reviewers=args.reviewers,
-        token=args.token,
         dry_run=args.dry_run,
     )
 
