@@ -109,7 +109,7 @@ setup(
         )
     ),
     entry_points={
-        "console_scripts": ["helm-bot=helm_bot.main:main"],
+        "console_scripts": ["helm-bot=helm_bot.cli:main"],
     },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
