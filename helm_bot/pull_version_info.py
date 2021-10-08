@@ -108,7 +108,7 @@ def get_chart_versions(
               up-to-date versions
     """
     chart_info: dict = {}
-    chart_info[chart_name]: dict = {}
+    chart_info[chart_name] = {}
 
     for (chart, chart_url) in chart_urls.items():
         if ("requirements.yaml" in chart_url) or ("requirements.yml" in chart_url):
