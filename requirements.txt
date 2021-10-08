@@ -1,7 +1,3 @@
-coverage
 jmespath
-pytest
 pyyaml
 requests
-responses
-testfixtures
