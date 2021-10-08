@@ -63,7 +63,7 @@ jobs:
 
       - name: Install helm-bot
         run: |
-          python setup.py
+          python setup.py install
 
       - name: Run tests
         run: |
