@@ -4,7 +4,7 @@ import jmespath
 from loguru import logger
 from requests import put
 
-from .helper_functions import get_request, post_request
+from .http_requests import get_request, post_request
 
 
 def add_labels(labels: list, pr_url: str, header: dict) -> None:
