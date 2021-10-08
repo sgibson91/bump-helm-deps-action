@@ -1,4 +1,4 @@
-jmespath
-loguru
-pyyaml
-requests
+jmespath==0.10.0
+loguru==0.5.3
+pyyaml==5.4.1
+requests==2.26.0
