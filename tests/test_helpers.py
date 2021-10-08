@@ -1,7 +1,7 @@
 import pytest
 import responses
 
-from helm_bot.helper_functions import delete_request, get_request, post_request, run_cmd
+from helm_bot.http_requests import delete_request, get_request, post_request, run_cmd
 
 
 @responses.activate
