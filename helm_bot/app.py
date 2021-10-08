@@ -149,15 +149,18 @@ def run(
             contain and authorisation token.
         chart_path (str): The path to the file that contains the chart's
             dependencies
-        chart_urls (dict): [description]
+        chart_urls (dict): A dictionary storing the location of the dependency
+            charts and their versions
         base_branch (str): The name of the branch to open the Pull Request
             against
         head_branch (str): The name of the branch to open the Pull Request from
         labels (list, optional): A list of labels to apply to the Pull Request.
             Defaults to [].
-        reviewers (list, optional): [description]. Defaults to [].
-        dry_run (bool, optional): A list of GitHub users to request reviews
-            from. Defaults to False.
+        reviewers (list, optional): A list of GitHub users to request reviews
+            from. Defaults to [].
+        dry_run (bool, optional): Perform a dry-run and do not open a Pull
+            Request. A list of the chart dependencies that can be updated will
+            be printed to the console. Defaults to False.
     """
     chart_name = chart_path.split("/")[-2]
 

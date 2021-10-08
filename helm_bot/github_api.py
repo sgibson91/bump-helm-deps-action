@@ -77,8 +77,8 @@ def create_commit(
 
 
 def create_ref(api_url: str, header: dict, ref: str, sha: str) -> None:
-    """Create a new git reference (specifically, a branch) with GitHub's git database API
-    endpoint
+    """Create a new git reference (specifically, a branch) with GitHub's git
+    database API endpoint
 
     Args:
         api_url (str): The URL to send the request to
@@ -146,6 +146,7 @@ def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]
     Args:
         api_url (str): The API URL of the GitHub repository to send requests to
         header (dict): A dictionary of headers to send with the GET request
+        
     Returns:
         pr_exists (bool): True if there is already an open Pull Request.
             False otherwise.

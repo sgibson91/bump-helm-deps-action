@@ -14,7 +14,8 @@ def pull_from_requirements_file(
 
     Args:
         api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): [description]
+        header (dict): A dictionary of headers to send with the request. Must
+            contain an authorisation token.
         output_dict (dict): The dictionary to store chart versions in
         chart_name (str): The name of the helm chart to pull versions for
 
@@ -40,7 +41,8 @@ def pull_from_chart_file(
 
     Args:
         api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): [description]
+        header (dict): A dictionary of headers to send with the request. Must
+            contain an authorisation token.
         output_dict (dict): The dictionary to store chart versions in
         dependency (str): The name of the helm chart dependency to pull
             versions for.
@@ -66,7 +68,8 @@ def pull_from_github_pages(
 
     Args:
         api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): [description]
+        header (dict): A dictionary of headers to send with the request. Must
+            contain an authorisation token.
         output_dict (dict): The dictionary to store chart versions in
         dependency (str): The name of the helm chart dependency to pull
             versions for.
@@ -94,18 +97,17 @@ def get_chart_versions(
     """Get the versions of dependent helm charts
 
     Args:
-        chart_name (str): The main helm chart to check
-        repo_owner (str): The repository/chart owner
-        repo_name (str): The name of the repository hosting the chart
-        branch_name (str): The branch of `repo_name` to pull current chart
-            versions from
-        token (str): A GitHub API token
-        pr_exists (bool): True if HelmUpgradeBot has previously opened a Pull
-            Request. Default: False.
+        api_url (str): The URL of the remotely hosted helm chart dependencies
+        header (dict): A dictionary of headers to send with the request. Must
+            contain an authorisation token.
+        chart_name (str): The name of the local helm chart
+        chart_urls (dict): A dictionary storing the location of the dependency
+            charts and their versions
+        branch_name (str): The branch to pull the info from
 
     Returns:
-        dict: A dictionary containing the chart dependencies and their
-              up-to-date versions
+        chart_info (dict): A dictionary of the dependent charts and their most
+            recent versions
     """
     chart_info: dict = {}
     chart_info[chart_name] = {}
