@@ -114,7 +114,9 @@ def get_chart_versions(
             recent versions
     """
     chart_name = chart_path.split("/")[-2]
-    chart_url = "/".join([api_url.replace(API_ROOT + "/repos", RAW_ROOT), branch_name, chart_path])
+    chart_url = "/".join(
+        [api_url.replace(API_ROOT + "/repos", RAW_ROOT), branch_name, chart_path]
+    )
     chart_urls[chart_name] = chart_url
 
     chart_info: dict = {}
