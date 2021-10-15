@@ -94,6 +94,8 @@ class UploadCommand(Command):
 
 # Where the magic happens:
 setup(
+    use_incremental=True,
+    setup_requires=["incremental"],
     name=NAME,
     description=DESCRIPTION,
     long_description=long_description,
