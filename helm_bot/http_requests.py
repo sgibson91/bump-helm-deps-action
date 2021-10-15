@@ -41,7 +41,7 @@ def get_request(
 
 def post_request(
     url: str, headers: dict = {}, json: dict = {}, return_json: bool = True
-) -> None:
+):
     """Send a POST request to an HTTP API endpoint
 
     Args:
