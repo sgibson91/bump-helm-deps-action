@@ -1,5 +1,6 @@
 import json
 import os
+from rich import print
 
 from bs4 import BeautifulSoup
 
@@ -53,17 +54,16 @@ def main():
     new = get_new_percent()
 
     if current == new:
-        print("No change in coverage percentage")
+        print("No change in coverage percentage! :tada:")
 
     else:
         diff = new - current
 
         if diff > 0:
-            print(f"Coverage has increased by {diff}%")
+            print(f"Coverage has [bold green]increased[/bold green] by {abs(diff)}%")
         else:
-            print(f"Coverage has decreased by {diff}%")
+            print(f"Coverage has [bold red]decreased[/bold red] by {abs(diff)}%")
 
-        print("Updating coverage badge")
         update_json(new, filename)
 
 

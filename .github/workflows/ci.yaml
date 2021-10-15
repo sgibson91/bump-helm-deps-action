@@ -125,7 +125,7 @@ jobs:
 
       - name: Install dependencies
         run:
-          python -m pip install -U pip bs4
+          python -m pip install -U pip bs4 rich
 
       - name: Run script to update badge metadata
         run: |
