@@ -11,7 +11,7 @@ If a new version is available, the Action will open a Pull Request inserting the
 - [🤔 Assumptions `bump-helm-deps` Makes](#-assumptions-bump-helm-deps-makes)
 - [:inbox_tray: Inputs](#inbox_tray-inputs)
 - [:lock: Permissions](#lock-permissions)
-- [:recyle: Example Usage](#recycle-example-usage)
+- [:recycle: Example Usage](#recycle-example-usage)
 - [:gift: Acknowledgements](#gift-acknowledgements)
 - [:sparkles: Contributing](#sparkles-contributing)
 
