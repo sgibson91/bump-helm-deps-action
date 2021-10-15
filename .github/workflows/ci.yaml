@@ -95,9 +95,7 @@ jobs:
 
       - name: Upload htmlcov dir as artifact
         if: |
-          (matrix.python_version == '3.9') &&
-          (github.event_name == 'push') &&
-          (github.ref == 'refs/heads/main')
+          (matrix.python_version == '3.9')
         uses: actions/upload-artifact@v2
         with:
           name: htmlcov
