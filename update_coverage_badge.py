@@ -1,6 +1,6 @@
+import argparse
 import json
 import os
-import argparse
 
 from bs4 import BeautifulSoup
 from rich import print
@@ -65,7 +65,9 @@ def main():
         diff = new - current
 
         if diff > 0:
-            print(f"Coverage has [bold green]increased[/bold green] by {abs(diff)}% :white_check_mark:")
+            print(
+                f"Coverage has [bold green]increased[/bold green] by {abs(diff)}% :white_check_mark:"
+            )
         else:
             print(f"Coverage has [bold red]decreased[/bold red] by {abs(diff)}% :x:")
 
