@@ -1,0 +1,63 @@
+name: bump-helm-deps
+author: Sarah Gibson
+description: |
+  For a helm chart stored in a GitHub repository and is dependent on other helm
+  charts. This action checks if newer versions of the dependent helm charts are
+  available and open a Pull Request with the new chart versions where applicable.
+inputs:
+  chart_path:
+    description: |
+      The path to the file that stores the helm chart dependencies
+    required: true
+  chart_urls:
+    description: |
+      A string-serialised dictionary storing the location of the dependent
+      and their versions.
+    required: true
+  github_token:
+    description: |
+      A GitHub token to make requests to the API with. Requires write
+      permissions to: create new branches, make commits, and open Pull Requests.
+      Defaults to `token` from the GitHub context, which is functionally
+      equivalent to `secrets.GITHUB_TOKEN`.
+    required: false
+    default: ${{ github.token }}
+  repository:
+    description: |
+      The GitHub repository where the helm chart is stored.
+      Defaults to context github.repository
+    required: false
+    default: ${{ github.repository }}
+  base_branch:
+    description: |
+      The base branch to open the Pull Request against. Defaults to "main".
+    required: false
+    default: "main"
+  head_branch:
+    description: |
+      The branch to commit to and open a Pull Request from. Defaults to
+      `helm_dep_bump-WXYZ` where `WXYZ` will be a randomly generated ascii string
+      (to avoid clashes).
+    required: false
+    default: "helm_dep_bump"
+  labels:
+    description: |
+      A comma-separated list of labels to apply to the opened Pull Request.
+      Labels must already exist in the repository.
+    required: false
+  reviewers:
+    description: |
+      A comma-separated list of GitHub users (without the leading `@`) to
+      request reviews from.
+    required: false
+  dry_run:
+    description: |
+      Perform a dry-run of the action. A Pull Request will not be opened, but a
+      log message will indicate if any helm chart versions can be bumped.
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+branding:
+  icon: 'check-circle'
+  color: 'purple'

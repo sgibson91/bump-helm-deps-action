@@ -1,7 +1,9 @@
+import argparse
 import json
 import os
 
 from bs4 import BeautifulSoup
+from rich import print
 
 HERE = os.getcwd()
 
@@ -47,24 +49,30 @@ def update_json(percent, filename):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", choices=["true", "false"])
+    args = parser.parse_args()
+
     filename = "badge_metadata.json"
 
     current = get_current_percent(filename)
     new = get_new_percent()
 
     if current == new:
-        print("No change in coverage percentage")
+        print("No change in coverage percentage! :tada:")
 
     else:
         diff = new - current
 
         if diff > 0:
-            print(f"Coverage has increased by {diff}%")
+            print(
+                f"Coverage has [bold green]increased[/bold green] by {abs(diff)}% :white_check_mark:"
+            )
         else:
-            print(f"Coverage has decreased by {diff}%")
+            print(f"Coverage has [bold red]decreased[/bold red] by {abs(diff)}% :x:")
 
-        print("Updating coverage badge")
-        update_json(new, filename)
+        if args.dry_run == "false":
+            update_json(new, filename)
 
 
 if __name__ == "__main__":
