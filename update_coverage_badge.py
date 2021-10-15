@@ -1,8 +1,8 @@
 import json
 import os
-from rich import print
 
 from bs4 import BeautifulSoup
+from rich import print
 
 HERE = os.getcwd()
 
