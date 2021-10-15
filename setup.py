@@ -14,7 +14,7 @@ from setuptools import Command, find_packages, setup
 # Package meta-data.
 NAME = "helm-bot"
 DESCRIPTION = "GitHub Action to automatically open Pull Requests containing helm chart dependency updates"
-URL = "https://github.com/sgibson91/hub23-deploy-upgrades"
+URL = "https://github.com/sgibson91/bump-helm-deps-action"
 EMAIL = "drsarahlgibson@gmail.com"
 AUTHOR = "Sarah Gibson"
 REQUIRES_PYTHON = ">=3.7.0"
