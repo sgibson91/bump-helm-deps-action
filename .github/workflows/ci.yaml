@@ -104,7 +104,6 @@ jobs:
           path: htmlcov/
 
   update-badge:
-    if: (github.event_name == 'push') && (github.ref == 'refs/heads/main')
     needs: run-tests
     runs-on: ubuntu-latest
 
@@ -129,9 +128,10 @@ jobs:
 
       - name: Run script to update badge metadata
         run: |
-          python update_coverage_badge.py
+          python update_coverage_badge.py --dry-run ${{ github.event_name == 'pull_request' }}
 
       - name: Add and commit the edited metadata file
+        if: (github.event_name == 'push') && (github.ref == 'refs/heads/main')
         uses: EndBug/add-and-commit@v4
         with:
           add: 'badge_metadata.json'
