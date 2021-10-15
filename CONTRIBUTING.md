@@ -34,7 +34,7 @@ Please report any unacceptable behaviour to [Dr Sarah Gibson](mailto:drsarahlgib
 
 ### :robot: What is the project?
 
-This repository (<https://github.com/sgibson91/hub23-deploy-upgrades>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of local charts can be updated, and opens a Pull Request with the new versions if so.
+This repository (<https://github.com/sgibson91/bump-helm-deps-action>) is specifically designed to check if [Helm chart](https://helm.sh/docs/topics/charts/) dependencies of local charts can be updated, and opens a Pull Request with the new versions if so.
 
 This project is mostly a Python wrapper around [HTTP requests](https://www.codecademy.com/articles/http-requests) to the [GitHub REST API](https://developer.github.com/v3/), with some YAML/JSON handling.
 
@@ -63,7 +63,7 @@ This repository has a [feature request template](.github/ISSUE_TEMPLATE/feature_
 ### :hatching_chick: Your First Contribution
 
 Unsure where to start contributing?
-Check out the [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/good%20first%20issue) and [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/help%20wanted)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/help%20wanted) labels to see where the project is looking for input.
+Check out the [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/good%20first%20issue)](https://github.com/sgibson91/bump-helm-deps-action/labels/good%20first%20issue) and [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/help%20wanted)](https://github.com/sgibson91/bump-helm-deps-action/labels/help%20wanted) labels to see where the project is looking for input.
 
 ### :arrow_right: Pull Requests
 
@@ -123,8 +123,8 @@ Below is a table with the currently used labels in the repo.
 
 | Label | Description |
 | :--- | :--- |
-| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/bug)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/bug) | Something isn't working |
-| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/documentation)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/documentation) | Improvements or additions to the documentation |
-| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/enhancement)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/enhancement) | New feature or request |
-| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/good%20first%20issue)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/good%20first%20issue) | Good for newcomers |
-| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/hub23-deploy-upgrades/help%20wanted)](https://github.com/sgibson91/hub23-deploy-upgrades/labels/help%20wanted) | Extra attention is needed |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/bug)](https://github.com/sgibson91/bump-helm-deps-action/labels/bug) | Something isn't working |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/documentation)](https://github.com/sgibson91/bump-helm-deps-action/labels/documentation) | Improvements or additions to the documentation |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/enhancement)](https://github.com/sgibson91/bump-helm-deps-action/labels/enhancement) | New feature or request |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/good%20first%20issue)](https://github.com/sgibson91/bump-helm-deps-action/labels/good%20first%20issue) | Good for newcomers |
+| [![GitHub labels](https://img.shields.io/github/labels/sgibson91/bump-helm-deps-action/help%20wanted)](https://github.com/sgibson91/bump-helm-deps-action/labels/help%20wanted) | Extra attention is needed |
