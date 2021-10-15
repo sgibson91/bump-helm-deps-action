@@ -21,12 +21,12 @@ def split_str_to_list(input_str: str) -> List[str]:
 def main():
     # Retrieve environment variables
     chart_path = (
-        json.loads(os.environ["INPUT_CHART_PATH"])
-        if "INPUT_CHART_PATH" in os.environ
-        else None
+        os.environ["INPUT_CHART_PATH"] if "INPUT_CHART_PATH" in os.environ else None
     )
     chart_urls = (
-        os.environ["INPUT_CHART_URLS"] if "INPUT_CHART_URLS" in os.environ else None
+        json.loads(os.environ["INPUT_CHART_URLS"])
+        if "INPUT_CHART_URLS" in os.environ
+        else None
     )
     github_token = (
         os.environ["INPUT_GITHUB_TOKEN"] if "INPUT_GITHUB_TOKEN" in os.environ else None
