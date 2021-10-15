@@ -1,9 +1,13 @@
-# Bump Helm Chart dependencies
+<center>
+
+<img src="helm-bot-logo.png" alt="Helm Bot logo" width="100">
+
+<h1>Bump Helm Chart Dependencies</h1>
 
 This is an GitHub Action that will check the chart dependencies of a Helm chart are up to date with their source.
 If a new version is available, the Action will open a Pull Request inserting the new chart dependency versions into the helm chart file.
 
-[![CI tests](https://github.com/sgibson91/bump-helm-deps-action/actions/workflows/ci.yaml/badge.svg)](https://github.com/sgibson91/bump-helm-deps-action/actions/workflows/ci.yaml) ![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/sgibson91/bump-helm-deps-action/main/badge_metadata.json) ![GitHub](https://img.shields.io/github/license/sgibson91/bump-helm-deps-action) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md)
+[![CI tests](https://github.com/sgibson91/bump-helm-deps-action/actions/workflows/ci.yaml/badge.svg)](https://github.com/sgibson91/bump-helm-deps-action/actions/workflows/ci.yaml) ![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/sgibson91/bump-helm-deps-action/main/badge_metadata.json) ![GitHub](https://img.shields.io/github/license/sgibson91/bump-helm-deps-action) [![badge](https://img.shields.io/static/v1?label=Code%20of&message=Conduct&color=blueviolet)](CODE_OF_CONDUCT.md) [![badge](https://img.shields.io/static/v1?label=Contributing&message=Guidelines&color=blueviolet)](CONTRIBUTING.md)</center>
 
 **Table of Contents:**
 
