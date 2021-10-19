@@ -62,9 +62,9 @@ def main():
             raise ValueError(f"{k} must be set!")
 
     # If labels/reviewers have been provided, transform from string into list
-    if isinstance(labels, list) and (len(labels) > 0):
+    if isinstance(labels, str) and (len(labels) > 0):
         labels = split_str_to_list(labels)
-    if isinstance(reviewers, list) and (len(reviewers) > 0):
+    if isinstance(reviewers, str) and (len(reviewers) > 0):
         reviewers = split_str_to_list(reviewers)
     print(reviewers)
     print(type(reviewers))
