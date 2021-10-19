@@ -102,9 +102,6 @@ def upgrade_chart_deps(
     chart_yaml = edit_config(chart_yaml_url, header, charts_to_update, chart_info)
 
     # Create a commit
-    print(charts_to_update)
-    print(chart_info)
-    print(chart for chart in charts_to_update)
     commit_msg = f"Bump charts {[chart for chart in charts_to_update]} to versions {[chart_info[chart] for chart in charts_to_update]}, respectively"
     create_commit(
         api_url, header, chart_path, head_branch, blob_sha, commit_msg, chart_yaml
