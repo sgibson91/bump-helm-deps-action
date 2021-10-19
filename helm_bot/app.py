@@ -162,6 +162,8 @@ def run(
             Request. A list of the chart dependencies that can be updated will
             be printed to the console. Defaults to False.
     """
+    print(reviewers)
+    print(type(reviewers))
     chart_name = chart_path.split("/")[-2]
 
     # Check if Pull Request exists
