@@ -43,6 +43,8 @@ def main():
     labels = os.environ["INPUT_LABELS"] if "INPUT_LABELS" in os.environ else []
     reviewers = os.environ["INPUT_REVIEWERS"] if "INPUT_REVIEWERS" in os.environ else []
     dry_run = os.environ["INPUT_DRY_RUN"] if "INPUT_DRY_RUN" in os.environ else False
+    print(reviewers)
+    print(type(reviewers))
 
     # Reference dict for required inputs
     required_vars = {
@@ -64,6 +66,8 @@ def main():
         labels = split_str_to_list(labels)
     if isinstance(reviewers, list) and (len(reviewers) > 0):
         reviewers = split_str_to_list(reviewers)
+    print(reviewers)
+    print(type(reviewers))
 
     # Check the dry_run variable is properly set
     if isinstance(dry_run, str) and (dry_run == "true"):
