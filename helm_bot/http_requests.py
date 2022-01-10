@@ -29,7 +29,7 @@ def get_request(
     resp = requests.get(url, headers=headers, params=params)
 
     if not resp:
-        raise RuntimeError("%s\nRequest URL: %s" % (resp.text, url))
+        raise RuntimeError("{}\nRequest URL: {}".format(resp.text, url))
 
     if output == "default":
         return resp
@@ -56,7 +56,7 @@ def post_request(
     resp = requests.post(url, headers=headers, json=json)
 
     if not resp:
-        raise RuntimeError("%s\nRequest URL: %s" % (resp.text, url))
+        raise RuntimeError("{}\nRequest URL: {}".format(resp.text, url))
 
     if return_json:
         return resp.json()
