@@ -6,7 +6,5 @@ tests
 # Files to be ignored
 .coveragerc
 .isort.cfg
-badge_metadata.json
 dev-requirements.txt
 mypy.ini
-update_coverage_badge.py
