@@ -4,5 +4,5 @@ mypy-extensions==0.4.3
 pytest==6.2.5
 responses==0.17.0
 types-jmespath==0.10.2
-types-PyYAML==5.4.10
+types-PyYAML==6.0.4
 types-requests==2.27.8
