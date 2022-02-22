@@ -10,6 +10,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      update-types: "patch"
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
     directory: "/"
