@@ -1,5 +1,5 @@
 incremental==21.3.0
-jmespath==0.10.0
+jmespath==1.0.0
 loguru==0.6.0
 pyyaml==6.0
 requests==2.27.1
