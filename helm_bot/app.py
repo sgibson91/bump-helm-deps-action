@@ -4,7 +4,7 @@ import random
 import string
 from itertools import compress, product
 
-import yaml
+from ruamel.yaml import YAML
 from loguru import logger
 
 from .github_api import (
@@ -19,6 +19,7 @@ from .http_requests import get_request
 from .pull_version_info import get_chart_versions
 
 HERE = os.getcwd()
+yaml = YAML(typ="safe", pure=True)
 
 
 def edit_config(
@@ -42,14 +43,13 @@ def edit_config(
         str: The updated helm chart config
     """
     resp = get_request(download_url, headers=header, output="text")
-    chart_yaml = yaml.safe_load(resp)
+    chart_yaml = yaml.load(resp)
 
     for chart, dep in product(charts_to_update, chart_yaml["dependencies"]):
         if dep["name"] == chart:
             dep["version"] = chart_info[chart]
 
-    encoded_chart_yaml = yaml.safe_dump(chart_yaml).encode("utf-8")
-    base64_bytes = base64.b64encode(encoded_chart_yaml)
+    base64_bytes = base64.b64encode(str(chart_yaml).encode("utf-8"))
     chart_yaml = base64_bytes.decode("utf-8")
 
     return chart_yaml
