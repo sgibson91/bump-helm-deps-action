@@ -7,6 +7,7 @@ RAW_ROOT = "https://raw.githubusercontent.com"
 
 yaml = YAML(typ="safe", pure=True)
 
+
 def pull_from_requirements_file(
     api_url: str,
     header: dict,

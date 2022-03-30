@@ -4,8 +4,8 @@ import random
 import string
 from itertools import compress, product
 
-from ruamel.yaml import YAML
 from loguru import logger
+from ruamel.yaml import YAML
 
 from .github_api import (
     create_commit,
