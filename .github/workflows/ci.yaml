@@ -60,7 +60,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m coverage run -m pytest -vvv
+          python -m coverage run -m pytest -vvv --color=yes
 
       - name: Generate coverate report
         run: |
