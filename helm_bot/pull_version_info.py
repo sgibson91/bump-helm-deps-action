@@ -1,11 +1,8 @@
-from ruamel.yaml import YAML
-
+import yaml
 from .http_requests import get_request
 
 API_ROOT = "https://api.github.com"
 RAW_ROOT = "https://raw.githubusercontent.com"
-
-yaml = YAML(typ="safe", pure=True)
 
 
 def pull_from_requirements_file(
@@ -28,7 +25,7 @@ def pull_from_requirements_file(
         output_dict (dict): A dictionary containing the names of the helm chart
             dependencies and their versions.
     """
-    chart_reqs = yaml.load(get_request(api_url, headers=header, output="text"))
+    chart_reqs = yaml.safe_load(get_request(api_url, headers=header, output="text"))
 
     for chart in chart_reqs["dependencies"]:
         output_dict[chart_name][chart["name"]] = chart["version"]
@@ -56,7 +53,7 @@ def pull_from_chart_file(
         output_dict (dict): A dictionary containing the names of the helm chart
             dependencies and their versions.
     """
-    chart_reqs = yaml.load(get_request(api_url, headers=header, output="text"))
+    chart_reqs = yaml.safe_load(get_request(api_url, headers=header, output="text"))
     output_dict[dependency] = chart_reqs["version"]
 
     return output_dict
@@ -83,7 +80,7 @@ def pull_from_github_pages(
         output_dict (dict): A dictionary containing the names of the helm chart
             dependencies and their versions.
     """
-    chart_reqs = yaml.load(get_request(api_url, headers=header, output="text"))
+    chart_reqs = yaml.safe_load(get_request(api_url, headers=header, output="text"))
     updates_sorted = sorted(
         chart_reqs["entries"][dependency], key=lambda k: k["created"]
     )

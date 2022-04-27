@@ -1,8 +1,7 @@
 import base64
 from unittest.mock import patch
 
-from ruamel.yaml import YAML
-
+import yaml
 from helm_bot.github_api import (
     add_labels,
     assign_reviewers,
@@ -16,8 +15,6 @@ from helm_bot.github_api import (
 
 test_url = "http://jsonplaceholder.typicode.com"
 test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
-
-yaml = YAML(typ="safe", pure=True)
 
 
 def test_add_labels():
@@ -53,7 +50,8 @@ def test_create_commit():
     test_commit_msg = "This is a commit message"
 
     test_contents = {"key1": "This is a test"}
-    test_contents = base64.b64encode(str(test_contents).encode("utf-8"))
+    test_contents = yaml.safe_dump(test_contents).encode("utf-8")
+    test_contents = base64.b64encode(test_contents)
     test_contents = test_contents.decode("utf-8")
 
     test_body = {

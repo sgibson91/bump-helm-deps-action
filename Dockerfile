@@ -1,9 +1,6 @@
 # Use a Python 3.9 slim image
 FROM python:3.10.4-slim
 
-RUN apt-get update && \
-    apt-get -y install gcc
-
 # Create and set the 'app' working directory
 RUN mkdir /app
 WORKDIR /app
