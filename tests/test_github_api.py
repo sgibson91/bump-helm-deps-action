@@ -2,6 +2,7 @@ import base64
 from unittest.mock import patch
 
 import yaml
+
 from helm_bot.github_api import (
     add_labels,
     assign_reviewers,
