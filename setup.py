@@ -1,10 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # Note: To use the 'upload' functionality of this file, you must:
 #   $ pip install twine
 
-import io
 import os
 import sys
 from shutil import rmtree
@@ -21,7 +19,7 @@ REQUIRES_PYTHON = ">=3.7.0"
 
 # What packages are required for this module to be executed?
 try:
-    with open("requirements.txt", "r") as f:
+    with open("requirements.txt") as f:
         lines = f.readlines()
         REQUIRED = [line.strip() for line in lines]
 except FileNotFoundError:
@@ -29,7 +27,7 @@ except FileNotFoundError:
 
 # What packages are optional?
 try:
-    with open("dev-requirements.txt", "r") as f:
+    with open("dev-requirements.txt") as f:
         lines = f.readlines()
         dev_packages = [line.strip() for line in lines]
 except FileNotFoundError:
@@ -49,7 +47,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 # Import the README and use it as the long-description.
 # Note: this will only work if 'README.md' is present in your MANIFEST.in file!
 try:
-    with io.open(os.path.join(here, "README.md"), encoding="utf-8") as f:
+    with open(os.path.join(here, "README.md"), encoding="utf-8") as f:
         long_description = "\n" + f.read()
 except FileNotFoundError:
     long_description = DESCRIPTION
@@ -64,7 +62,7 @@ class UploadCommand(Command):
     @staticmethod
     def status(s):
         """Prints things in bold."""
-        print("\033[1m{}\033[0m".format(s))
+        print(f"\033[1m{s}\033[0m")
 
     def initialize_options(self):
         pass
@@ -80,7 +78,7 @@ class UploadCommand(Command):
             pass
 
         self.status("Building Source and Wheel (universal) distribution…")
-        os.system("{} setup.py sdist bdist_wheel --universal".format(sys.executable))
+        os.system(f"{sys.executable} setup.py sdist bdist_wheel --universal")
 
         self.status("Uploading the package to PyPI via Twine…")
         os.system("twine upload dist/*")
