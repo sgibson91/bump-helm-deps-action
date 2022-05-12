@@ -7,8 +7,8 @@ from helm_bot.github_api import (
     add_labels,
     assign_reviewers,
     create_commit,
-    create_pr,
     create_ref,
+    create_update_pr,
     find_existing_pr,
     get_contents,
     get_ref,
@@ -81,7 +81,7 @@ def test_create_commit():
         )
 
 
-def test_create_pr_no_labels_no_reviewers():
+def test_create_update_pr_no_labels_no_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
     test_chart_name = "test-chart"
@@ -110,7 +110,7 @@ def test_create_pr_no_labels_no_reviewers():
     }
 
     with patch("helm_bot.github_api.post_request") as mocked_func:
-        create_pr(
+        create_update_pr(
             test_url,
             test_header,
             test_base_branch,
@@ -120,6 +120,7 @@ def test_create_pr_no_labels_no_reviewers():
             test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
+            pr_exists=False,
         )
 
         assert mocked_func.call_count == 1
@@ -131,7 +132,7 @@ def test_create_pr_no_labels_no_reviewers():
         )
 
 
-def test_create_pr_with_labels_no_reviewers():
+def test_create_update_pr_with_labels_no_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
     test_chart_name = "test-chart"
@@ -161,12 +162,12 @@ def test_create_pr_with_labels_no_reviewers():
 
     mock_post = patch(
         "helm_bot.github_api.post_request",
-        return_value={"issue_url": "/".join([test_url, "issues", "1"])},
+        return_value={"issue_url": "/".join([test_url, "issues", "1"]), "number": 1},
     )
     mock_labels = patch("helm_bot.github_api.add_labels")
 
     with mock_post as mock1, mock_labels as mock2:
-        create_pr(
+        create_update_pr(
             test_url,
             test_header,
             test_base_branch,
@@ -176,10 +177,14 @@ def test_create_pr_with_labels_no_reviewers():
             test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
+            pr_exists=False,
         )
 
         assert mock1.call_count == 1
-        assert mock1.return_value == {"issue_url": "/".join([test_url, "issues", "1"])}
+        assert mock1.return_value == {
+            "issue_url": "/".join([test_url, "issues", "1"]),
+            "number": 1,
+        }
         mock1.assert_called_with(
             "/".join([test_url, "pulls"]),
             headers=test_header,
@@ -192,7 +197,7 @@ def test_create_pr_with_labels_no_reviewers():
         )
 
 
-def test_create_pr_no_labels_with_reviewers():
+def test_create_update_pr_no_labels_with_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
     test_chart_name = "test-chart"
@@ -222,12 +227,12 @@ def test_create_pr_no_labels_with_reviewers():
 
     mock_post = patch(
         "helm_bot.github_api.post_request",
-        return_value={"url": "/".join([test_url, "pulls", "1"])},
+        return_value={"url": "/".join([test_url, "pulls", "1"]), "number": 1},
     )
     mock_reviewers = patch("helm_bot.github_api.assign_reviewers")
 
     with mock_post as mock1, mock_reviewers as mock2:
-        create_pr(
+        create_update_pr(
             test_url,
             test_header,
             test_base_branch,
@@ -237,10 +242,14 @@ def test_create_pr_no_labels_with_reviewers():
             test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
+            pr_exists=False,
         )
 
         assert mock1.call_count == 1
-        assert mock1.return_value == {"url": "/".join([test_url, "pulls", "1"])}
+        assert mock1.return_value == {
+            "url": "/".join([test_url, "pulls", "1"]),
+            "number": 1,
+        }
         mock1.assert_called_with(
             "/".join([test_url, "pulls"]),
             headers=test_header,
@@ -253,7 +262,7 @@ def test_create_pr_no_labels_with_reviewers():
         )
 
 
-def test_create_pr_with_labels_and_reviewers():
+def test_create_update_pr_with_labels_and_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
     test_chart_name = "test-chart"
@@ -286,13 +295,14 @@ def test_create_pr_with_labels_and_reviewers():
         return_value={
             "issue_url": "/".join([test_url, "issues", "1"]),
             "url": "/".join([test_url, "pulls", "1"]),
+            "number": 1,
         },
     )
     mock_labels = patch("helm_bot.github_api.add_labels")
     mock_reviewers = patch("helm_bot.github_api.assign_reviewers")
 
     with mock_post as mock1, mock_labels as mock2, mock_reviewers as mock3:
-        create_pr(
+        create_update_pr(
             test_url,
             test_header,
             test_base_branch,
@@ -302,12 +312,14 @@ def test_create_pr_with_labels_and_reviewers():
             test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
+            pr_exists=False,
         )
 
         assert mock1.call_count == 1
         assert mock1.return_value == {
             "issue_url": "/".join([test_url, "issues", "1"]),
             "url": "/".join([test_url, "pulls", "1"]),
+            "number": 1,
         }
         mock1.assert_called_with(
             "/".join([test_url, "pulls"]),
