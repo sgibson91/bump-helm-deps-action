@@ -9,8 +9,8 @@ from loguru import logger
 
 from .github_api import (
     create_commit,
-    create_pr,
     create_ref,
+    create_update_pr,
     find_existing_pr,
     get_contents,
     get_ref,
@@ -201,8 +201,18 @@ def run(
             pr_exists,
         )
 
-        if not pr_exists:
-            create_pr(api_url, header, base_branch, head_branch, labels, reviewers)
+        create_update_pr(
+            api_url,
+            header,
+            base_branch,
+            head_branch,
+            chart_name,
+            chart_info,
+            charts_to_update,
+            labels,
+            reviewers,
+            pr_exists,
+        )
 
     elif (len(charts_to_update) > 0) and dry_run:
         logger.info(

@@ -4,7 +4,7 @@ import jmespath
 from loguru import logger
 from requests import put
 
-from .http_requests import get_request, post_request
+from .http_requests import get_request, patch_request, post_request
 
 
 def add_labels(labels: list, pr_url: str, header: dict) -> None:
@@ -96,15 +96,19 @@ def create_ref(api_url: str, header: dict, ref: str, sha: str) -> None:
     post_request(url, headers=header, json=body)
 
 
-def create_pr(
+def create_update_pr(
     api_url: str,
     header: dict,
     base_branch: str,
     head_branch: str,
+    chart_name: str,
+    chart_info: dict,
+    charts_to_update: list,
     labels: list,
     reviewers: list,
+    pr_exists: bool,
 ) -> None:
-    """Create a Pull Request via the GitHub API
+    """Create or update a Pull Request via the GitHub API
 
     Args:
         api_url (str): The URL to send the request to
@@ -112,32 +116,60 @@ def create_pr(
             contain and authorisation token.
         base_branch (str): The name of the branch to open the Pull Request against
         head_branch (str): The name of the branch to open the Pull Request from
+        chart_name (str): The name of the local helm chart
+        chart_info (dict): A dictionary of the helm chartdependencies and their
+            versions
+        charts_to_update (list): A list of helm chart dependencies that can be
+            updated
         labels (list): A list of labels to apply to the Pull Request
         reviewers (list): A list of GitHub users to request reviews from
+        pr_exists (bool): True if a Pull Request exists.
     """
     logger.info("Creating Pull Request...")
 
     url = "/".join([api_url, "pulls"])
     pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{chart_info[chart_name][chart]}` -> `{chart_info[chart]}`"
+                    for chart in charts_to_update
+                ]
+            )
+        ),
         "base": base_branch,
-        "head": head_branch,
     }
-    resp = post_request(
-        url,
-        headers=header,
-        json=pr,
-        return_json=True,
-    )
 
-    logger.info("Pull Request created!")
+    if pr_exists:
+        pr["state"] = "open"
 
-    if len(labels) > 0:
-        add_labels(labels, resp["issue_url"], header)
+        resp = patch_request(
+            url,
+            headers=header,
+            json=pr,
+            return_json=True,
+        )
 
-    if len(reviewers) > 0:
-        assign_reviewers(reviewers, resp["url"], header)
+        logger.info(f"Pull Request #{resp['number']} updated!")
+    else:
+        pr["head"] = head_branch
+
+        resp = post_request(
+            url,
+            headers=header,
+            json=pr,
+            return_json=True,
+        )
+
+        logger.info(f"Pull Request #{resp['number']} created!")
+
+        if labels:
+            add_labels(labels, resp["issue_url"], header)
+
+        if reviewers:
+            assign_reviewers(reviewers, resp["url"], header)
 
 
 def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]]:
