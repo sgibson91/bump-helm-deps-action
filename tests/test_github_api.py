@@ -84,12 +84,27 @@ def test_create_commit():
 def test_create_pr_no_labels_no_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
+    test_chart_name = "test-chart"
+    test_chart_info = {
+        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
+        "chart1": "7.8.9",
+        "chart2": "10.11.12",
+    }
+    test_charts_to_update = ["chart1", "chart2"]
     test_labels = []
     test_reviewers = []
 
     expected_pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
+                    for chart in test_charts_to_update
+                ]
+            )
+        ),
         "base": test_base_branch,
         "head": test_head_branch,
     }
@@ -100,6 +115,9 @@ def test_create_pr_no_labels_no_reviewers():
             test_header,
             test_base_branch,
             test_head_branch,
+            test_chart_name,
+            test_chart_info,
+            test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
         )
@@ -116,12 +134,27 @@ def test_create_pr_no_labels_no_reviewers():
 def test_create_pr_with_labels_no_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
+    test_chart_name = "test-chart"
+    test_chart_info = {
+        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
+        "chart1": "7.8.9",
+        "chart2": "10.11.12",
+    }
+    test_charts_to_update = ["chart1", "chart2"]
     test_labels = ["label1", "label2"]
     test_reviewers = []
 
     expected_pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
+                    for chart in test_charts_to_update
+                ]
+            )
+        ),
         "base": test_base_branch,
         "head": test_head_branch,
     }
@@ -138,6 +171,9 @@ def test_create_pr_with_labels_no_reviewers():
             test_header,
             test_base_branch,
             test_head_branch,
+            test_chart_name,
+            test_chart_info,
+            test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
         )
@@ -159,12 +195,27 @@ def test_create_pr_with_labels_no_reviewers():
 def test_create_pr_no_labels_with_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
+    test_chart_name = "test-chart"
+    test_chart_info = {
+        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
+        "chart1": "7.8.9",
+        "chart2": "10.11.12",
+    }
+    test_charts_to_update = ["chart1", "chart2"]
     test_labels = []
     test_reviewers = ["reviewer1", "reviewer2"]
 
     expected_pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
+                    for chart in test_charts_to_update
+                ]
+            )
+        ),
         "base": test_base_branch,
         "head": test_head_branch,
     }
@@ -181,6 +232,9 @@ def test_create_pr_no_labels_with_reviewers():
             test_header,
             test_base_branch,
             test_head_branch,
+            test_chart_name,
+            test_chart_info,
+            test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
         )
@@ -202,12 +256,27 @@ def test_create_pr_no_labels_with_reviewers():
 def test_create_pr_with_labels_and_reviewers():
     test_base_branch = "main"
     test_head_branch = "head"
+    test_chart_name = "test-chart"
+    test_chart_info = {
+        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
+        "chart1": "7.8.9",
+        "chart2": "10.11.12",
+    }
+    test_charts_to_update = ["chart1", "chart2"]
     test_labels = ["label1", "label2"]
     test_reviewers = ["reviewer1", "reviewer2"]
 
     expected_pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
+                    for chart in test_charts_to_update
+                ]
+            )
+        ),
         "base": test_base_branch,
         "head": test_head_branch,
     }
@@ -228,6 +297,9 @@ def test_create_pr_with_labels_and_reviewers():
             test_header,
             test_base_branch,
             test_head_branch,
+            test_chart_name,
+            test_chart_info,
+            test_charts_to_update,
             labels=test_labels,
             reviewers=test_reviewers,
         )
