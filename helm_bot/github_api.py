@@ -4,7 +4,7 @@ import jmespath
 from loguru import logger
 from requests import put
 
-from .http_requests import get_request, post_request
+from .http_requests import get_request, patch_request, post_request
 
 
 def add_labels(labels: list, pr_url: str, header: dict) -> None:
@@ -96,7 +96,7 @@ def create_ref(api_url: str, header: dict, ref: str, sha: str) -> None:
     post_request(url, headers=header, json=body)
 
 
-def create_pr(
+def create_update_pr(
     api_url: str,
     header: dict,
     base_branch: str,
@@ -106,8 +106,9 @@ def create_pr(
     charts_to_update: list,
     labels: list,
     reviewers: list,
+    pr_exists: bool,
 ) -> None:
-    """Create a Pull Request via the GitHub API
+    """Create or update a Pull Request via the GitHub API
 
     Args:
         api_url (str): The URL to send the request to
@@ -122,6 +123,7 @@ def create_pr(
             updated
         labels (list): A list of labels to apply to the Pull Request
         reviewers (list): A list of GitHub users to request reviews from
+        pr_exists (bool): True if a Pull Request exists.
     """
     logger.info("Creating Pull Request...")
 
@@ -138,22 +140,36 @@ def create_pr(
             )
         ),
         "base": base_branch,
-        "head": head_branch,
     }
-    resp = post_request(
-        url,
-        headers=header,
-        json=pr,
-        return_json=True,
-    )
 
-    logger.info("Pull Request created!")
+    if pr_exists:
+        pr["state"] = "open"
 
-    if len(labels) > 0:
-        add_labels(labels, resp["issue_url"], header)
+        resp = patch_request(
+            url,
+            headers=header,
+            json=pr,
+            return_json=True,
+        )
 
-    if len(reviewers) > 0:
-        assign_reviewers(reviewers, resp["url"], header)
+        logger.info(f"Pull Request #{resp['number']} updated!")
+    else:
+        pr["head"] = head_branch
+
+        resp = post_request(
+            url,
+            headers=header,
+            json=pr,
+            return_json=True,
+        )
+
+        logger.info(f"Pull Request #{resp['number']} created!")
+
+        if labels:
+            add_labels(labels, resp["issue_url"], header)
+
+        if reviewers:
+            assign_reviewers(reviewers, resp["url"], header)
 
 
 def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]]:

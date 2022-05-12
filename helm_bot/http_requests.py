@@ -29,7 +29,7 @@ def get_request(
     resp = requests.get(url, headers=headers, params=params)
 
     if not resp:
-        raise RuntimeError(f"{resp.text}\nRequest URL: {url}")
+        raise requests.HTTPError(f"{resp.text}\nRequest URL: {url}")
 
     if output == "default":
         return resp
@@ -39,8 +39,31 @@ def get_request(
         return resp.text
 
 
+def patch_request(
+    url: str, headers: dict = {}, json: dict = {}, return_json: bool = False
+):
+    """Send a PATCH request to an HTTP API endpoint
+
+    Args:
+        url (str): The URL to send the request to
+        headers (dict, optional): A dictionary of any headers to send with the
+            request. Defaults to an empty dictionary.
+        json (dict, optional): A dictionary containing JSON payload to send with
+            the request. Defaults to an empty dictionary.
+        return_json (bool, optional): Return the JSON payload response.
+            Defaults to False.
+    """
+    resp = requests.patch(url, headers=headers, json=json)
+
+    if not resp:
+        raise requests.HTTPError(f"{resp.text}\nRequest URL: {url}")
+
+    if return_json:
+        return resp.json()
+
+
 def post_request(
-    url: str, headers: dict = {}, json: dict = {}, return_json: bool = True
+    url: str, headers: dict = {}, json: dict = {}, return_json: bool = False
 ):
     """Send a POST request to an HTTP API endpoint
 
@@ -56,7 +79,7 @@ def post_request(
     resp = requests.post(url, headers=headers, json=json)
 
     if not resp:
-        raise RuntimeError(f"{resp.text}\nRequest URL: {url}")
+        raise requests.HTTPError(f"{resp.text}\nRequest URL: {url}")
 
     if return_json:
         return resp.json()
