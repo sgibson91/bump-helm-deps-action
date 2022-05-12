@@ -7,5 +7,5 @@ Provides helm_bot version information.
 
 from incremental import Version
 
-__version__ = Version("helm_bot", 1, 0, 3)
+__version__ = Version("helm_bot", 1, 1, 0)
 __all__ = ["__version__"]

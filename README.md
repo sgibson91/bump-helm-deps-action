@@ -56,6 +56,7 @@ Here is a list detailing the assumptions that the Action makes.
 | `head_branch` | The branch to commit to and open a Pull Request from | :x: | `helm_dep_bump-WXYZ` where `WXYZ` will be a randomly generated ascii string (to avoid clashes) |
 | `labels` | A comma-separated list of labels to apply to the opened Pull Request. Labels must already exist in the repository. | :x: | `[]` |
 | `reviewers` | A comma-separated list of GitHub users (without the leading `@`) to request reviews from | :x: | `[]` |
+| `team_reviewers` | A comma-separated list of GitHub teams, in the form `ORG_NAME/TEAM_NAME`, to request reviews from | :x: | `[]` |
 | `dry_run` | Perform a dry-run of the action. A Pull Request will not be opened, but a log message will indicate if any helm chart versions can be bumped. | :x: | `False` |
 
 ## :lock: Permissions

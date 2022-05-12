@@ -5,6 +5,7 @@ tests
 
 # Files to be ignored
 .coveragerc
-.isort.cfg
+.pre-commit-config.yaml
+codecov.yaml
 dev-requirements.txt
 mypy.ini

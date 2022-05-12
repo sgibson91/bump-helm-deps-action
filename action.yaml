@@ -50,6 +50,11 @@ inputs:
       A comma-separated list of GitHub users (without the leading `@`) to
       request reviews from.
     required: false
+  team_reviewers:
+    description: |
+      A comma-separated list of GitHub teams, in the form ORG_NAME/TEAM_NAME, to
+      request reviews from.
+    required: false
   dry_run:
     description: |
       Perform a dry-run of the action. A Pull Request will not be opened, but a
