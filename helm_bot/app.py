@@ -139,6 +139,7 @@ def run(
     head_branch: str,
     labels: list = [],
     reviewers: list = [],
+    team_reviewers: list = [],
     dry_run: bool = False,
 ) -> None:
     """Run the action to check if the helm chart dependencies are up to date
@@ -158,6 +159,8 @@ def run(
             Defaults to [].
         reviewers (list, optional): A list of GitHub users to request reviews
             from. Defaults to [].
+        team_reviewers (list, optional): A list of GitHub Teams to request a review from.
+            In the form <ORG_NAME>/<TEAM_NAME>. Defaults to [].
         dry_run (bool, optional): Perform a dry-run and do not open a Pull
             Request. A list of the chart dependencies that can be updated will
             be printed to the console. Defaults to False.
@@ -211,6 +214,7 @@ def run(
             charts_to_update,
             labels,
             reviewers,
+            team_reviewers,
             pr_exists,
         )
 

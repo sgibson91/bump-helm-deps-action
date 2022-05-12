@@ -27,24 +27,33 @@ def add_labels(labels: list, pr_url: str, header: dict) -> None:
     )
 
 
-def assign_reviewers(reviewers: list, pr_url: str, header: dict) -> None:
+def assign_reviewers(
+    reviewers: list, team_reviewers: list, pr_url: str, header: dict
+) -> None:
     """Request reviews from GitHub users on a Pull Request
 
     Args:
         reviewers (list): A list of GitHub user to request reviews from
             (**excluding** the leading `@` symbol)
+        team_reviewers (list): A list of GitHub Teams to request a review from. In the
+            form <ORG_NAME>/<TEAM_NAME>.
         pr_url (str): The API URL of the Pull Request (pulls endpoint) to send
             the request to
         header (dict): A dictionary of headers to send with the request. Must
             contain an authorisation token.
     """
     logger.info("Assigning reviewers to Pull Request: {}", pr_url)
-    logger.info("Assigning reviewers: {}", reviewers)
+
+    if reviewers:
+        logger.info("Assigning reviewers: {}", reviewers)
+    if team_reviewers:
+        logger.info("Assigning team reviewers: {}", team_reviewers)
+
     url = "/".join([pr_url, "requested_reviewers"])
     post_request(
         url,
         headers=header,
-        json={"reviewers": reviewers},
+        json={"reviewers": reviewers, "team_reviewers": team_reviewers},
     )
 
 
@@ -106,6 +115,7 @@ def create_update_pr(
     charts_to_update: list,
     labels: list,
     reviewers: list,
+    team_reviewers: list,
     pr_exists: bool,
 ) -> None:
     """Create or update a Pull Request via the GitHub API
@@ -123,6 +133,8 @@ def create_update_pr(
             updated
         labels (list): A list of labels to apply to the Pull Request
         reviewers (list): A list of GitHub users to request reviews from
+        team_reviewers (list): A list of GitHub Teams to request a review from. In the
+            form <ORG_NAME>/<TEAM_NAME>.
         pr_exists (bool): True if a Pull Request exists.
     """
     logger.info("Creating Pull Request...")
@@ -168,8 +180,8 @@ def create_update_pr(
         if labels:
             add_labels(labels, resp["issue_url"], header)
 
-        if reviewers:
-            assign_reviewers(reviewers, resp["url"], header)
+        if reviewers or team_reviewers:
+            assign_reviewers(reviewers, team_reviewers, resp["url"], header)
 
 
 def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]]:
