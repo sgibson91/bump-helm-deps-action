@@ -202,7 +202,17 @@ def run(
         )
 
         if not pr_exists:
-            create_pr(api_url, header, base_branch, head_branch, labels, reviewers)
+            create_pr(
+                api_url,
+                header,
+                base_branch,
+                head_branch,
+                chart_name,
+                chart_info,
+                charts_to_update,
+                labels,
+                reviewers,
+            )
 
     elif (len(charts_to_update) > 0) and dry_run:
         logger.info(

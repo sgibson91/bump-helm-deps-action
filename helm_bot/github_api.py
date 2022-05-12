@@ -101,6 +101,9 @@ def create_pr(
     header: dict,
     base_branch: str,
     head_branch: str,
+    chart_name: str,
+    chart_info: dict,
+    charts_to_update: list,
     labels: list,
     reviewers: list,
 ) -> None:
@@ -112,6 +115,11 @@ def create_pr(
             contain and authorisation token.
         base_branch (str): The name of the branch to open the Pull Request against
         head_branch (str): The name of the branch to open the Pull Request from
+        chart_name (str): The name of the local helm chart
+        chart_info (dict): A dictionary of the helm chartdependencies and their
+            versions
+        charts_to_update (list): A list of helm chart dependencies that can be
+            updated
         labels (list): A list of labels to apply to the Pull Request
         reviewers (list): A list of GitHub users to request reviews from
     """
@@ -119,8 +127,16 @@ def create_pr(
 
     url = "/".join([api_url, "pulls"])
     pr = {
-        "title": "Bumping versions of helm chart dependencies",
-        "body": "This Pull Request is bumping the dependencies of the local Helm Chart to the most recent release versions.",
+        "title": f"Bumping helm chart dependency versions: {chart_name}",
+        "body": (
+            f"This Pull Request is bumping the dependencies of the `{chart_name}` chart to the following versions.\n\n"
+            + "\n".join(
+                [
+                    f"- {chart}: `{chart_info[chart_name][chart]}` -> `{chart_info[chart]}`"
+                    for chart in charts_to_update
+                ]
+            )
+        ),
         "base": base_branch,
         "head": head_branch,
     }
