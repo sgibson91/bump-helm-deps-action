@@ -1,7 +1,6 @@
 import base64
 from unittest.mock import patch
 
-from helm_bot.yaml_parser import YamlParser
 from helm_bot.github_api import (
     add_labels,
     assign_reviewers,
@@ -12,6 +11,7 @@ from helm_bot.github_api import (
     get_contents,
     get_ref,
 )
+from helm_bot.yaml_parser import YamlParser
 
 test_url = "http://jsonplaceholder.typicode.com"
 test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
