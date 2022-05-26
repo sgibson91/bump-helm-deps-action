@@ -43,17 +43,20 @@ def assign_reviewers(
             contain an authorisation token.
     """
     logger.info("Assigning reviewers to Pull Request: {}", pr_url)
+    json = {}
 
     if reviewers:
         logger.info("Assigning reviewers: {}", reviewers)
+        json["reviewers"] = reviewers
     if team_reviewers:
         logger.info("Assigning team reviewers: {}", team_reviewers)
+        json["team_reviewers"] = team_reviewers
 
     url = "/".join([pr_url, "requested_reviewers"])
     post_request(
         url,
         headers=header,
-        json={"reviewers": reviewers, "team_reviewers": team_reviewers},
+        json=json,
     )
 
 

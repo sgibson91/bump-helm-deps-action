@@ -40,7 +40,7 @@ def test_assign_reviewers():
         mocked_func.assert_called_with(
             "/".join([test_url, "requested_reviewers"]),
             headers=test_header,
-            json={"reviewers": test_reviewers, "team_reviewers": []},
+            json={"reviewers": test_reviewers},
         )
 
 
