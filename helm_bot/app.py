@@ -22,12 +22,7 @@ HERE = os.getcwd()
 yaml = YamlParser()
 
 
-def edit_config(
-    download_url: str,
-    header: dict,
-    charts_to_update: list,
-    chart_info: dict,
-) -> str:
+def edit_config(download_url, header, charts_to_update, chart_info):
     """Update the helm chart dependencies
 
     Args:
@@ -57,15 +52,15 @@ def edit_config(
 
 
 def upgrade_chart_deps(
-    api_url: str,
-    header: dict,
-    chart_path: str,
-    base_branch: str,
-    head_branch: str,
-    charts_to_update: list,
-    chart_info: dict,
-    pr_exists: bool,
-) -> None:
+    api_url,
+    header,
+    chart_path,
+    base_branch,
+    head_branch,
+    charts_to_update,
+    chart_info,
+    pr_exists,
+):
     """Upgrade the dependencies in the helm chart to the most recent version
 
     Args:
@@ -109,7 +104,7 @@ def upgrade_chart_deps(
     )
 
 
-def compare_dependency_versions(chart_info: dict, chart_name: str) -> list:
+def compare_dependency_versions(chart_info, chart_name):
     """Compare the currently deployed helm chart dependencies against the most
     recently available and ascertain if a dependency can be updated
 
@@ -132,16 +127,16 @@ def compare_dependency_versions(chart_info: dict, chart_name: str) -> list:
 
 
 def run(
-    api_url: str,
-    header: dict,
-    chart_path: str,
-    chart_urls: dict,
-    base_branch: str,
-    head_branch: str,
-    labels: list = [],
-    reviewers: list = [],
-    team_reviewers: list = [],
-    dry_run: bool = False,
+    api_url,
+    header,
+    chart_path,
+    chart_urls,
+    base_branch,
+    head_branch,
+    labels=[],
+    reviewers=[],
+    team_reviewers=[],
+    dry_run=False,
 ) -> None:
     """Run the action to check if the helm chart dependencies are up to date
 
