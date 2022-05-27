@@ -376,13 +376,14 @@ def test_find_existing_pr_no_matches():
             {
                 "head": {
                     "label": "some_branch",
-                }
+                },
+                "number": 1,
             }
         ],
     )
 
     with mock_get as mock:
-        pr_exists, branch_name = find_existing_pr(test_url, test_header)
+        pr_exists, branch_name, pr_number = find_existing_pr(test_url, test_header)
 
         assert mock.call_count == 1
         mock.assert_called_with(
@@ -393,22 +394,24 @@ def test_find_existing_pr_no_matches():
         )
         assert not pr_exists
         assert branch_name is None
+        assert pr_number is None
 
 
-def test_find_existing_pr_one_match():
+def test_find_existing_pr_match():
     mock_get = patch(
         "helm_bot.github_api.get_request",
         return_value=[
             {
                 "head": {
                     "label": "helm_dep_bump",
-                }
+                },
+                "number": 1,
             }
         ],
     )
 
     with mock_get as mock:
-        pr_exists, branch_name = find_existing_pr(test_url, test_header)
+        pr_exists, branch_name, pr_number = find_existing_pr(test_url, test_header)
 
         assert mock.call_count == 1
         mock.assert_called_with(
@@ -419,37 +422,7 @@ def test_find_existing_pr_one_match():
         )
         assert pr_exists
         assert branch_name == "helm_dep_bump"
-
-
-def test_find_existing_pr_multiple_matches():
-    mock_get = patch(
-        "helm_bot.github_api.get_request",
-        return_value=[
-            {
-                "head": {
-                    "label": "helm_dep_bump1",
-                }
-            },
-            {
-                "head": {
-                    "label": "helm_dep_bump2",
-                }
-            },
-        ],
-    )
-
-    with mock_get as mock:
-        pr_exists, branch_name = find_existing_pr(test_url, test_header)
-
-        assert mock.call_count == 1
-        mock.assert_called_with(
-            test_url + "/pulls",
-            headers=test_header,
-            params={"state": "open", "sort": "created", "direction": "desc"},
-            output="json",
-        )
-        assert pr_exists
-        assert branch_name == "helm_dep_bump1"
+        assert pr_number == 1
 
 
 def test_get_contents():
