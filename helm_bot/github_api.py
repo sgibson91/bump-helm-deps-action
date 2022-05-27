@@ -120,6 +120,7 @@ def create_update_pr(
     reviewers: list,
     team_reviewers: list,
     pr_exists: bool,
+    pr_number: int = None,
 ) -> None:
     """Create or update a Pull Request via the GitHub API
 
@@ -139,6 +140,7 @@ def create_update_pr(
         team_reviewers (list): A list of GitHub Teams to request a review from. In the
             form <ORG_NAME>/<TEAM_NAME>.
         pr_exists (bool): True if a Pull Request exists.
+        pr_number (int): The number of an existing Pull Request to update. None otherwise.
     """
     logger.info("Creating Pull Request...")
 
@@ -158,6 +160,7 @@ def create_update_pr(
     }
 
     if pr_exists:
+        url = "/".join([url, str(pr_number)])
         pr["state"] = "open"
 
         resp = patch_request(
@@ -197,7 +200,9 @@ def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]
     Returns:
         pr_exists (bool): True if there is already an open Pull Request.
             False otherwise.
-        head_branch (str): The name of the branch to send commits to
+        head_branch (str): The name of the branch to send commits to. None if a Pull
+            Request does not already exist.
+        number (int): The number of the existing Pull Request. None otherwise.
     """
     logger.info(
         "Finding Pull Requests previously opened to bump helm chart dependencies"
@@ -208,35 +213,30 @@ def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]
     resp = get_request(url, headers=header, params=params, output="json")
 
     # Expression to match the head ref
-    head_label_exp = jmespath.compile("[*].head.label")
-    matching_labels = head_label_exp.search(resp)
+    matches = jmespath.search("[*].head.label", resp)
+    indx, match = next(
+        (
+            (indx, match)
+            for (indx, match) in enumerate(matches)
+            if "helm_dep_bump" in match
+        ),
+        (None, None),
+    )
 
-    # Create list of labels of matching PRs
-    matching_prs = [label for label in matching_labels if "helm_dep_bump" in label]
-
-    if len(matching_prs) > 1:
-        logger.info(
-            "More than one Pull Request open. Will push new commits to the most recent Pull Request."
-        )
-
-        ref = matching_prs[0].split(":")[-1]
-
-        return True, ref
-
-    elif len(matching_prs) == 1:
-        logger.info(
-            "One Pull Request open. Will push new commits to this Pull Request."
-        )
-
-        ref = matching_prs[0].split(":")[-1]
-
-        return True, ref
-
-    else:
+    if (indx is None) and (match is None):
         logger.info(
             "No relevant Pull Requests found. A new Pull Request will be opened."
         )
-        return False, None
+        return False, None, None
+    else:
+        logger.info(
+            "Relevant Pull Request found. Will push new commits to this Pull Request."
+        )
+
+        ref = match.split(":")[-1]
+        number = resp[indx]["number"]
+
+        return True, ref, number
 
 
 def get_contents(api_url: str, header: dict, path: str, ref: str) -> dict:
