@@ -169,7 +169,7 @@ def run(
     chart_name = chart_path.split("/")[-2]
 
     # Check if Pull Request exists
-    pr_exists, branch_name = find_existing_pr(api_url, header)
+    pr_exists, branch_name, pr_number = find_existing_pr(api_url, header)
 
     # Get and compare the helm chart dependencies
     if branch_name is None:
@@ -217,6 +217,7 @@ def run(
             reviewers,
             team_reviewers,
             pr_exists,
+            pr_number=pr_number,
         )
 
     elif (len(charts_to_update) > 0) and dry_run:
