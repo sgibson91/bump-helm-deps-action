@@ -25,10 +25,3 @@ class YamlParser:
 
     def yaml_string_to_object(self, string, options={}):
         return self.yaml.load(string, **options)
-
-    def yaml_file_to_object(self, file_path, options={}):
-        return self.yaml.load(file_path, **options)
-
-    def object_to_yaml_file(self, obj, file_path, options={}):
-        with open(file_path, "w") as fp:
-            self.yaml.dump(obj, fp, **options)
