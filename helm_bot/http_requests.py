@@ -1,12 +1,7 @@
 import requests
 
 
-def get_request(
-    url: str,
-    headers: dict = {},
-    params: dict = {},
-    output: str = "default",
-):
+def get_request(url, headers={}, params={}, output="default"):
     """Send a GET request to an HTTP API endpoint
 
     Args:
@@ -39,9 +34,7 @@ def get_request(
         return resp.text
 
 
-def patch_request(
-    url: str, headers: dict = {}, json: dict = {}, return_json: bool = False
-):
+def patch_request(url, headers={}, json={}, return_json=False):
     """Send a PATCH request to an HTTP API endpoint
 
     Args:
@@ -62,9 +55,7 @@ def patch_request(
         return resp.json()
 
 
-def post_request(
-    url: str, headers: dict = {}, json: dict = {}, return_json: bool = False
-):
+def post_request(url, headers={}, json={}, return_json=False):
     """Send a POST request to an HTTP API endpoint
 
     Args:

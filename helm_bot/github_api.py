@@ -1,5 +1,3 @@
-from typing import Tuple, Union
-
 import jmespath
 from loguru import logger
 from requests import put
@@ -7,7 +5,7 @@ from requests import put
 from .http_requests import get_request, patch_request, post_request
 
 
-def add_labels(labels: list, pr_url: str, header: dict) -> None:
+def add_labels(labels, pr_url, header):
     """Assign labels to an open Pull Request. The labels must already exist in
     the repository.
 
@@ -27,9 +25,7 @@ def add_labels(labels: list, pr_url: str, header: dict) -> None:
     )
 
 
-def assign_reviewers(
-    reviewers: list, team_reviewers: list, pr_url: str, header: dict
-) -> None:
+def assign_reviewers(reviewers, team_reviewers, pr_url, header):
     """Request reviews from GitHub users on a Pull Request
 
     Args:
@@ -61,14 +57,14 @@ def assign_reviewers(
 
 
 def create_commit(
-    api_url: str,
-    header: dict,
-    path: str,
-    branch: str,
-    sha: str,
-    commit_msg: str,
-    content: str,
-) -> None:
+    api_url,
+    header,
+    path,
+    branch,
+    sha,
+    commit_msg,
+    content,
+):
     """Create a commit over the GitHub API by creating or updating a file
 
     Args:
@@ -88,7 +84,7 @@ def create_commit(
     put(url, json=body, headers=header)
 
 
-def create_ref(api_url: str, header: dict, ref: str, sha: str) -> None:
+def create_ref(api_url, header, ref, sha):
     """Create a new git reference (specifically, a branch) with GitHub's git
     database API endpoint
 
@@ -109,19 +105,19 @@ def create_ref(api_url: str, header: dict, ref: str, sha: str) -> None:
 
 
 def create_update_pr(
-    api_url: str,
-    header: dict,
-    base_branch: str,
-    head_branch: str,
-    chart_name: str,
-    chart_info: dict,
-    charts_to_update: list,
-    labels: list,
-    reviewers: list,
-    team_reviewers: list,
-    pr_exists: bool,
-    pr_number: int = None,
-) -> None:
+    api_url,
+    header,
+    base_branch,
+    head_branch,
+    chart_name,
+    chart_info,
+    charts_to_update,
+    labels,
+    reviewers,
+    team_reviewers,
+    pr_exists,
+    pr_number=None,
+):
     """Create or update a Pull Request via the GitHub API
 
     Args:
@@ -190,7 +186,7 @@ def create_update_pr(
             assign_reviewers(reviewers, team_reviewers, resp["url"], header)
 
 
-def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]]:
+def find_existing_pr(api_url, header):
     """Check if the action already has an open Pull Request
 
     Args:
@@ -239,7 +235,7 @@ def find_existing_pr(api_url: str, header: dict) -> Tuple[bool, Union[str, None]
         return True, ref, number
 
 
-def get_contents(api_url: str, header: dict, path: str, ref: str) -> dict:
+def get_contents(api_url, header, path, ref):
     """Get the contents of a file in a GitHub repo over the API
 
     Args:
@@ -259,7 +255,7 @@ def get_contents(api_url: str, header: dict, path: str, ref: str) -> dict:
     return get_request(url, headers=header, params=query, output="json")
 
 
-def get_ref(api_url: str, header: dict, ref: str) -> dict:
+def get_ref(api_url, header, ref):
     """Get a git reference (specifically, a HEAD ref) using GitHub's git
     database API endpoint
 

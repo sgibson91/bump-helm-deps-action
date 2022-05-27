@@ -6,12 +6,7 @@ RAW_ROOT = "https://raw.githubusercontent.com"
 yaml = YamlParser()
 
 
-def pull_from_requirements_file(
-    api_url: str,
-    header: dict,
-    output_dict: dict,
-    chart_name: str,
-) -> dict:
+def pull_from_requirements_file(api_url, header, output_dict, chart_name):
     """Pull helm chart dependencies and versions from a requirements.yml/.yaml
     file.
 
@@ -36,12 +31,7 @@ def pull_from_requirements_file(
     return output_dict
 
 
-def pull_from_chart_file(
-    api_url: str,
-    header: dict,
-    output_dict: dict,
-    dependency: str,
-) -> dict:
+def pull_from_chart_file(api_url, header, output_dict, dependency):
     """Pull helm chart dependencies and versions from a Chart.yml/.yaml file.
 
     Args:
@@ -64,12 +54,7 @@ def pull_from_chart_file(
     return output_dict
 
 
-def pull_from_github_pages(
-    api_url: str,
-    header: dict,
-    output_dict: dict,
-    dependency: str,
-) -> dict:
+def pull_from_github_pages(api_url, header, output_dict, dependency):
     """Pull helm chart dependencies and versions from remote host listed on a
     GitHub Pages site.
 
@@ -96,13 +81,7 @@ def pull_from_github_pages(
     return output_dict
 
 
-def get_chart_versions(
-    api_url: str,
-    header: dict,
-    chart_path: str,
-    chart_urls: dict,
-    branch_name: str,
-) -> dict:
+def get_chart_versions(api_url, header, chart_path, chart_urls, branch_name):
     """Get the versions of dependent helm charts
 
     Args:
