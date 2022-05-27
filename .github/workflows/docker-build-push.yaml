@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Test Building Docker Image
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
         uses: docker/build-push-action@v3.0.0
         with:
           push: false
-          tags: ${{ github.repository }}:latest
+          tags: ${{ github.repository }}:${{ github.head_ref }}
 
   docker-build-push:
     runs-on: ubuntu-latest
