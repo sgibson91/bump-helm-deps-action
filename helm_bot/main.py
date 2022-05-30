@@ -1,15 +1,111 @@
+import base64
 import json
 import os
-from typing import List
 
-from .app import run
+from .github_api import GitHubAPI
+from .pull_version_info import HelmChartVersionPuller
+from .yaml_parser import YamlParser
 
-API_ROOT = "https://api.github.com"
+yaml = YamlParser()
 
 
-def split_str_to_list(input_str: str) -> List[str]:
+class UpdateHelmDeps:
+    """Update the versions of helm subcharts of a local helm chart"""
+
+    def __init__(
+        self,
+        repository,
+        github_token,
+        chart_path,
+        chart_urls,
+        base_branch="main",
+        head_branch="bump-helm-deps",
+        labels=[],
+        reviewers=[],
+        team_reviewers=[],
+        dry_run=False,
+    ):
+        self.repository = repository
+        self.chart_path = chart_path
+        self.chart_urls = chart_urls
+        self.base_branch = base_branch
+        self.head_branch = head_branch
+        self.labels = labels
+        self.reviewers = reviewers
+        self.team_reviewers = team_reviewers
+        self.dry_run = dry_run
+
+        self.headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {github_token}",
+        }
+
+    def update_versions(self):
+        """Update the dependencies of a local helm chart with the latest versions
+
+        Returns:
+            chart_yaml (str): The updated helm chart dependencies in YAML format and
+                encoded in base64
+        """
+        for chart in self.charts_to_update:
+            indx = next(
+                (
+                    indx
+                    for (indx, chart_dep) in enumerate(self.chart_yaml["dependencies"])
+                    if chart_dep["name"] == chart
+                ),
+                None,
+            )
+            self.chart_yaml["dependencies"][indx]["version"] = self.chart_versions[
+                chart
+            ]["latest"]
+
+        encoded_chart_yaml = yaml.object_to_yaml_str(self.chart_yaml).encode("utf-8")
+        base64_bytes = base64.b64encode(encoded_chart_yaml)
+        chart_yaml = base64_bytes.decode("utf-8")
+
+        return chart_yaml
+
+    def update(self):
+        """Run the action to check the helm chart dependencies are up to date"""
+        github = GitHubAPI(self)
+        github.find_existing_pull_request()
+
+        if github.pr_exists:
+            version_puller = HelmChartVersionPuller(self, self.head_branch)
+        else:
+            version_puller = HelmChartVersionPuller(self, self.base_branch)
+
+            resp = github.get_ref(self.base_branch)
+            github.create_ref(self.head_Branch, resp["sha"])
+
+        version_puller.get_chart_versions()
+
+        if len(self.charts_to_update) > 0 and not self.dry_run:
+            updated_chart_yaml = self.update_versions()
+            commit_msg = f"Bump charts {[chart for chart in self.charts_to_update]} to versions {[self.chart_versions[chart]['latest'] for chart in self.charts_to_update]}, respectively"
+            github.create_commit(commit_msg, updated_chart_yaml)
+            github.create_update_pull_request()
+
+        elif len(self.chart_to_update) > 0 and self.dry_run:
+            pass
+        else:
+            pass
+
+
+def split_str_to_list(input_str, split_char=","):
+    """Split a string into a list of elements.
+
+    Args:
+        input_str (str): The string to split
+        split_char (str, optional): The character to split the string by. Defaults
+            to ",".
+
+    Returns:
+        (list): The string split into a list
+    """
     # Split a string into a list using `,` char
-    split_str = input_str.split(",")
+    split_str = input_str.split(split_char)
 
     # For each element in split_str, strip leading/trailing whitespace
     for i, element in enumerate(split_str):
@@ -82,27 +178,18 @@ def main():
     else:
         raise ValueError("DRY_RUN variable can only take values 'true' or 'false'")
 
-    # Set API URL
-    repo_api = "/".join([API_ROOT, "repos", repository])
-
-    # Create a header for API requests
-    header = {
-        "Accept": "application/vnd.github.v3+json",
-        "Authorization": f"token {github_token}",
-    }
-
-    run(
-        repo_api,
-        header,
+    update_helm_deps = UpdateHelmDeps(
+        repository,
+        github_token,
         chart_path,
-        chart_urls,
-        base_branch,
-        head_branch,
+        base_branch=base_branch,
+        head_branch=head_branch,
         labels=labels,
         reviewers=reviewers,
         team_reviewers=team_reviewers,
         dry_run=dry_run,
     )
+    update_helm_deps.update()
 
 
 if __name__ == "__main__":
