@@ -1,473 +1,532 @@
 import base64
-from unittest.mock import patch
+import unittest
+from unittest.mock import call, patch
 
-from helm_bot.github_api import (
-    add_labels,
-    assign_reviewers,
-    create_commit,
-    create_ref,
-    create_update_pr,
-    find_existing_pr,
-    get_contents,
-    get_ref,
-)
+from helm_bot.github_api import GitHubAPI
+from helm_bot.main import UpdateHelmDeps
 from helm_bot.yaml_parser import YamlParser
-
-test_url = "http://jsonplaceholder.typicode.com"
-test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
 
 yaml = YamlParser()
 
 
-def test_add_labels():
-    test_labels = ["label1", "label2"]
-
-    with patch("helm_bot.github_api.post_request") as mocked_func:
-        add_labels(test_labels, test_url, test_header)
-
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            test_url, headers=test_header, json={"labels": test_labels}
+class TestGitHubAPI(unittest.TestCase):
+    def test_assign_labels(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            labels=["label1", "label2"],
         )
+        github = GitHubAPI(helm_deps)
+        pr_url = "/".join([github.api_url, "issues", "1"])
 
+        with patch("helm_bot.github_api.post_request") as mock:
+            github._assign_labels(pr_url)
 
-def test_assign_reviewers():
-    test_reviewers = ["reviewer1", "reviewer2"]
-
-    with patch("helm_bot.github_api.post_request") as mocked_func:
-        assign_reviewers(test_reviewers, [], test_url, test_header)
-
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            "/".join([test_url, "requested_reviewers"]),
-            headers=test_header,
-            json={"reviewers": test_reviewers},
-        )
-
-
-def test_create_commit():
-    test_path = "config/test_config.yaml"
-    test_branch = "test_branch"
-    test_sha = "test_sha"
-    test_commit_msg = "This is a commit message"
-
-    test_contents = {"key1": "This is a test"}
-    test_contents = yaml.object_to_yaml_str(test_contents).encode("utf-8")
-    test_contents = base64.b64encode(test_contents)
-    test_contents = test_contents.decode("utf-8")
-
-    test_body = {
-        "message": test_commit_msg,
-        "content": test_contents,
-        "sha": test_sha,
-        "branch": test_branch,
-    }
-
-    with patch("helm_bot.github_api.put") as mocked_func:
-        create_commit(
-            test_url,
-            test_header,
-            test_path,
-            test_branch,
-            test_sha,
-            test_commit_msg,
-            test_contents,
-        )
-
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            "/".join([test_url, "contents", test_path]),
-            json=test_body,
-            headers=test_header,
-        )
-
-
-def test_create_update_pr_no_labels_no_reviewers():
-    test_base_branch = "main"
-    test_head_branch = "head"
-    test_chart_name = "test-chart"
-    test_chart_info = {
-        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
-        "chart1": "7.8.9",
-        "chart2": "10.11.12",
-    }
-    test_charts_to_update = ["chart1", "chart2"]
-    test_labels = []
-    test_reviewers = []
-    test_team_reviewers = []
-
-    expected_pr = {
-        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
-        "body": (
-            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
-            + "\n".join(
-                [
-                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
-                    for chart in test_charts_to_update
-                ]
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([pr_url, "labels"]),
+                headers=helm_deps.headers,
+                json={"labels": helm_deps.labels},
             )
-        ),
-        "base": test_base_branch,
-        "head": test_head_branch,
-    }
 
-    with patch("helm_bot.github_api.post_request") as mocked_func:
-        create_update_pr(
-            test_url,
-            test_header,
-            test_base_branch,
-            test_head_branch,
-            test_chart_name,
-            test_chart_info,
-            test_charts_to_update,
-            labels=test_labels,
-            reviewers=test_reviewers,
-            team_reviewers=test_team_reviewers,
-            pr_exists=False,
+    def test_assign_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            reviewers=["reviewer1", "reviewer2"],
         )
+        github = GitHubAPI(helm_deps)
+        pr_url = "/".join([github.api_url, "pull", "1"])
 
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            "/".join([test_url, "pulls"]),
-            headers=test_header,
-            json=expected_pr,
-            return_json=True,
-        )
+        with patch("helm_bot.github_api.post_request") as mock:
+            github._assign_reviewers(pr_url)
 
-
-def test_create_update_pr_with_labels_no_reviewers():
-    test_base_branch = "main"
-    test_head_branch = "head"
-    test_chart_name = "test-chart"
-    test_chart_info = {
-        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
-        "chart1": "7.8.9",
-        "chart2": "10.11.12",
-    }
-    test_charts_to_update = ["chart1", "chart2"]
-    test_labels = ["label1", "label2"]
-    test_reviewers = []
-    test_team_reviewers = []
-
-    expected_pr = {
-        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
-        "body": (
-            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
-            + "\n".join(
-                [
-                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
-                    for chart in test_charts_to_update
-                ]
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([pr_url, "requested_reviewers"]),
+                headers=helm_deps.headers,
+                json={"reviewers": helm_deps.reviewers},
             )
-        ),
-        "base": test_base_branch,
-        "head": test_head_branch,
-    }
 
-    mock_post = patch(
-        "helm_bot.github_api.post_request",
-        return_value={"issue_url": "/".join([test_url, "issues", "1"]), "number": 1},
-    )
-    mock_labels = patch("helm_bot.github_api.add_labels")
-
-    with mock_post as mock1, mock_labels as mock2:
-        create_update_pr(
-            test_url,
-            test_header,
-            test_base_branch,
-            test_head_branch,
-            test_chart_name,
-            test_chart_info,
-            test_charts_to_update,
-            labels=test_labels,
-            reviewers=test_reviewers,
-            team_reviewers=test_team_reviewers,
-            pr_exists=False,
+    def test_assign_team_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            team_reviewers=["team1", "team2"],
         )
+        github = GitHubAPI(helm_deps)
+        pr_url = "/".join([github.api_url, "pull", "1"])
 
-        assert mock1.call_count == 1
-        assert mock1.return_value == {
-            "issue_url": "/".join([test_url, "issues", "1"]),
-            "number": 1,
+        with patch("helm_bot.github_api.post_request") as mock:
+            github._assign_reviewers(pr_url)
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([pr_url, "requested_reviewers"]),
+                headers=helm_deps.headers,
+                json={"team_reviewers": helm_deps.team_reviewers},
+            )
+
+    def test_create_commit(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+
+        helm_deps.sha = "test_sha"
+        commit_msg = "This is a commit message"
+        contents = {"key1": "This is a test"}
+
+        contents = yaml.object_to_yaml_str(contents).encode("utf-8")
+        contents = base64.b64encode(contents)
+        contents = contents.decode("utf-8")
+
+        body = {
+            "message": commit_msg,
+            "content": contents,
+            "sha": helm_deps.sha,
+            "branch": helm_deps.head_branch,
         }
-        mock1.assert_called_with(
-            "/".join([test_url, "pulls"]),
-            headers=test_header,
-            json=expected_pr,
-            return_json=True,
-        )
-        assert mock2.call_count == 1
-        mock2.assert_called_with(
-            test_labels, "/".join([test_url, "issues", "1"]), test_header
-        )
 
-
-def test_create_update_pr_no_labels_with_reviewers():
-    test_base_branch = "main"
-    test_head_branch = "head"
-    test_chart_name = "test-chart"
-    test_chart_info = {
-        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
-        "chart1": "7.8.9",
-        "chart2": "10.11.12",
-    }
-    test_charts_to_update = ["chart1", "chart2"]
-    test_labels = []
-    test_reviewers = ["reviewer1", "reviewer2"]
-    test_team_reviewers = []
-
-    expected_pr = {
-        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
-        "body": (
-            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
-            + "\n".join(
-                [
-                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
-                    for chart in test_charts_to_update
-                ]
+        with patch("helm_bot.github_api.put") as mock:
+            github.create_commit(
+                commit_msg,
+                contents,
             )
-        ),
-        "base": test_base_branch,
-        "head": test_head_branch,
-    }
 
-    mock_post = patch(
-        "helm_bot.github_api.post_request",
-        return_value={"url": "/".join([test_url, "pulls", "1"]), "number": 1},
-    )
-    mock_reviewers = patch("helm_bot.github_api.assign_reviewers")
-
-    with mock_post as mock1, mock_reviewers as mock2:
-        create_update_pr(
-            test_url,
-            test_header,
-            test_base_branch,
-            test_head_branch,
-            test_chart_name,
-            test_chart_info,
-            test_charts_to_update,
-            labels=test_labels,
-            reviewers=test_reviewers,
-            team_reviewers=test_team_reviewers,
-            pr_exists=False,
-        )
-
-        assert mock1.call_count == 1
-        assert mock1.return_value == {
-            "url": "/".join([test_url, "pulls", "1"]),
-            "number": 1,
-        }
-        mock1.assert_called_with(
-            "/".join([test_url, "pulls"]),
-            headers=test_header,
-            json=expected_pr,
-            return_json=True,
-        )
-        assert mock2.call_count == 1
-        mock2.assert_called_with(
-            test_reviewers,
-            test_team_reviewers,
-            "/".join([test_url, "pulls", "1"]),
-            test_header,
-        )
-
-
-def test_create_update_pr_with_labels_and_reviewers():
-    test_base_branch = "main"
-    test_head_branch = "head"
-    test_chart_name = "test-chart"
-    test_chart_info = {
-        test_chart_name: {"chart1": "1.2.3", "chart2": "4.5.6"},
-        "chart1": "7.8.9",
-        "chart2": "10.11.12",
-    }
-    test_charts_to_update = ["chart1", "chart2"]
-    test_labels = ["label1", "label2"]
-    test_reviewers = ["reviewer1", "reviewer2"]
-    test_team_reviewers = []
-
-    expected_pr = {
-        "title": f"Bumping helm chart dependency versions: {test_chart_name}",
-        "body": (
-            f"This Pull Request is bumping the dependencies of the `{test_chart_name}` chart to the following versions.\n\n"
-            + "\n".join(
-                [
-                    f"- {chart}: `{test_chart_info[test_chart_name][chart]}` -> `{test_chart_info[chart]}`"
-                    for chart in test_charts_to_update
-                ]
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "contents", helm_deps.chart_path]),
+                json=body,
+                headers=helm_deps.headers,
             )
-        ),
-        "base": test_base_branch,
-        "head": test_head_branch,
-    }
 
-    mock_post = patch(
-        "helm_bot.github_api.post_request",
-        return_value={
-            "issue_url": "/".join([test_url, "issues", "1"]),
-            "url": "/".join([test_url, "pulls", "1"]),
-            "number": 1,
-        },
-    )
-    mock_labels = patch("helm_bot.github_api.add_labels")
-    mock_reviewers = patch("helm_bot.github_api.assign_reviewers")
-
-    with mock_post as mock1, mock_labels as mock2, mock_reviewers as mock3:
-        create_update_pr(
-            test_url,
-            test_header,
-            test_base_branch,
-            test_head_branch,
-            test_chart_name,
-            test_chart_info,
-            test_charts_to_update,
-            labels=test_labels,
-            reviewers=test_reviewers,
-            team_reviewers=test_team_reviewers,
-            pr_exists=False,
+    def test_create_update_pull_request_no_labels_no_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
         )
+        github = GitHubAPI(helm_deps)
+        helm_deps.chart_name = "chart-name"
+        github.pr_exists = False
 
-        assert mock1.call_count == 1
-        assert mock1.return_value == {
-            "issue_url": "/".join([test_url, "issues", "1"]),
-            "url": "/".join([test_url, "pulls", "1"]),
-            "number": 1,
+        helm_deps.chart_versions = {
+            "chart1": {"current": "1.2.3", "latest": "7.8.9"},
+            "chart2": {"current": "4.5.6", "latest": "10.11.12"},
         }
-        mock1.assert_called_with(
-            "/".join([test_url, "pulls"]),
-            headers=test_header,
-            json=expected_pr,
-            return_json=True,
+        helm_deps.charts_to_update = ["chart1", "chart2"]
+
+        expected_pr = {
+            "title": f"Bumping helm chart dependency versions: {helm_deps.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{helm_deps.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{helm_deps.chart_versions[chart]['current']}` -> `{helm_deps.chart_versions[chart]['latest']}`"
+                        for chart in helm_deps.charts_to_update
+                    ]
+                )
+            ),
+            "base": helm_deps.base_branch,
+            "head": helm_deps.head_branch,
+        }
+
+        with patch("helm_bot.github_api.post_request") as mock:
+            github.create_update_pull_request()
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                json=expected_pr,
+                return_json=True,
+            )
+
+    def test_create_update_pull_request_with_labels_no_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            labels=["label1", "label2"],
         )
-        assert mock2.call_count == 1
-        mock2.assert_called_with(
-            test_labels, "/".join([test_url, "issues", "1"]), test_header
-        )
-        assert mock3.call_count == 1
-        mock3.assert_called_with(
-            test_reviewers,
-            test_team_reviewers,
-            "/".join([test_url, "pulls", "1"]),
-            test_header,
-        )
+        github = GitHubAPI(helm_deps)
+        helm_deps.chart_name = "chart-name"
+        github.pr_exists = False
 
+        helm_deps.chart_versions = {
+            "chart1": {"current": "1.2.3", "latest": "7.8.9"},
+            "chart2": {"current": "4.5.6", "latest": "10.11.12"},
+        }
+        helm_deps.charts_to_update = ["chart1", "chart2"]
 
-def test_create_ref():
-    test_ref = "test_ref"
-    test_sha = "test_sha"
+        expected_pr = {
+            "title": f"Bumping helm chart dependency versions: {helm_deps.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{helm_deps.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{helm_deps.chart_versions[chart]['current']}` -> `{helm_deps.chart_versions[chart]['latest']}`"
+                        for chart in helm_deps.charts_to_update
+                    ]
+                )
+            ),
+            "base": helm_deps.base_branch,
+            "head": helm_deps.head_branch,
+        }
 
-    test_body = {"ref": f"refs/heads/{test_ref}", "sha": test_sha}
-
-    with patch("helm_bot.github_api.post_request") as mocked_func:
-        create_ref(test_url, test_header, test_ref, test_sha)
-
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            "/".join([test_url, "git", "refs"]),
-            headers=test_header,
-            json=test_body,
-        )
-
-
-def test_find_existing_pr_no_matches():
-    mock_get = patch(
-        "helm_bot.github_api.get_request",
-        return_value=[
-            {
-                "head": {
-                    "label": "some_branch",
-                },
+        mock_post = patch(
+            "helm_bot.github_api.post_request",
+            return_value={
+                "issue_url": "/".join([github.api_url, "issues", "1"]),
                 "number": 1,
-            }
-        ],
-    )
-
-    with mock_get as mock:
-        pr_exists, branch_name, pr_number = find_existing_pr(test_url, test_header)
-
-        assert mock.call_count == 1
-        mock.assert_called_with(
-            test_url + "/pulls",
-            headers=test_header,
-            params={"state": "open", "sort": "created", "direction": "desc"},
-            output="json",
+            },
         )
-        assert not pr_exists
-        assert branch_name is None
-        assert pr_number is None
 
+        calls = [
+            call(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                json=expected_pr,
+                return_json=True,
+            ),
+            call(
+                "/".join([github.api_url, "issues", "1", "labels"]),
+                headers=helm_deps.headers,
+                json={"labels": helm_deps.labels},
+            ),
+        ]
 
-def test_find_existing_pr_match():
-    mock_get = patch(
-        "helm_bot.github_api.get_request",
-        return_value=[
-            {
-                "head": {
-                    "label": "helm_dep_bump",
+        with mock_post as mock:
+            github.create_update_pull_request()
+
+            self.assertEqual(mock.call_count, 2)
+            self.assertDictEqual(
+                mock.return_value,
+                {
+                    "issue_url": "/".join([github.api_url, "issues", "1"]),
+                    "number": 1,
                 },
-                "number": 1,
-            }
-        ],
-    )
+            )
+            mock.assert_has_calls(calls)
 
-    with mock_get as mock:
-        pr_exists, branch_name, pr_number = find_existing_pr(test_url, test_header)
-
-        assert mock.call_count == 1
-        mock.assert_called_with(
-            test_url + "/pulls",
-            headers=test_header,
-            params={"state": "open", "sort": "created", "direction": "desc"},
-            output="json",
+    def test_create_update_pull_request_no_labels_with_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            reviewers=["reviewer1", "reviewer2"],
         )
-        assert pr_exists
-        assert branch_name == "helm_dep_bump"
-        assert pr_number == 1
+        github = GitHubAPI(helm_deps)
+        helm_deps.chart_name = "chart-name"
+        github.pr_exists = False
 
+        helm_deps.chart_versions = {
+            "chart1": {"current": "1.2.3", "latest": "7.8.9"},
+            "chart2": {"current": "4.5.6", "latest": "10.11.12"},
+        }
+        helm_deps.charts_to_update = ["chart1", "chart2"]
 
-def test_get_contents():
-    test_path = "config/test_config.yaml"
-    test_ref = "test_ref"
-    test_query = {"ref": test_ref}
-
-    mock_get = patch(
-        "helm_bot.github_api.get_request",
-        return_value={
-            "download_url": "/".join([test_url, "download", test_path]),
-            "sha": "blob_sha",
-        },
-    )
-
-    with mock_get as mocked_func:
-        resp = get_contents(test_url, test_header, test_path, test_ref)
-
-        assert mocked_func.call_count == 1
-        mocked_func.assert_called_with(
-            "/".join([test_url, "contents", test_path]),
-            headers=test_header,
-            params=test_query,
-            output="json",
-        )
-        assert resp == {
-            "download_url": "/".join([test_url, "download", test_path]),
-            "sha": "blob_sha",
+        expected_pr = {
+            "title": f"Bumping helm chart dependency versions: {helm_deps.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{helm_deps.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{helm_deps.chart_versions[chart]['current']}` -> `{helm_deps.chart_versions[chart]['latest']}`"
+                        for chart in helm_deps.charts_to_update
+                    ]
+                )
+            ),
+            "base": helm_deps.base_branch,
+            "head": helm_deps.head_branch,
         }
 
-
-def test_get_ref():
-    test_ref = "test_ref"
-
-    mock_get = patch(
-        "helm_bot.github_api.get_request", return_value={"object": {"sha": "sha"}}
-    )
-
-    with mock_get as mock1:
-        resp = get_ref(test_url, test_header, test_ref)
-
-        assert mock1.call_count == 1
-        mock1.assert_called_with(
-            "/".join([test_url, "git", "ref", "heads", test_ref]),
-            headers=test_header,
-            output="json",
+        mock_post = patch(
+            "helm_bot.github_api.post_request",
+            return_value={
+                "url": "/".join([github.api_url, "pulls", "1"]),
+                "number": 1,
+            },
         )
-        assert resp == {"object": {"sha": "sha"}}
+
+        calls = [
+            call(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                json=expected_pr,
+                return_json=True,
+            ),
+            call(
+                "/".join([github.api_url, "pulls", "1", "requested_reviewers"]),
+                headers=helm_deps.headers,
+                json={"reviewers": helm_deps.reviewers},
+            ),
+        ]
+
+        with mock_post as mock:
+            github.create_update_pull_request()
+
+            self.assertEqual(mock.call_count, 2)
+            self.assertDictEqual(
+                mock.return_value,
+                {
+                    "url": "/".join([github.api_url, "pulls", "1"]),
+                    "number": 1,
+                },
+            )
+            mock.assert_has_calls(calls)
+
+    def test_create_update_pull_request_with_labels_and_reviewers(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+            labels=["label1", "label2"],
+            reviewers=["reviewer1", "reviewer2"],
+        )
+        github = GitHubAPI(helm_deps)
+        helm_deps.chart_name = "chart-name"
+        github.pr_exists = False
+
+        helm_deps.chart_versions = {
+            "chart1": {"current": "1.2.3", "latest": "7.8.9"},
+            "chart2": {"current": "4.5.6", "latest": "10.11.12"},
+        }
+        helm_deps.charts_to_update = ["chart1", "chart2"]
+
+        expected_pr = {
+            "title": f"Bumping helm chart dependency versions: {helm_deps.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{helm_deps.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{helm_deps.chart_versions[chart]['current']}` -> `{helm_deps.chart_versions[chart]['latest']}`"
+                        for chart in helm_deps.charts_to_update
+                    ]
+                )
+            ),
+            "base": helm_deps.base_branch,
+            "head": helm_deps.head_branch,
+        }
+
+        mock_post = patch(
+            "helm_bot.github_api.post_request",
+            return_value={
+                "issue_url": "/".join([github.api_url, "issues", "1"]),
+                "url": "/".join([github.api_url, "pulls", "1"]),
+                "number": 1,
+            },
+        )
+
+        calls = [
+            call(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                json=expected_pr,
+                return_json=True,
+            ),
+            call(
+                "/".join([github.api_url, "issues", "1", "labels"]),
+                headers=helm_deps.headers,
+                json={"labels": helm_deps.labels},
+            ),
+            call(
+                "/".join([github.api_url, "pulls", "1", "requested_reviewers"]),
+                headers=helm_deps.headers,
+                json={"reviewers": helm_deps.reviewers},
+            ),
+        ]
+
+        with mock_post as mock:
+            github.create_update_pull_request()
+
+            self.assertEqual(mock.call_count, 3)
+            self.assertDictEqual(
+                mock.return_value,
+                {
+                    "issue_url": "/".join([github.api_url, "issues", "1"]),
+                    "url": "/".join([github.api_url, "pulls", "1"]),
+                    "number": 1,
+                },
+            )
+            mock.assert_has_calls(calls)
+
+    def test_create_ref(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+        test_ref = "test_ref"
+        test_sha = "test_sha"
+
+        test_body = {"ref": f"refs/heads/{test_ref}", "sha": test_sha}
+
+        with patch("helm_bot.github_api.post_request") as mock:
+            github.create_ref(test_ref, test_sha)
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "git", "refs"]),
+                headers=helm_deps.headers,
+                json=test_body,
+            )
+
+    def test_find_existing_pull_request_no_matches(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+
+        mock_get = patch(
+            "helm_bot.github_api.get_request",
+            return_value=[
+                {
+                    "head": {
+                        "label": "some_branch",
+                    }
+                }
+            ],
+        )
+
+        with mock_get as mock:
+            github.find_existing_pull_request()
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                params={"state": "open", "sort": "created", "direction": "desc"},
+                output="json",
+            )
+            self.assertFalse(github.pr_exists)
+            self.assertTrue(helm_deps.head_branch.startswith("bump-helm-deps-"))
+
+    def test_find_existing_pull_request_match(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+
+        mock_get = patch(
+            "helm_bot.github_api.get_request",
+            return_value=[
+                {
+                    "head": {
+                        "label": "bump-helm-deps",
+                    },
+                    "number": 1,
+                }
+            ],
+        )
+
+        with mock_get as mock:
+            github.find_existing_pull_request()
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "pulls"]),
+                headers=helm_deps.headers,
+                params={"state": "open", "sort": "created", "direction": "desc"},
+                output="json",
+            )
+            self.assertTrue(github.pr_exists)
+            self.assertEqual(helm_deps.head_branch, "bump-helm-deps")
+            self.assertEqual(github.pr_number, 1)
+
+    def test_get_ref(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+        test_ref = "test_ref"
+
+        mock_get = patch(
+            "helm_bot.github_api.get_request", return_value={"object": {"sha": "sha"}}
+        )
+
+        with mock_get as mock:
+            resp = github.get_ref(test_ref)
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                "/".join([github.api_url, "git", "ref", "heads", test_ref]),
+                headers=helm_deps.headers,
+                output="json",
+            )
+            self.assertDictEqual(resp, {"object": {"sha": "sha"}})
+
+    def test_update_existing_pr(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        github = GitHubAPI(helm_deps)
+        github.pr_exists = True
+        github.pr_number = 1
+        helm_deps.chart_versions = {
+            "chart": {"current": "old_version", "latest": "new_version"},
+        }
+        helm_deps.charts_to_update = ["chart"]
+        helm_deps.chart_name = "chart-name"
+
+        expected_pr = {
+            "title": f"Bumping helm chart dependency versions: {helm_deps.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{helm_deps.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{helm_deps.chart_versions[chart]['current']}` -> `{helm_deps.chart_versions[chart]['latest']}`"
+                        for chart in helm_deps.charts_to_update
+                    ]
+                )
+            ),
+            "base": helm_deps.base_branch,
+            "state": "open",
+        }
+
+        mock_patch = patch(
+            "helm_bot.github_api.patch_request", return_value={"number": 1}
+        )
+
+        with mock_patch as mock:
+            github.create_update_pull_request()
+
+            mock.assert_called_with(
+                "/".join([github.api_url, "pulls", str(github.pr_number)]),
+                headers=helm_deps.headers,
+                json=expected_pr,
+                return_json=True,
+            )
+            self.assertDictEqual(mock.return_value, {"number": 1})
+
+
+if __name__ == "__main__":
+    unittest.main()
