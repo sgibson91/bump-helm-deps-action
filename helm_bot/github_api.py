@@ -25,8 +25,8 @@ class GitHubAPI:
             pr_url (str): The API URL of the Pull Request (issues endpoint) to
                 send the request to
         """
-        logger.info("Adding labels to Pull Request: {}", pr_url)
-        logger.info("Adding labels: {}", self.inputs.labels)
+        logger.info("Assigning labels to Pull Request: {}", pr_url)
+        logger.info("Assigning labels: {}", self.inputs.labels)
         url = "/".join([pr_url, "labels"])
         post_request(
             url,
@@ -93,8 +93,6 @@ class GitHubAPI:
 
     def create_update_pull_request(self):
         """Create or update a Pull Request via the GitHub API"""
-        logger.info("Creating Pull Request...")
-
         url = "/".join([self.api_url, "pulls"])
         pr = {
             "title": f"Bumping helm chart dependency versions: {self.inputs.chart_name}",
@@ -111,9 +109,10 @@ class GitHubAPI:
         }
 
         if self.pr_exists:
+            logger.info("Updating Pull Request...")
+
             url = "/".join([url, str(self.pr_number)])
             pr["state"] = "open"
-
             resp = patch_request(
                 url,
                 headers=self.inputs.headers,
@@ -123,8 +122,9 @@ class GitHubAPI:
 
             logger.info(f"Pull Request #{resp['number']} updated!")
         else:
-            pr["head"] = self.inputs.head_branch
+            logger.info("Creating Pull Request...")
 
+            pr["head"] = self.inputs.head_branch
             resp = post_request(
                 url,
                 headers=self.inputs.headers,
@@ -143,7 +143,7 @@ class GitHubAPI:
     def find_existing_pull_request(self):
         """Check if the bot already has an open Pull Request"""
         logger.info(
-            "Finding Pull Requests previously opened to bump helm chart dependencies"
+            "Finding Pull Requests previously opened to bump helm subchart versions"
         )
 
         url = "/".join([self.api_url, "pulls"])
