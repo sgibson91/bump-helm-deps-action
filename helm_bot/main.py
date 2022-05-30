@@ -2,6 +2,8 @@ import base64
 import json
 import os
 
+from loguru import logger
+
 from .github_api import GitHubAPI
 from .pull_version_info import HelmChartVersionPuller
 from .yaml_parser import YamlParser
@@ -82,15 +84,22 @@ class UpdateHelmDeps:
         version_puller.get_chart_versions()
 
         if len(self.charts_to_update) > 0 and not self.dry_run:
+            logger.info(
+                "The following subcharts can be updated: {}", self.charts_to_update
+            )
+
             updated_chart_yaml = self.update_versions()
             commit_msg = f"Bump charts {[chart for chart in self.charts_to_update]} to versions {[self.chart_versions[chart]['latest'] for chart in self.charts_to_update]}, respectively"
             github.create_commit(commit_msg, updated_chart_yaml)
             github.create_update_pull_request()
 
         elif len(self.chart_to_update) > 0 and self.dry_run:
-            pass
+            logger.info(
+                "The following subcharts can be updated: {}: A Pull Request will not be opened due to the --dry-run flag being set.",
+                self.charts_to_update,
+            )
         else:
-            pass
+            logger.info("All subcharts are up-to-date!")
 
 
 def split_str_to_list(input_str, split_char=","):

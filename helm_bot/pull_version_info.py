@@ -1,6 +1,8 @@
 import warnings
 from itertools import compress
 
+from loguru import logger
+
 from .http_requests import get_request
 from .yaml_parser import YamlParser
 
@@ -63,6 +65,7 @@ class HelmChartVersionPuller:
         Decipher where a list of chart versions is hosted and find the most recently
         published version
         """
+        logger.info("Fetching most recently published helm chart versions...")
         for chart, chart_url in self.inputs.chart_urls.items():
             if "/gh-pages/" in chart_url:
                 self._pull_version_github_pages(chart, chart_url)
@@ -91,6 +94,7 @@ class HelmChartVersionPuller:
 
     def get_chart_versions(self):
         """Get the versions of dependent helm charts"""
+        logger.info("Fetching current subchart versions from helm chart...")
         self.inputs.chart_yaml, self.inputs.sha = self._get_config(self.branch)
         self.inputs.chart_name = (
             self.inputs.chart_yaml["name"]
