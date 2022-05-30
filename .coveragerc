@@ -2,3 +2,6 @@
 omit =
     # omit all tests
     tests/*
+    # omit specific files
+    helm_bot/__init__.py
+    helm_bot/_version.py

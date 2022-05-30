@@ -1,100 +1,75 @@
-import responses
+import unittest
+from unittest.mock import patch
 
-from helm_bot.pull_version_info import (
-    pull_from_chart_file,
-    pull_from_github_pages,
-    pull_from_requirements_file,
-)
-
-test_url = "http://jsonplaceholder.typicode.com/"
-test_header = {"Authorization": "token ThIs_Is_A_ToKeN"}
+from helm_bot.main import UpdateHelmDeps
+from helm_bot.pull_version_info import HelmChartVersionPuller
 
 
-@responses.activate
-def test_pull_from_chart_file():
-    test_dict = {}
-    test_dep = "dependency"
-
-    responses.add(responses.GET, test_url, json={"version": "1.2.3"}, status=200)
-
-    test_dict = pull_from_chart_file(test_url, test_header, test_dict, test_dep)
-
-    assert len(test_dict) == 1
-    assert list(test_dict.items()) == [(test_dep, "1.2.3")]
-
-    assert len(responses.calls) == 1
-    assert responses.calls[0].request.url == test_url
-    assert responses.calls[0].response.text == '{"version": "1.2.3"}'
-
-
-@responses.activate
-def test_pull_from_github_pages():
-    test_dict = {}
-    test_dep = "dependency"
-
-    responses.add(
-        responses.GET,
-        test_url,
-        json={
-            "entries": {
-                "dependency": [
-                    {
-                        "created": "2020-07-26T15:33:00.0000000Z",
-                        "version": "1.2.3",
-                    },
-                    {
-                        "created": "2020-07-25T15:33:00.0000000Z",
-                        "version": "1.2.2",
-                    },
-                ]
+class TestHelmChartVersionPuller(unittest.TestCase):
+    def test_compare_chart_versions_match(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_a_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        version_puller = HelmChartVersionPuller(helm_deps, "main")
+        version_puller.chart_versions = {
+            "some_chart": {
+                "current": "version",
+                "latest": "version",
             }
-        },
-        status=200,
-    )
+        }
 
-    test_dict = pull_from_github_pages(test_url, test_header, test_dict, test_dep)
+        result = version_puller._compare_chart_versions()
 
-    assert len(test_dict) == 1
-    assert list(test_dict.items()) == [(test_dep, "1.2.3")]
+        self.assertEqual(result, [])
 
-    assert len(responses.calls) == 1
-    assert responses.calls[0].request.url == test_url
-    assert (
-        responses.calls[0].response.text
-        == '{"entries": {"dependency": [{"created": "2020-07-26T15:33:00.0000000Z", "version": "1.2.3"}, {"created": "2020-07-25T15:33:00.0000000Z", "version": "1.2.2"}]}}'  # noqa: E501
-    )
+    def test_compare_chart_versions_no_match(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_a_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        version_puller = HelmChartVersionPuller(helm_deps, "main")
+        version_puller.chart_versions = {
+            "some_chart": {
+                "current": "old_version",
+                "latest": "new_version",
+            }
+        }
+
+        result = version_puller._compare_chart_versions()
+
+        self.assertEqual(result, ["some_chart"])
+
+    @patch("helm_bot.pull_version_info.get_request")
+    def test_get_config(self, mock_get):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_a_t0k3n",
+            "chart-name/Chart.yaml",
+            {"some_chart": "https://some-chart.com"},
+        )
+        version_puller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
+
+        mock_get.side_effect = [
+            {
+                "download_url": "https://example.com",
+                "sha": "123456789",
+            },
+            "hello: world",
+        ]
+
+        expected_config = {"hello": "world"}
+        expected_sha = "123456789"
+
+        config, sha = version_puller._get_config(helm_deps.base_branch)
+
+        self.assertDictEqual(config, expected_config)
+        self.assertEqual(sha, expected_sha)
 
 
-@responses.activate
-def test_pull_from_requirements_file():
-    test_dict = {}
-    test_chart = "chart_name"
-    test_dict[test_chart] = {}
-
-    responses.add(
-        responses.GET,
-        test_url,
-        json={
-            "dependencies": [
-                {"name": "chart-1", "version": "1.2.3"},
-                {"name": "chart-2", "version": "4.5.6"},
-            ]
-        },
-        status=200,
-    )
-
-    test_dict = pull_from_requirements_file(
-        test_url, test_header, test_dict, test_chart
-    )
-
-    assert len(test_dict) == 1
-    assert list(test_dict.items()) == [
-        ("chart_name", {"chart-1": "1.2.3", "chart-2": "4.5.6"})
-    ]
-
-    assert len(responses.calls) == 1
-    assert responses.calls[0].request.url == test_url
-    assert (
-        responses.calls[0].response.text
-        == '{"dependencies": [{"name": "chart-1", "version": "1.2.3"}, {"name": "chart-2", "version": "4.5.6"}]}'
-    )
+if __name__ == "__main__":
+    unittest.main()

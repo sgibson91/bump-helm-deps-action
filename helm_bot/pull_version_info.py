@@ -1,139 +1,106 @@
+import warnings
+from itertools import compress
+
 from .http_requests import get_request
 from .yaml_parser import YamlParser
 
-API_ROOT = "https://api.github.com"
-RAW_ROOT = "https://raw.githubusercontent.com"
 yaml = YamlParser()
 
 
-def pull_from_requirements_file(api_url, header, output_dict, chart_name):
-    """Pull helm chart dependencies and versions from a requirements.yml/.yaml
-    file.
-
-    Args:
-        api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-        output_dict (dict): The dictionary to store chart versions in
-        chart_name (str): The name of the helm chart to pull versions for
-
-    Returns:
-        output_dict (dict): A dictionary containing the names of the helm chart
-            dependencies and their versions.
+class HelmChartVersionPuller:
     """
-    chart_reqs = yaml.yaml_string_to_object(
-        get_request(api_url, headers=header, output="text")
-    )
-
-    for chart in chart_reqs["dependencies"]:
-        output_dict[chart_name][chart["name"]] = chart["version"]
-
-    return output_dict
-
-
-def pull_from_chart_file(api_url, header, output_dict, dependency):
-    """Pull helm chart dependencies and versions from a Chart.yml/.yaml file.
-
-    Args:
-        api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-        output_dict (dict): The dictionary to store chart versions in
-        dependency (str): The name of the helm chart dependency to pull
-            versions for.
-
-    Returns:
-        output_dict (dict): A dictionary containing the names of the helm chart
-            dependencies and their versions.
+    Check the versions of subcharts in a local helm chart against the most recently
+    published version and update if needed.
     """
-    chart_reqs = yaml.yaml_string_to_object(
-        get_request(api_url, headers=header, output="text")
-    )
-    output_dict[dependency] = chart_reqs["version"]
 
-    return output_dict
+    def __init__(self, inputs, branch):
+        self.inputs = inputs
+        self.branch = branch
+        self.github_api_url = "/".join(
+            ["https://api.github.com", "repos", self.inputs.repository]
+        )
+        self.chart_versions = {}
 
+    def _get_config(self, ref):
+        """Get the contents and sha of a YAML config file in a GitHub repo over the API
 
-def pull_from_github_pages(api_url, header, output_dict, dependency):
-    """Pull helm chart dependencies and versions from remote host listed on a
-    GitHub Pages site.
+        Args:
+            ref (str): The reference (branch) the file is stored on
 
-    Args:
-        api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-        output_dict (dict): The dictionary to store chart versions in
-        dependency (str): The name of the helm chart dependency to pull
-            versions for.
+        Returns:
+            config (dict): The config stored at the provided filepath
+            sha (str): The SHA of the file
+        """
+        url = "/".join([self.github_api_url, "contents", self.inputs.chart_path])
+        query = {"ref": ref}
+        resp = get_request(
+            url, headers=self.inputs.headers, params=query, output="json"
+        )
 
-    Returns:
-        output_dict (dict): A dictionary containing the names of the helm chart
-            dependencies and their versions.
-    """
-    chart_reqs = yaml.yaml_string_to_object(
-        get_request(api_url, headers=header, output="text")
-    )
-    updates_sorted = sorted(
-        chart_reqs["entries"][dependency], key=lambda k: k["created"]
-    )
-    output_dict[dependency] = updates_sorted[-1]["version"]
+        download_url = resp["download_url"]
+        sha = resp["sha"]
 
-    return output_dict
+        resp = get_request(download_url, headers=self.inputs.headers, output="text")
+        return yaml.yaml_string_to_object(resp), sha
 
+    def _pull_version_github_pages(self, chart, chart_url):
+        """Pull helm chart dependencies and versions from remote host listed on a
+        GitHub Pages site.
 
-def get_chart_versions(api_url, header, chart_path, chart_urls, branch_name):
-    """Get the versions of dependent helm charts
+        Args:
+            chart (str): The name of the helm chart dependency to pull
+                versions for.
+            chart_url (str): The URL of the remotely hosted helm chart dependencies
+        """
+        releases = yaml.yaml_string_to_object(
+            get_request(chart_url, headers=self.input.headers, output="text")
+        )
+        releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
+        self.chart_versions["chart"]["latest"] = releases_sorted[-1]["version"]
 
-    Args:
-        api_url (str): The URL of the remotely hosted helm chart dependencies
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-        chart_path (str): The path to the file that contains the chart's
-            dependencies
-        chart_urls (dict): A dictionary storing the location of the dependency
-            charts and their versions
-        branch_name (str): The branch to pull the info from
+    def _get_remote_versions(self):
+        """
+        Decipher where a list of chart versions is hosted and find the most recently
+        published version
+        """
+        for chart, chart_url in self.inputs.chart_urls.items():
+            if "/gh-pages/" in chart_url:
+                self._pull_version_github_pages(chart, chart_url)
+            else:
+                warnings.warn(
+                    f"NotImplemented: Cannot currently retrieve version from URL type: {chart_url}"
+                )
+                continue
 
-    Returns:
-        chart_info (dict): A dictionary of the dependent charts and their most
-            recent versions
-    """
-    chart_name = chart_path.split("/")[-2]
-    chart_url = "/".join(
-        [api_url.replace(API_ROOT + "/repos", RAW_ROOT), branch_name, chart_path]
-    )
-    chart_urls[chart_name] = chart_url
+    def _compare_chart_versions(self):
+        """Compare the current helm chart dependencies against the most recently
+        available and ascertain if a subchart can be updated
 
-    chart_info: dict = {}
-    chart_info[chart_name] = {}
-
-    for (chart, chart_url) in chart_urls.items():
-        if ("requirements.yaml" in chart_url) or ("requirements.yml" in chart_url):
-            chart_info = pull_from_requirements_file(
-                chart_url,
-                header,
-                chart_info,
-                chart,
+        Returns:
+            charts_to_update (list): A list of the helm chart dependencies that need
+                updating
+        """
+        condition = [
+            (
+                self.chart_versions[chart]["current"]
+                != self.chart_versions[chart]["latest"]
             )
-        elif ("Chart.yaml" in chart_url) or ("Chart.yml" in chart_url):
-            chart_info = pull_from_chart_file(
-                chart_url,
-                header,
-                chart_info,
-                chart,
-            )
-        elif "/gh-pages/" in chart_url:
-            chart_info = pull_from_github_pages(
-                chart_url,
-                header,
-                chart_info,
-                chart,
-            )
-        else:
-            msg = (
-                "Scraping from the following URL type is currently not implemented\n\t%s"
-                % chart_url
-            )
-            raise NotImplementedError(msg)
+            for chart in self.chart_versions.keys()
+        ]
+        return list(compress(self.chart_versions.keys(), condition))
 
-    return chart_info
+    def get_chart_versions(self):
+        """Get the versions of dependent helm charts"""
+        self.inputs.chart_yaml, self.inputs.sha = self._get_config(self.branch)
+        self.inputs.chart_name = (
+            self.inputs.chart_yaml["name"]
+            if "name" in self.inputs.chart_yaml.keys()
+            else self.inputs.chart_path.split("/")[-2]
+        )
+
+        for chart in self.inputs.chart_yaml["dependencies"]:
+            self.chart_versions[chart["name"]] = {"current": chart["version"]}
+
+        self._get_remote_versions()
+        self.inputs.charts_to_update = self._compare_chart_versions()
+        self.inputs.chart_versions = self.chart_versions

@@ -1,3 +1,6 @@
+import random
+import string
+
 import jmespath
 from loguru import logger
 from requests import put
@@ -5,269 +8,187 @@ from requests import put
 from .http_requests import get_request, patch_request, post_request
 
 
-def add_labels(labels, pr_url, header):
-    """Assign labels to an open Pull Request. The labels must already exist in
-    the repository.
+class GitHubAPI:
+    """Interact with the GitHub API and perform various git-flow tasks"""
 
-    Args:
-        labels (list): The list of labels to apply
-        pr_url (str): The API URL of the Pull Request (issues endpoint) to
-            send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-    """
-    logger.info("Adding labels to Pull Request: {}", pr_url)
-    logger.info("Adding labels: {}", labels)
-    post_request(
-        pr_url,
-        headers=header,
-        json={"labels": labels},
-    )
+    def __init__(self, inputs):
+        self.inputs = inputs
+        self.api_url = "/".join(
+            ["https://api.github.com", "repos", self.inputs.repository]
+        )
 
+    def _assign_labels(self, pr_url):
+        """Assign labels to an open Pull Request. The labels must already exist in
+        the repository.
 
-def assign_reviewers(reviewers, team_reviewers, pr_url, header):
-    """Request reviews from GitHub users on a Pull Request
+        Args:
+            pr_url (str): The API URL of the Pull Request (issues endpoint) to
+                send the request to
+        """
+        logger.info("Adding labels to Pull Request: {}", pr_url)
+        logger.info("Adding labels: {}", self.inputs.labels)
+        url = "/".join([pr_url, "labels"])
+        post_request(
+            url,
+            headers=self.inputs.headers,
+            json={"labels": self.inputs.labels},
+        )
 
-    Args:
-        reviewers (list): A list of GitHub user to request reviews from
-            (**excluding** the leading `@` symbol)
-        team_reviewers (list): A list of GitHub Teams to request a review from. In the
-            form <ORG_NAME>/<TEAM_NAME>.
-        pr_url (str): The API URL of the Pull Request (pulls endpoint) to send
-            the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            contain an authorisation token.
-    """
-    logger.info("Assigning reviewers to Pull Request: {}", pr_url)
-    json = {}
+    def _assign_reviewers(self, pr_url):
+        """Request reviews from GitHub users  or teams on a Pull Request
 
-    if reviewers:
-        logger.info("Assigning reviewers: {}", reviewers)
-        json["reviewers"] = reviewers
-    if team_reviewers:
-        logger.info("Assigning team reviewers: {}", team_reviewers)
-        json["team_reviewers"] = team_reviewers
+        Args:
+            pr_url (str): The API URL of the Pull Request (pulls endpoint) to send
+                the request to
+        """
+        logger.info("Assigning reviewers to Pull Request: {}", pr_url)
+        json = {}
 
-    url = "/".join([pr_url, "requested_reviewers"])
-    post_request(
-        url,
-        headers=header,
-        json=json,
-    )
+        if self.inputs.reviewers:
+            logger.info("Assigning reviewers: {}", self.inputs.reviewers)
+            json["reviewers"] = self.inputs.reviewers
+        if self.inputs.team_reviewers:
+            logger.info("Assigning team reviewers: {}", self.inputs.team_reviewers)
+            json["team_reviewers"] = self.inputs.team_reviewers
 
+        url = "/".join([pr_url, "requested_reviewers"])
+        post_request(
+            url,
+            headers=self.inputs.headers,
+            json=json,
+        )
 
-def create_commit(
-    api_url,
-    header,
-    path,
-    branch,
-    sha,
-    commit_msg,
-    content,
-):
-    """Create a commit over the GitHub API by creating or updating a file
+    def create_commit(self, commit_msg, contents):
+        """Create a commit over the GitHub API by creating or updating a file
 
-    Args:
-        api_url (str): The URL to send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            include an authorisation token.
-        path (str): The path to the file that is to be created or updated,
-            relative to the repo root
-        branch (str): The branch the commit should be made on
-        sha (str): The SHA of the blob to be updated.
-        commit_msg (str): A message describing the changes the commit applies
-        content (str): The content of the file to be updated, encoded in base64
-    """
-    logger.info("Committing changes to file: {}", path)
-    url = "/".join([api_url, "contents", path])
-    body = {"message": commit_msg, "content": content, "sha": sha, "branch": branch}
-    put(url, json=body, headers=header)
+        Args:
+            commit_msg (str): A message describing the changes the commit applies
+            contents (str): The content of the file to be updated, encoded in base64
+        """
+        logger.info("Committing changes to file: {}", self.inputs.chart_path)
+        url = "/".join([self.api_url, "contents", self.inputs.chart_path])
+        body = {
+            "message": commit_msg,
+            "content": contents,
+            "sha": self.inputs.sha,
+            "branch": self.inputs.head_branch,
+        }
+        put(url, json=body, headers=self.inputs.headers)
 
+    def create_ref(self, ref, sha):
+        """Create a new git reference (specifically, a branch) with GitHub's git
+        database API endpoint
 
-def create_ref(api_url, header, ref, sha):
-    """Create a new git reference (specifically, a branch) with GitHub's git
-    database API endpoint
+        Args:
+            ref (str): The reference or branch name to create
+            sha (str): The SHA of the parent commit to point the new reference to
+        """
+        logger.info("Creating new branch: {}", ref)
+        url = "/".join([self.api_url, "git", "refs"])
+        body = {
+            "ref": f"refs/heads/{ref}",
+            "sha": sha,
+        }
+        post_request(url, headers=self.inputs.headers, json=body)
 
-    Args:
-        api_url (str): The URL to send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            include an authorisation token.
-        ref (str): The reference or branch name to create
-        sha (str): The SHA of the parent commit to point the new reference to
-    """
-    logger.info("Creating new branch: {}", ref)
-    url = "/".join([api_url, "git", "refs"])
-    body = {
-        "ref": f"refs/heads/{ref}",
-        "sha": sha,
-    }
-    post_request(url, headers=header, json=body)
+    def create_update_pull_request(self):
+        """Create or update a Pull Request via the GitHub API"""
+        logger.info("Creating Pull Request...")
 
+        url = "/".join([self.api_url, "pulls"])
+        pr = {
+            "title": f"Bumping helm chart dependency versions: {self.inputs.chart_name}",
+            "body": (
+                f"This Pull Request is bumping the dependencies of the `{self.inputs.chart_name}` chart to the following versions.\n\n"
+                + "\n".join(
+                    [
+                        f"- {chart}: `{self.inputs.chart_versions[chart]['current']}` -> `{self.inputs.chart_versions[chart]['latest']}`"
+                        for chart in self.inputs.charts_to_update
+                    ]
+                )
+            ),
+            "base": self.inputs.base_branch,
+        }
 
-def create_update_pr(
-    api_url,
-    header,
-    base_branch,
-    head_branch,
-    chart_name,
-    chart_info,
-    charts_to_update,
-    labels,
-    reviewers,
-    team_reviewers,
-    pr_exists,
-    pr_number=None,
-):
-    """Create or update a Pull Request via the GitHub API
+        if self.pr_exists:
+            url = "/".join([url, str(self.pr_number)])
+            pr["state"] = "open"
 
-    Args:
-        api_url (str): The URL to send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            contain and authorisation token.
-        base_branch (str): The name of the branch to open the Pull Request against
-        head_branch (str): The name of the branch to open the Pull Request from
-        chart_name (str): The name of the local helm chart
-        chart_info (dict): A dictionary of the helm chartdependencies and their
-            versions
-        charts_to_update (list): A list of helm chart dependencies that can be
-            updated
-        labels (list): A list of labels to apply to the Pull Request
-        reviewers (list): A list of GitHub users to request reviews from
-        team_reviewers (list): A list of GitHub Teams to request a review from. In the
-            form <ORG_NAME>/<TEAM_NAME>.
-        pr_exists (bool): True if a Pull Request exists.
-        pr_number (int): The number of an existing Pull Request to update. None otherwise.
-    """
-    logger.info("Creating Pull Request...")
-
-    url = "/".join([api_url, "pulls"])
-    pr = {
-        "title": f"Bumping helm chart dependency versions: {chart_name}",
-        "body": (
-            f"This Pull Request is bumping the dependencies of the `{chart_name}` chart to the following versions.\n\n"
-            + "\n".join(
-                [
-                    f"- {chart}: `{chart_info[chart_name][chart]}` -> `{chart_info[chart]}`"
-                    for chart in charts_to_update
-                ]
+            resp = patch_request(
+                url,
+                headers=self.inputs.headers,
+                json=pr,
+                return_json=True,
             )
-        ),
-        "base": base_branch,
-    }
 
-    if pr_exists:
-        url = "/".join([url, str(pr_number)])
-        pr["state"] = "open"
+            logger.info(f"Pull Request #{resp['number']} updated!")
+        else:
+            pr["head"] = self.inputs.head_branch
 
-        resp = patch_request(
-            url,
-            headers=header,
-            json=pr,
-            return_json=True,
-        )
+            resp = post_request(
+                url,
+                headers=self.inputs.headers,
+                json=pr,
+                return_json=True,
+            )
 
-        logger.info(f"Pull Request #{resp['number']} updated!")
-    else:
-        pr["head"] = head_branch
+            logger.info(f"Pull Request #{resp['number']} created!")
 
-        resp = post_request(
-            url,
-            headers=header,
-            json=pr,
-            return_json=True,
-        )
+            if self.inputs.labels:
+                self._assign_labels(resp["issue_url"])
 
-        logger.info(f"Pull Request #{resp['number']} created!")
+            if self.inputs.reviewers or self.inputs.team_reviewers:
+                self._assign_reviewers(resp["url"])
 
-        if labels:
-            add_labels(labels, resp["issue_url"], header)
-
-        if reviewers or team_reviewers:
-            assign_reviewers(reviewers, team_reviewers, resp["url"], header)
-
-
-def find_existing_pr(api_url, header):
-    """Check if the action already has an open Pull Request
-
-    Args:
-        api_url (str): The API URL of the GitHub repository to send requests to
-        header (dict): A dictionary of headers to send with the GET request
-
-    Returns:
-        pr_exists (bool): True if there is already an open Pull Request.
-            False otherwise.
-        head_branch (str): The name of the branch to send commits to. None if a Pull
-            Request does not already exist.
-        number (int): The number of the existing Pull Request. None otherwise.
-    """
-    logger.info(
-        "Finding Pull Requests previously opened to bump helm chart dependencies"
-    )
-
-    url = "/".join([api_url, "pulls"])
-    params = {"state": "open", "sort": "created", "direction": "desc"}
-    resp = get_request(url, headers=header, params=params, output="json")
-
-    # Expression to match the head ref
-    matches = jmespath.search("[*].head.label", resp)
-    indx, match = next(
-        (
-            (indx, match)
-            for (indx, match) in enumerate(matches)
-            if "helm_dep_bump" in match
-        ),
-        (None, None),
-    )
-
-    if (indx is None) and (match is None):
+    def find_existing_pull_request(self):
+        """Check if the bot already has an open Pull Request"""
         logger.info(
-            "No relevant Pull Requests found. A new Pull Request will be opened."
-        )
-        return False, None, None
-    else:
-        logger.info(
-            "Relevant Pull Request found. Will push new commits to this Pull Request."
+            "Finding Pull Requests previously opened to bump helm chart dependencies"
         )
 
-        ref = match.split(":")[-1]
-        number = resp[indx]["number"]
+        url = "/".join([self.api_url, "pulls"])
+        params = {"state": "open", "sort": "created", "direction": "desc"}
+        resp = get_request(
+            url, headers=self.inputs.headers, params=params, output="json"
+        )
 
-        return True, ref, number
+        # Expression to match the head ref
+        matches = jmespath.search("[*].head.label", resp)
+        indx, match = next(
+            (
+                (indx, match)
+                for (indx, match) in enumerate(matches)
+                if self.inputs.head_branch in match
+            ),
+            (None, None),
+        )
 
+        if (indx is None) and (match is None):
+            logger.info(
+                "No relevant Pull Requests found. A new Pull Request will be opened."
+            )
+            random_id = "".join(random.sample(string.ascii_letters, 4))
+            self.inputs.head_branch = "-".join([self.inputs.head_branch, random_id])
+            self.pr_exists = False
+        else:
+            logger.info(
+                "Relevant Pull Request found. Will push new commits to this Pull Request."
+            )
 
-def get_contents(api_url, header, path, ref):
-    """Get the contents of a file in a GitHub repo over the API
+            self.inputs.head_branch = match.split(":")[-1]
+            self.pr_number = resp[indx]["number"]
+            self.pr_exists = True
 
-    Args:
-        api_url (str): The URL to send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            include an authorisation token.
-        path (str): The path to the file that is to be created or updated,
-            relative to the repo root
-        ref (str): The reference (branch) the file is stored on
+    def get_ref(self, ref):
+        """Get a git reference (specifically, a HEAD ref) using GitHub's git
+        database API endpoint
 
-    Returns:
-        dict: The JSON payload response of the request
-    """
-    logger.info("Downloading helm chart dependencies from url: {}", api_url)
-    url = "/".join([api_url, "contents", path])
-    query = {"ref": ref}
-    return get_request(url, headers=header, params=query, output="json")
+        Args:
+            ref (str): The reference for which to return information for
 
-
-def get_ref(api_url, header, ref):
-    """Get a git reference (specifically, a HEAD ref) using GitHub's git
-    database API endpoint
-
-    Args:
-        api_url (str): The URL to send the request to
-        header (dict): A dictionary of headers to send with the request. Must
-            include an authorisation token.
-        ref (str): The reference for which to return information for
-
-    Returns:
-        dict: The JSON payload response of the request
-    """
-    logger.info("Pulling info for ref: {}", ref)
-    url = "/".join([api_url, "git", "ref", "heads", ref])
-    return get_request(url, headers=header, output="json")
+        Returns:
+            dict: The JSON payload response of the request
+        """
+        logger.info("Pulling info for ref: {}", ref)
+        url = "/".join([self.api_url, "git", "ref", "heads", ref])
+        return get_request(url, headers=self.inputs.headers, output="json")
