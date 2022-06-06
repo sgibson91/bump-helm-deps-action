@@ -11,6 +11,7 @@ on:
 jobs:
   build-docker-image:
     runs-on: ubuntu-latest
+    environment: docker
     steps:
       - name: Parse image tag
         id: parse_image_tag
