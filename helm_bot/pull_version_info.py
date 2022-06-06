@@ -55,7 +55,7 @@ class HelmChartVersionPuller:
             chart_url (str): The URL of the remotely hosted helm chart dependencies
         """
         releases = yaml.yaml_string_to_object(
-            get_request(chart_url, headers=self.input.headers, output="text")
+            get_request(chart_url, headers=self.inputs.headers, output="text")
         )
         releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
         self.chart_versions["chart"]["latest"] = releases_sorted[-1]["version"]
