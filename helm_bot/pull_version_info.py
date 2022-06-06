@@ -103,7 +103,8 @@ class HelmChartVersionPuller:
         )
 
         for chart in self.inputs.chart_yaml["dependencies"]:
-            self.chart_versions[chart["name"]] = {"current": chart["version"]}
+            if chart["name"] in self.inputs.chart_urls.keys():
+                self.chart_versions[chart["name"]] = {"current": chart["version"]}
         print(self.chart_versions)
 
         self._get_remote_versions()
