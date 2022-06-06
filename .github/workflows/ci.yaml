@@ -70,4 +70,4 @@ jobs:
       - name: Run helm-bot
         run: helm-bot
         env:
-          CHART_PATH: "tests/assets/test-chart"
+          INPUT_CHART_PATH: "tests/assets/test-chart"
