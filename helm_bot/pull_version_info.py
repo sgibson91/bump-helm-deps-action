@@ -58,7 +58,7 @@ class HelmChartVersionPuller:
             get_request(chart_url, headers=self.inputs.headers, output="text")
         )
         releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
-        self.chart_versions["chart"]["latest"] = releases_sorted[-1]["version"]
+        self.chart_versions[chart]["latest"] = releases_sorted[-1]["version"]
 
     def _get_remote_versions(self):
         """
