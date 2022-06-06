@@ -38,6 +38,7 @@ class HelmChartVersionPuller:
         resp = get_request(
             url, headers=self.inputs.headers, params=query, output="json"
         )
+        print(resp)
 
         download_url = resp["download_url"]
         sha = resp["sha"]
