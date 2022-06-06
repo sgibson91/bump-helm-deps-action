@@ -79,7 +79,7 @@ class UpdateHelmDeps:
             version_puller = HelmChartVersionPuller(self, self.base_branch)
 
             resp = github.get_ref(self.base_branch)
-            github.create_ref(self.head_branch, resp["sha"])
+            github.create_ref(self.head_branch, resp["object"]["sha"])
 
         version_puller.get_chart_versions()
 
