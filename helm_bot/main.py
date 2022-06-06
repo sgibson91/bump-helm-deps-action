@@ -93,7 +93,7 @@ class UpdateHelmDeps:
             github.create_commit(commit_msg, updated_chart_yaml)
             github.create_update_pull_request()
 
-        elif len(self.chart_to_update) > 0 and self.dry_run:
+        elif len(self.charts_to_update) > 0 and self.dry_run:
             logger.info(
                 "The following subcharts can be updated: {}: A Pull Request will not be opened due to the --dry-run flag being set.",
                 self.charts_to_update,

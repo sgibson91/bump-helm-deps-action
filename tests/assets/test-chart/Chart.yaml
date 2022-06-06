@@ -1,0 +1,7 @@
+name: "test-chart"
+apiVersion: "v1"
+version: "0.0.0"
+dependencies:
+  - name: "binderhub"
+    version: "0.2.0-n960.h47d7917"
+    repository: "https://jupyterhub.github.io/helm-chart/"
