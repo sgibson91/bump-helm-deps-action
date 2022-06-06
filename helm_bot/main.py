@@ -191,6 +191,7 @@ def main():
         repository,
         github_token,
         chart_path,
+        chart_urls,
         base_branch=base_branch,
         head_branch=head_branch,
         labels=labels,
