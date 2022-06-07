@@ -39,7 +39,6 @@ inputs:
       `helm_dep_bump-WXYZ` where `WXYZ` will be a randomly generated ascii string
       (to avoid clashes).
     required: false
-    default: "helm_dep_bump"
   labels:
     description: |
       A comma-separated list of labels to apply to the opened Pull Request.
