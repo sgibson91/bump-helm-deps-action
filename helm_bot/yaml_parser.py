@@ -10,9 +10,10 @@ def represent_none(self, data):
 class YamlParser:
     def __init__(self):
         self.yaml = ruamel.yaml.YAML()
-        self.yaml.indent(mapping=3, sequence=2, offset=0)
+        self.yaml.indent(mapping=2, sequence=4, offset=2)
         self.yaml.allow_duplicate_keys = True
         self.yaml.explicit_start = False
+        self.yaml.preserve_quotes = True
         self.yaml.representer.add_representer(type(None), represent_none)
 
     def object_to_yaml_str(self, obj, options={}):
