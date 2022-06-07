@@ -96,11 +96,6 @@ class HelmChartVersionPuller:
         """Get the versions of dependent helm charts"""
         logger.info("Fetching current subchart versions from helm chart...")
         self.inputs.chart_yaml, self.inputs.sha = self._get_config(self.branch)
-        self.inputs.chart_name = (
-            self.inputs.chart_yaml["name"]
-            if "name" in self.inputs.chart_yaml.keys()
-            else self.inputs.chart_path.split("/")[-2]
-        )
 
         self.chart_versions = {
             chart["name"]: {"current": chart["version"]}

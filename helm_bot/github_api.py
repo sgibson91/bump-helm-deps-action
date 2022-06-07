@@ -168,7 +168,7 @@ class GitHubAPI:
                 "No relevant Pull Requests found. A new Pull Request will be opened."
             )
             random_id = "".join(random.sample(string.ascii_letters, 4))
-            self.inputs.head_branch = "-".join([self.inputs.head_branch, random_id])
+            self.inputs.head_branch = "/".join([self.inputs.head_branch, random_id])
             self.pr_exists = False
         else:
             logger.info(
