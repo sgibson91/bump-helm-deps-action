@@ -419,7 +419,11 @@ class TestGitHubAPI(unittest.TestCase):
                 output="json",
             )
             self.assertFalse(github.pr_exists)
-            self.assertTrue(helm_deps.head_branch.startswith("bump-helm-deps-"))
+            self.assertTrue(
+                helm_deps.head_branch.startswith(
+                    "/".join(["bump-helm-deps", "chart-name"])
+                )
+            )
 
     def test_find_existing_pull_request_match(self):
         helm_deps = UpdateHelmDeps(
@@ -435,7 +439,7 @@ class TestGitHubAPI(unittest.TestCase):
             return_value=[
                 {
                     "head": {
-                        "label": "bump-helm-deps",
+                        "label": "bump-helm-deps/chart-name",
                     },
                     "number": 1,
                 }
@@ -453,7 +457,9 @@ class TestGitHubAPI(unittest.TestCase):
                 output="json",
             )
             self.assertTrue(github.pr_exists)
-            self.assertEqual(helm_deps.head_branch, "bump-helm-deps")
+            self.assertEqual(
+                helm_deps.head_branch, "/".join(["bump-helm-deps", "chart-name"])
+            )
             self.assertEqual(github.pr_number, 1)
 
     def test_get_ref(self):
