@@ -31,7 +31,6 @@ class UpdateHelmDeps:
         self.chart_path = chart_path
         self.chart_urls = chart_urls
         self.base_branch = base_branch
-        self.head_branch = head_branch
         self.labels = labels
         self.reviewers = reviewers
         self.team_reviewers = team_reviewers
@@ -41,6 +40,8 @@ class UpdateHelmDeps:
             "Accept": "application/vnd.github.v3+json",
             "Authorization": f"token {github_token}",
         }
+        self.chart_name = self.chart_path.split("/")[-2]
+        self.head_branch = "/".join([head_branch, self.chart_name])
 
     def update_versions(self):
         """Update the dependencies of a local helm chart with the latest versions
