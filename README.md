@@ -52,7 +52,7 @@ Here is a list detailing the assumptions that the Action makes.
 | `chart_urls` | A string-serialised dictionary storing the location of the dependent and their versions. E.g. `'{"binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"}'` | :white_check_mark: | - |
 | `github_token` | A GitHub token to make requests to the API with. Requires write permissions to: create new branches, make commits, and open Pull Requests. | :x: | `${{github.token}}` |
 | `repository` | The GitHub repository where the helm chart is stored | :x: | `${{github.repository}}` |
-| `base_branch` | The base branch to open the Pull Request against | :x: | `${{github.ref_name}}` |
+| `base_branch` | The base branch to open the Pull Request against | :x: | `main` |
 | `head_branch` | The branch to commit to and open a Pull Request from | :x: | `bump-helm-deps/{{ chart name }}/WXYZ` where `chart name` is derived from the `chart_path`, and `WXYZ` will be a randomly generated ascii string (to avoid clashes) |
 | `labels` | A comma-separated list of labels to apply to the opened Pull Request. Labels must already exist in the repository. | :x: | `[]` |
 | `reviewers` | A comma-separated list of GitHub users (without the leading `@`) to request reviews from | :x: | `[]` |
