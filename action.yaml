@@ -39,6 +39,7 @@ inputs:
       `bump-helm-deps/{{ chart name }}/WXYZ` where chart name is derived from chart_path
       and `WXYZ` is a randomly generated ascii string (to avoid clashes).
     required: false
+    default: "bump-helm-deps"
   labels:
     description: |
       A comma-separated list of labels to apply to the opened Pull Request.
