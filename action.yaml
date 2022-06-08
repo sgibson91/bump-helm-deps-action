@@ -30,9 +30,9 @@ inputs:
     default: ${{ github.repository }}
   base_branch:
     description: |
-      The base branch to open the Pull Request against. Defaults to ${{ github.ref_name }}.
+      The base branch to open the Pull Request against. Defaults to "main".
     required: false
-    default: ${{ github.ref_name }}
+    default: "main"
   head_branch:
     description: |
       The branch to commit to and open a Pull Request from. Defaults to
