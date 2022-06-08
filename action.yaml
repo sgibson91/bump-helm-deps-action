@@ -30,14 +30,14 @@ inputs:
     default: ${{ github.repository }}
   base_branch:
     description: |
-      The base branch to open the Pull Request against. Defaults to "main".
+      The base branch to open the Pull Request against. Defaults to ${{ github.ref_name }}.
     required: false
-    default: "main"
+    default: ${{ github.ref_name }}
   head_branch:
     description: |
       The branch to commit to and open a Pull Request from. Defaults to
-      `helm_dep_bump-WXYZ` where `WXYZ` will be a randomly generated ascii string
-      (to avoid clashes).
+      `bump-helm-deps/{{ chart name }}/WXYZ` where chart name is derived from chart_path
+      and `WXYZ` is a randomly generated ascii string (to avoid clashes).
     required: false
   labels:
     description: |
@@ -51,8 +51,7 @@ inputs:
     required: false
   team_reviewers:
     description: |
-      A comma-separated list of GitHub teams, in the form ORG_NAME/TEAM_NAME, to
-      request reviews from.
+      A comma-separated list of GitHub teams to request reviews from.
     required: false
   dry_run:
     description: |
