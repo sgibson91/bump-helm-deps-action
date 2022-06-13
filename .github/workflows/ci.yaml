@@ -54,6 +54,7 @@ jobs:
 
   run-test-chart:
     runs-on: ubuntu-latest
+    environment: github-app-token
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -67,13 +68,20 @@ jobs:
         run: |
           python -m pip install -e .
 
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+
       - name: Run helm-bot
         run: helm-bot
         env:
           INPUT_CHART_PATH: "tests/assets/test-chart/Chart.yaml"
           INPUT_CHART_URLS: '{"binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml"}'
-          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
           INPUT_REPOSITORY: ${{ github.repository }}
           INPUT_BASE_BRANCH: "main"
           INPUT_HEAD_BRANCH: "test"
-          INPUT_DRY_RUN: 'true'
+          INPUT_DRY_RUN: "true"
