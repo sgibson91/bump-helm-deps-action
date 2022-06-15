@@ -11,6 +11,8 @@ on:
   schedule:
     - cron: "0 0 * * 1"
 
+concurrency: tests
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
