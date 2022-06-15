@@ -67,7 +67,7 @@ class HelmChartVersionPuller:
         """
         logger.info("Fetching most recently published helm chart versions...")
         for chart, chart_url in self.inputs.chart_urls.items():
-            if "/gh-pages/" in chart_url:
+            if ("/gh-pages/" in chart_url) or chart_url.endswith("index.yaml") or chart_url.endswith("index.yml"):
                 self._pull_version_github_pages(chart, chart_url)
             else:
                 warnings.warn(
