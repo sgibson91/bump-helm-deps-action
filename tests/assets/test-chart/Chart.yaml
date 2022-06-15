@@ -5,3 +5,6 @@ dependencies:
   - name: "binderhub"
     version: "0.2.0-n960.h47d7917"
     repository: "https://jupyterhub.github.io/helm-chart/"
+  - name: "cryptnono"
+    version: "0.0.1-n023.hd7bae13"
+    repository: "https://yuvipanda.github.io/cryptnono/"
