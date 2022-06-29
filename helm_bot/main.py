@@ -79,15 +79,16 @@ class UpdateHelmDeps:
         else:
             version_puller = HelmChartVersionPuller(self, self.base_branch)
 
-            resp = github.get_ref(self.base_branch)
-            github.create_ref(self.head_branch, resp["object"]["sha"])
-
         version_puller.get_chart_versions()
 
         if len(self.charts_to_update) > 0 and not self.dry_run:
             logger.info(
                 "The following subcharts can be updated: {}", self.charts_to_update
             )
+
+            if not github.pr_exists:
+                resp = github.get_ref(self.base_branch)
+                github.create_ref(self.head_branch, resp["object"]["sha"])
 
             updated_chart_yaml = self.update_versions()
             commit_msg = f"Bump charts {[chart for chart in self.charts_to_update]} to versions {[self.chart_versions[chart]['latest'] for chart in self.charts_to_update]}, respectively"
