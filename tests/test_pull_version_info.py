@@ -11,7 +11,7 @@ class TestHelmChartVersionPuller(unittest.TestCase):
             "octocat/octocat",
             "ThIs_Is_a_t0k3n",
             "chart-name/Chart.yaml",
-            {"some_chart": "https://some-chart.com"},
+            {"some_chart": {"url": "https://some-chart.com"}},
         )
         version_puller = HelmChartVersionPuller(helm_deps, "main")
         version_puller.chart_versions = {
@@ -30,7 +30,7 @@ class TestHelmChartVersionPuller(unittest.TestCase):
             "octocat/octocat",
             "ThIs_Is_a_t0k3n",
             "chart-name/Chart.yaml",
-            {"some_chart": "https://some-chart.com"},
+            {"some_chart": {"url": "https://some-chart.com"}},
         )
         version_puller = HelmChartVersionPuller(helm_deps, "main")
         version_puller.chart_versions = {
@@ -50,7 +50,7 @@ class TestHelmChartVersionPuller(unittest.TestCase):
             "octocat/octocat",
             "ThIs_Is_a_t0k3n",
             "chart-name/Chart.yaml",
-            {"some_chart": "https://some-chart.com"},
+            {"some_chart": {"url": "https://some-chart.com"}},
         )
         version_puller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
 
@@ -69,6 +69,214 @@ class TestHelmChartVersionPuller(unittest.TestCase):
 
         self.assertDictEqual(config, expected_config)
         self.assertEqual(sha, expected_sha)
+
+    def test_pull_version_github_pages(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {"some_chart": {"url": "https://some-chart.com"}},
+        )
+        versionpuller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
+        versionpuller.chart_versions = {"some_chart": {"current": "old_version"}}
+
+        expected_chart_versions = {
+            "some_chart": {
+                "current": "old_version",
+                "latest": "new_version",
+            }
+        }
+
+        mock_get = patch(
+            "helm_bot.pull_version_info.get_request",
+            return_value="""{
+                "entries": {
+                    "some_chart": [
+                        {
+                            "created": "2022-07-04T13:10:00Z",
+                            "version": "new_version",
+                        }
+                    ]
+                }
+            }""",
+        )
+
+        with mock_get as mock:
+            versionpuller._pull_version_github_pages(
+                "some_chart", helm_deps.chart_info["some_chart"]["url"]
+            )
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                helm_deps.chart_info["some_chart"]["url"],
+                headers=helm_deps.headers,
+                output="text",
+            )
+            self.assertDictEqual(versionpuller.chart_versions, expected_chart_versions)
+
+    def test_pull_version_github_pages_regexpr(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {
+                "some_chart": {
+                    "url": "https://some-chart.com",
+                    "prefix": "some-",
+                    "regexpr": r"[0-9]*\.[0-9]*\.[0-9]*",
+                }
+            },
+        )
+        versionpuller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
+        versionpuller.chart_versions = {"some_chart": {"current": "old_version"}}
+
+        expected_chart_versions = {
+            "some_chart": {
+                "current": "old_version",
+                "latest": "1.2.3",
+            }
+        }
+
+        mock_get = patch(
+            "helm_bot.pull_version_info.get_request",
+            return_value="""{
+                "entries": {
+                    "some_chart": [
+                        {
+                            "created": "2022-07-04T13:10:00Z",
+                            "version": "new_version",
+                        },
+                        {
+                            "created": "2022-07-04T13:21:00Z",
+                            "version": "7.8.9",
+                        },
+                        {
+                            "created": "2022-07-04T13:10:00Z",
+                            "version": "some-1.2.3",
+                        },
+                    ]
+                }
+            }""",
+        )
+
+        with mock_get as mock:
+            versionpuller._pull_version_github_pages(
+                "some_chart",
+                helm_deps.chart_info["some_chart"]["url"],
+                helm_deps.chart_info["some_chart"]["prefix"],
+                helm_deps.chart_info["some_chart"]["regexpr"],
+            )
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                helm_deps.chart_info["some_chart"]["url"],
+                headers=helm_deps.headers,
+                output="text",
+            )
+            self.assertDictEqual(versionpuller.chart_versions, expected_chart_versions)
+
+    def test_pull_version_github_releases(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {"some_chart": {"url": "https://github.com/some-org/some_chart/releases"}},
+        )
+        versionpuller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
+        versionpuller.chart_versions = {"some_chart": {"current": "old_version"}}
+
+        expected_chart_versions = {
+            "some_chart": {
+                "current": "old_version",
+                "latest": "new_version",
+            }
+        }
+
+        mock_get = patch(
+            "helm_bot.pull_version_info.get_request",
+            return_value=[
+                {
+                    "published_at": "2022-07-04T13:28:00Z",
+                    "name": "new_version",
+                },
+            ],
+        )
+
+        with mock_get as mock:
+            versionpuller._pull_version_github_releases(
+                "some_chart", helm_deps.chart_info["some_chart"]["url"]
+            )
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                helm_deps.chart_info["some_chart"]["url"].replace(
+                    "https://github.com", "https://api.github.com/repos"
+                ),
+                headers=helm_deps.headers,
+                params={"per_page": 100},
+                output="json",
+            )
+            self.assertDictEqual(versionpuller.chart_versions, expected_chart_versions)
+
+    def test_pull_version_github_releases_regexpr(self):
+        helm_deps = UpdateHelmDeps(
+            "octocat/octocat",
+            "ThIs_Is_A_t0k3n",
+            "chart_name/Chart.yaml",
+            {
+                "some_chart": {
+                    "url": "https://github.com/some-org/some-chart/releses",
+                    "prefix": "some-",
+                    "regexpr": r"[0-9]*\.[0-9]*\.[0-9]*",
+                }
+            },
+        )
+        versionpuller = HelmChartVersionPuller(helm_deps, helm_deps.base_branch)
+        versionpuller.chart_versions = {"some_chart": {"current": "old_version"}}
+
+        expected_chart_versions = {
+            "some_chart": {
+                "current": "old_version",
+                "latest": "1.2.3",
+            }
+        }
+
+        mock_get = patch(
+            "helm_bot.pull_version_info.get_request",
+            return_value=[
+                {
+                    "published_at": "2022-07-04T13:10:00Z",
+                    "name": "new_version",
+                },
+                {
+                    "published_at": "2022-07-04T13:21:00Z",
+                    "name": "7.8.9",
+                },
+                {
+                    "published_at": "2022-07-04T13:10:00Z",
+                    "name": "some-1.2.3",
+                },
+            ],
+        )
+
+        with mock_get as mock:
+            versionpuller._pull_version_github_releases(
+                "some_chart",
+                helm_deps.chart_info["some_chart"]["url"],
+                helm_deps.chart_info["some_chart"]["prefix"],
+                helm_deps.chart_info["some_chart"]["regexpr"],
+            )
+
+            self.assertEqual(mock.call_count, 1)
+            mock.assert_called_with(
+                helm_deps.chart_info["some_chart"]["url"].replace(
+                    "https://github.com", "https://api.github.com/repos"
+                ),
+                headers=helm_deps.headers,
+                params={"per_page": 100},
+                output="json",
+            )
+            self.assertDictEqual(versionpuller.chart_versions, expected_chart_versions)
 
 
 if __name__ == "__main__":
