@@ -19,7 +19,7 @@ class UpdateHelmDeps:
         repository,
         github_token,
         chart_path,
-        chart_urls,
+        chart_info,
         base_branch="main",
         head_branch="bump-helm-deps",
         labels=[],
@@ -29,7 +29,7 @@ class UpdateHelmDeps:
     ):
         self.repository = repository
         self.chart_path = chart_path
-        self.chart_urls = chart_urls
+        self.chart_info = chart_info
         self.base_branch = base_branch
         self.labels = labels
         self.reviewers = reviewers
@@ -125,10 +125,25 @@ def split_str_to_list(input_str, split_char=","):
     return split_str
 
 
+def assert_chart_info_input(chart_info):
+    """Assert the user input provided to the chart_info variable is as of the expected
+    structure. I.e., a dictionary, where each key's value is also a dictionary that must
+    have a 'url' key.
+
+    Args:
+        chart_info (dict): The input dictionary to check
+    """
+    assert isinstance(chart_info, dict)
+
+    for k, v in chart_info.items():
+        assert isinstance(v, dict)
+        assert "url" in v.keys()
+
+
 def main():
     # Retrieve environment variables
     chart_path = os.environ.get("INPUT_CHART_PATH", None)
-    chart_urls = json.loads(os.environ.get("INPUT_CHART_URLS", "null"))
+    chart_info = json.loads(os.environ.get("INPUT_CHART_INFO", "null"))
     github_token = os.environ.get("INPUT_GITHUB_TOKEN", None)
     repository = os.environ.get("INPUT_REPOSITORY", None)
     base_branch = os.environ.get("INPUT_BASE_BRANCH", None)
@@ -141,7 +156,7 @@ def main():
     # Reference dict for required inputs
     required_vars = {
         "CHART_PATH": chart_path,
-        "CHART_URLS": chart_urls,
+        "CHART_INFO": chart_info,
         "GITHUB_TOKEN": github_token,
         "REPOSITORY": repository,
         "BASE_BRANCH": base_branch,
@@ -152,6 +167,8 @@ def main():
     for k, v in required_vars.items():
         if v is None:
             raise ValueError(f"{k} must be set!")
+
+    assert_chart_info_input(chart_info)
 
     # If labels/reviewers/team_reviewers have been provided, transform from string into list
     if labels:
@@ -175,7 +192,7 @@ def main():
         repository,
         github_token,
         chart_path,
-        chart_urls,
+        chart_info,
         base_branch=base_branch,
         head_branch=head_branch,
         labels=labels,

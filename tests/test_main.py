@@ -1,7 +1,9 @@
 import base64
 import unittest
 
-from helm_bot.main import UpdateHelmDeps, split_str_to_list
+import pytest
+
+from helm_bot.main import UpdateHelmDeps, assert_chart_info_input, split_str_to_list
 from helm_bot.yaml_parser import YamlParser
 
 yaml = YamlParser()
@@ -69,6 +71,32 @@ def test_split_str_to_list_complex():
     assert result1 == expected_output
     assert result2 == expected_output
     assert result1 == result2
+
+
+def test_assert_chart_info_input_pass():
+    chart_info = {"chart_name": {"url": "https://example.com/chart"}}
+    assert_chart_info_input(chart_info)
+
+
+def test_assert_chart_info_input_fail_1():
+    chart_info = {"chart_name": "https://example.com/chart"}
+
+    with pytest.raises(AssertionError):
+        assert_chart_info_input(chart_info)
+
+
+def test_assert_chart_info_input_fail_2():
+    chart_info = ["chart_name", "https://example.com/chart"]
+
+    with pytest.raises(AssertionError):
+        assert_chart_info_input(chart_info)
+
+
+def test_assert_chart_info_input_fail_3():
+    chart_info = [{"chart_name": "https://example.com/chart"}]
+
+    with pytest.raises(AssertionError):
+        assert_chart_info_input(chart_info)
 
 
 if __name__ == "__main__":

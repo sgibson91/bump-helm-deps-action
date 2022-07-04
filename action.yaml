@@ -9,10 +9,14 @@ inputs:
     description: |
       The path to the file that stores the helm chart dependencies
     required: true
-  chart_urls:
+  chart_info:
     description: |
       A string-serialised dictionary storing the location of the dependent
-      and their versions.
+      and their versions in the form:
+      '{"chart_name": {"url": "URL WHERE CHART VERSIONS ARE STORED"}}'
+      Optionally, 'prefix' and 'regexpr' keys can be provided to describe the format of
+      the version tag to use from the repository. This can be useful if the chart
+      publishes a range of different styles of version tags.
     required: true
   github_token:
     description: |
