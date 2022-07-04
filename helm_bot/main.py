@@ -127,34 +127,16 @@ def split_str_to_list(input_str, split_char=","):
 
 def main():
     # Retrieve environment variables
-    chart_path = (
-        os.environ["INPUT_CHART_PATH"] if "INPUT_CHART_PATH" in os.environ else None
-    )
-    chart_urls = (
-        json.loads(os.environ["INPUT_CHART_URLS"])
-        if "INPUT_CHART_URLS" in os.environ
-        else None
-    )
-    github_token = (
-        os.environ["INPUT_GITHUB_TOKEN"] if "INPUT_GITHUB_TOKEN" in os.environ else None
-    )
-    repository = (
-        os.environ["INPUT_REPOSITORY"] if "INPUT_REPOSITORY" in os.environ else None
-    )
-    base_branch = (
-        os.environ["INPUT_BASE_BRANCH"] if "INPUT_BASE_BRANCH" in os.environ else None
-    )
-    head_branch = (
-        os.environ["INPUT_HEAD_BRANCH"] if "INPUT_HEAD_BRANCH" in os.environ else None
-    )
-    labels = os.environ["INPUT_LABELS"] if "INPUT_LABELS" in os.environ else []
-    reviewers = os.environ["INPUT_REVIEWERS"] if "INPUT_REVIEWERS" in os.environ else []
-    team_reviewers = (
-        os.environ["INPUT_TEAM_REVIEWERS"]
-        if "INPUT_TEAM_REVIEWERS" in os.environ
-        else []
-    )
-    dry_run = os.environ["INPUT_DRY_RUN"] if "INPUT_DRY_RUN" in os.environ else False
+    chart_path = os.environ.get("INPUT_CHART_PATH", None)
+    chart_urls = json.loads(os.environ.get("INPUT_CHART_URLS", "null"))
+    github_token = os.environ.get("INPUT_GITHUB_TOKEN", None)
+    repository = os.environ.get("INPUT_REPOSITORY", None)
+    base_branch = os.environ.get("INPUT_BASE_BRANCH", None)
+    head_branch = os.environ.get("INPUT_HEAD_BRANCH", None)
+    labels = os.environ.get("INPUT_LABELS", [])
+    reviewers = os.environ.get("INPUT_REVIEWERS", [])
+    team_reviewers = os.environ.get("INPUT_TEAM_REVIEWERS", [])
+    dry_run = os.environ.get("INPUT_DRY_RUN", False)
 
     # Reference dict for required inputs
     required_vars = {
@@ -172,11 +154,11 @@ def main():
             raise ValueError(f"{k} must be set!")
 
     # If labels/reviewers/team_reviewers have been provided, transform from string into list
-    if isinstance(labels, str) and (len(labels) > 0):
+    if labels:
         labels = split_str_to_list(labels)
-    if isinstance(reviewers, str) and (len(reviewers) > 0):
+    if reviewers:
         reviewers = split_str_to_list(reviewers)
-    if isinstance(team_reviewers, str) and (len(team_reviewers) > 0):
+    if team_reviewers:
         team_reviewers = split_str_to_list(team_reviewers)
 
     # Check the dry_run variable is properly set
