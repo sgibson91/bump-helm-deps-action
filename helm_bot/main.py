@@ -126,9 +126,11 @@ def split_str_to_list(input_str, split_char=","):
 
 
 def main():
+    test = os.environ.get("INPUT_CHART_URLS", "null")
+    print(test)
     # Retrieve environment variables
     chart_path = os.environ.get("INPUT_CHART_PATH", None)
-    chart_urls = json.loads(os.environ.get("INPUT_CHART_URLS", "null"))
+    chart_urls = json.loads(test)
     github_token = os.environ.get("INPUT_GITHUB_TOKEN", None)
     repository = os.environ.get("INPUT_REPOSITORY", None)
     base_branch = os.environ.get("INPUT_BASE_BRANCH", None)
