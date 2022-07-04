@@ -67,7 +67,7 @@ class HelmChartVersionPuller:
 
         for release in releases["entries"][chart]:
             release["created"] = datetime.strptime(
-                release["created"], "%Y-%m-%dT%H:%M:%SZ"
+                release["created"], "%Y-%m-%dT%H:%M:%S.%fZ"
             )
 
         releases = sorted(releases["entries"][chart], key=lambda k: k["created"])
@@ -115,7 +115,7 @@ class HelmChartVersionPuller:
 
         for release in releases:
             release["published_at"] = datetime.strptime(
-                release["published_at"], "%Y-%m-%dT%H:%M:%SZ"
+                release["published_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
             )
 
         releases = sorted(releases, key=lambda k: k["published_at"])
