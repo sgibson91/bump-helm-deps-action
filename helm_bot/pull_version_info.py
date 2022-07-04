@@ -57,7 +57,9 @@ class HelmChartVersionPuller:
             chart_url (str): The URL of the remotely hosted helm chart dependencies
         """
         try:
-            releases = get_request(chart_url, headers=self.inputs.headers, output="text")
+            releases = get_request(
+                chart_url, headers=self.inputs.headers, output="text"
+            )
 
             releases = releases.encode("acsii", "ignore")
             releases = releases.decode()
