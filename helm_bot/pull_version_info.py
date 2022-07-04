@@ -3,10 +3,10 @@ import warnings
 from itertools import compress
 
 from loguru import logger
+from ruamel.yaml.reader import ReaderError
 
 from .http_requests import get_request
 from .yaml_parser import YamlParser
-from ruamel.yaml.reader import ReaderError
 
 yaml = YamlParser()
 
@@ -60,7 +60,9 @@ class HelmChartVersionPuller:
             releases = yaml.yaml_string_to_object(
                 get_request(chart_url, headers=self.inputs.headers, output="text")
             )
-            releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
+            releases_sorted = sorted(
+                releases["entries"][chart], key=lambda k: k["created"]
+            )
             self.chart_versions[chart]["latest"] = releases_sorted[-1]["version"]
 
         except ReaderError as re:
