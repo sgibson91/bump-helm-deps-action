@@ -81,7 +81,7 @@ jobs:
         run: helm-bot
         env:
           INPUT_CHART_PATH: "tests/assets/test-chart/Chart.yaml"
-          INPUT_CHART_INFO: >-
+          INPUT_CHART_URLS: >-
             {
               "binderhub": "https://raw.githubusercontent.com/jupyterhub/helm-chart/gh-pages/index.yaml",
               "cryptnono": "https://yuvipanda.github.io/cryptnono/index.yaml",
