@@ -93,7 +93,7 @@ class TestHelmChartVersionPuller(unittest.TestCase):
                 "entries": {
                     "some_chart": [
                         {
-                            "created": "2022-07-04T13:10:00Z",
+                            "created": "2022-07-04T13:10:00.123456Z",
                             "version": "new_version",
                         }
                     ]
@@ -143,15 +143,15 @@ class TestHelmChartVersionPuller(unittest.TestCase):
                 "entries": {
                     "some_chart": [
                         {
-                            "created": "2022-07-04T13:10:00Z",
+                            "created": "2022-07-04T13:10:00.123456Z",
                             "version": "new_version",
                         },
                         {
-                            "created": "2022-07-04T13:21:00Z",
+                            "created": "2022-07-04T13:21:00.123456Z",
                             "version": "7.8.9",
                         },
                         {
-                            "created": "2022-07-04T13:10:00Z",
+                            "created": "2022-07-04T13:10:00.123456Z",
                             "version": "some-1.2.3",
                         },
                     ]
@@ -196,7 +196,7 @@ class TestHelmChartVersionPuller(unittest.TestCase):
             "helm_bot.pull_version_info.get_request",
             return_value=[
                 {
-                    "published_at": "2022-07-04T13:28:00Z",
+                    "published_at": "2022-07-04T13:28:00.123456Z",
                     "name": "new_version",
                 },
             ],
@@ -245,15 +245,15 @@ class TestHelmChartVersionPuller(unittest.TestCase):
             "helm_bot.pull_version_info.get_request",
             return_value=[
                 {
-                    "published_at": "2022-07-04T13:10:00Z",
+                    "published_at": "2022-07-04T13:10:00.123456Z",
                     "name": "new_version",
                 },
                 {
-                    "published_at": "2022-07-04T13:21:00Z",
+                    "published_at": "2022-07-04T13:21:00.123456Z",
                     "name": "7.8.9",
                 },
                 {
-                    "published_at": "2022-07-04T13:10:00Z",
+                    "published_at": "2022-07-04T13:10:00.123456Z",
                     "name": "some-1.2.3",
                 },
             ],
