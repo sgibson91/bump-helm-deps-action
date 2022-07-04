@@ -61,7 +61,7 @@ class HelmChartVersionPuller:
                 chart_url, headers=self.inputs.headers, output="text"
             )
 
-            releases = releases.encode("acsii", "ignore")
+            releases = releases.encode("ascii", "ignore")
             releases = releases.decode()
 
             releases = yaml.yaml_string_to_object(releases)
