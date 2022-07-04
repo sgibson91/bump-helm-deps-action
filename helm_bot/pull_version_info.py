@@ -1,6 +1,5 @@
 import re
 import warnings
-from datetime import datetime
 from itertools import compress
 
 from dateutil.parser import isoparse
