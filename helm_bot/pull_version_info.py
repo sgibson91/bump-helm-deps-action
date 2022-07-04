@@ -3,6 +3,7 @@ import warnings
 from datetime import datetime
 from itertools import compress
 
+from dateutil.parser import isoparse
 from loguru import logger
 
 from .http_requests import get_request
@@ -66,9 +67,7 @@ class HelmChartVersionPuller:
         )
 
         for release in releases["entries"][chart]:
-            release["created"] = datetime.strptime(
-                release["created"], r"%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            release["created"] = isoparse(release["created"])
 
         releases = sorted(releases["entries"][chart], key=lambda k: k["created"])
 
@@ -114,9 +113,7 @@ class HelmChartVersionPuller:
         )
 
         for release in releases:
-            release["published_at"] = datetime.strptime(
-                release["published_at"], r"%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            release["published_at"] = isoparse(release["published_at"])
 
         releases = sorted(releases, key=lambda k: k["published_at"])
 
