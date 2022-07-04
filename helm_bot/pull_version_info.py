@@ -1,3 +1,4 @@
+import sys
 import warnings
 from itertools import compress
 
@@ -5,6 +6,7 @@ from loguru import logger
 
 from .http_requests import get_request
 from .yaml_parser import YamlParser
+from ruamel.yaml.reader import ReaderError
 
 yaml = YamlParser()
 
@@ -54,11 +56,16 @@ class HelmChartVersionPuller:
                 versions for.
             chart_url (str): The URL of the remotely hosted helm chart dependencies
         """
-        releases = yaml.yaml_string_to_object(
-            get_request(chart_url, headers=self.inputs.headers, output="text")
-        )
-        releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
-        self.chart_versions[chart]["latest"] = releases_sorted[-1]["version"]
+        try:
+            releases = yaml.yaml_string_to_object(
+                get_request(chart_url, headers=self.inputs.headers, output="text")
+            )
+            releases_sorted = sorted(releases["entries"][chart], key=lambda k: k["created"])
+            self.chart_versions[chart]["latest"] = releases_sorted[-1]["version"]
+
+        except ReaderError as re:
+            logger.error(f"Could not read from URL: {chart_url}\n\n{re}")
+            sys.exit(1)
 
     def _get_remote_versions(self):
         """
