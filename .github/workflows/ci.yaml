@@ -55,6 +55,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   run-test-chart:
+    if: contains(github.head_ref, "dependabot") == false
     runs-on: ubuntu-latest
     environment: github-app-token
     steps:
