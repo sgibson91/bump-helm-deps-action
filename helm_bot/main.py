@@ -164,7 +164,7 @@ def main():
     # Check the dry_run variable is properly set
     if isinstance(dry_run, str) and (dry_run == "true"):
         dry_run = True
-    elif isinstance(dry_run, str) and (dry_run != "true"):
+    elif isinstance(dry_run, str) and (dry_run == "false"):
         dry_run = False
     elif isinstance(dry_run, bool) and not dry_run:
         pass
