@@ -166,10 +166,15 @@ def main():
         dry_run = True
     elif isinstance(dry_run, str) and (dry_run == "false"):
         dry_run = False
-    elif isinstance(dry_run, bool) and not dry_run:
+    elif isinstance(dry_run, bool):
+        # Pass silently since input is a boolean as expected
         pass
     else:
-        raise ValueError("DRY_RUN variable can only take values 'true' or 'false'")
+        # If none of the above conditions pass then raise an error
+        raise ValueError(
+            "DRY_RUN variable can only take values 'true' or 'false' (either str or bool type). "
+            + f"You have provided: {dry_run} ({type(dry_run)})"
+        )
 
     update_helm_deps = UpdateHelmDeps(
         repository,
