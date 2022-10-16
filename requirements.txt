@@ -1,4 +1,4 @@
-incremental==21.3.0
+incremental==22.10.0
 jmespath==1.0.0
 loguru==0.6.0
 requests==2.28.0
