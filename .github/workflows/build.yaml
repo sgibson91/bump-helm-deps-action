@@ -38,4 +38,4 @@ jobs:
         uses: docker/build-push-action@v4.0.0
         with:
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ github.repository }}:${{ steps.parse_image_tag.outputs.image_tag }}
+          tags: quay.io/${{ github.repository }}:${{ steps.parse_image_tag.outputs.image_tag }}
