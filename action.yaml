@@ -61,7 +61,7 @@ inputs:
     required: false
 runs:
   using: 'docker'
-  image: 'quay.io://sgibson91/bump-helm-deps-action:main'
+  image: './Dockerfile'
 branding:
   icon: 'check-circle'
   color: 'purple'
