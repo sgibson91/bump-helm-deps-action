@@ -4,20 +4,14 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "00:00"
-      timezone: "Europe/London"
+      interval: "monthly"
     pull-request-branch-name:
       separator: "-"
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "00:00"
-      timezone: "Europe/London"
+      interval: "monthly"
     ignore:
       - update-types: ["version-update:semver-patch"]
         dependency-name: "*"
@@ -27,9 +21,6 @@ updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "00:00"
-      timezone: "Europe/London"
+      interval: "monthly"
     pull-request-branch-name:
       separator: "-"
