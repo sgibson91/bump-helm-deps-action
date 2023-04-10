@@ -1,5 +1,5 @@
 # Use a Python 3.9 slim image
-FROM python:3.10.10-slim
+FROM python:3.10.11-slim
 
 # Install gcc
 RUN apt-get update && apt-get install --yes gcc
