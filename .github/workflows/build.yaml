@@ -35,7 +35,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
 
       - name: Build image
-        uses: docker/build-push-action@v4.0.0
+        uses: docker/build-push-action@v4
         with:
           push: ${{ github.event_name != 'pull_request' }}
           tags: quay.io/${{ github.repository }}:${{ steps.parse_image_tag.outputs.image_tag }}
