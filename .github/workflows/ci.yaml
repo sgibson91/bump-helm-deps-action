@@ -51,8 +51,7 @@ jobs:
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v3
         with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   run-test-chart:
     if: contains(github.head_ref, 'dependabot') == false
