@@ -11,6 +11,9 @@ WORKDIR /app
 # Copy repository contents into the working directory
 COPY . /app
 
+# Update pip
+RUN pip install -U pip
+
 # Install package
 RUN pip install .
 
