@@ -1,4 +1,4 @@
-# Use a Python 3.9 slim image
+# Use a Python slim image
 FROM python:3.10.13-slim
 
 # Install gcc
