@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy repository contents into the working directory
 COPY . /app
 
-# Upgrade pip and install dependencies
-RUN python setup.py install
+# Install package
+RUN pip install .
 
 # Set entrypoint
 ENTRYPOINT ["helm-bot"]
