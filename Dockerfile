@@ -1,4 +1,4 @@
-# Use a Python 3.9 slim image
+# Use a Python slim image
 FROM python:3.10.13-slim
 
 # Install gcc
@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy repository contents into the working directory
 COPY . /app
 
-# Upgrade pip and install dependencies
-RUN python setup.py install
+# Install package
+RUN pip install .
 
 # Set entrypoint
 ENTRYPOINT ["helm-bot"]
