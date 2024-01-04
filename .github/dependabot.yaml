@@ -7,6 +7,10 @@ updates:
       interval: "monthly"
     pull-request-branch-name:
       separator: "-"
+    groups:
+      actions:
+        patterns:
+          - "*"
   # Maintain dependencies for pip
   - package-ecosystem: "pip"
     directory: "/"
@@ -17,6 +21,10 @@ updates:
         dependency-name: "*"
     pull-request-branch-name:
       separator: "-"
+    groups:
+      pip:
+        patterns:
+          - "*"
   # Maintain dependencies for docker
   - package-ecosystem: "docker"
     directory: "/"
@@ -24,3 +32,7 @@ updates:
       interval: "monthly"
     pull-request-branch-name:
       separator: "-"
+    groups:
+      docker:
+        patterns:
+          - "*"
