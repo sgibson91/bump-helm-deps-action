@@ -1,6 +1,6 @@
 incremental==22.10.0
 jmespath==1.0.0
 loguru==0.7.0
-requests==2.31.0
+requests==2.32.2
 ruamel.yaml==0.18.*
 twisted==24.3.0
