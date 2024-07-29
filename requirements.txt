@@ -3,4 +3,4 @@ jmespath==1.0.0
 loguru==0.7.0
 requests==2.32.2
 ruamel.yaml==0.18.*
-twisted==24.3.0
+twisted>=24.7.0rc1
