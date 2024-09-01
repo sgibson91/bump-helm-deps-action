@@ -1,5 +1,5 @@
 # Use a Python slim image
-FROM python:3.12.4-slim
+FROM python:3.12.5-slim
 
 # Install gcc
 RUN apt-get update && apt-get install --yes gcc
