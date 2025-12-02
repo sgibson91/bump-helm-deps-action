@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Python ${{ matrix.python_version }}
         uses: actions/setup-python@v6
@@ -56,7 +56,7 @@ jobs:
     environment: github-app-token
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Python 3.10
         uses: actions/setup-python@v6
