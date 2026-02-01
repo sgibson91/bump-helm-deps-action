@@ -1,5 +1,5 @@
 incremental
-jmespath==1.0.0
+jmespath==1.1.0
 loguru==0.7.0
 requests==2.32.4
 ruamel.yaml==0.19.*
