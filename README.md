@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> [Dependabot now supports helm](https://github.blog/changelog/2025-04-09-dependabot-version-updates-now-support-helm/) so that functionality should be used, rather than this Action. 
+
 <center>
 
 <img src="helm-bot-logo.png" alt="Helm Bot logo" width="100">
